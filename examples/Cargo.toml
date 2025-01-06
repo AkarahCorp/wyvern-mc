@@ -3,6 +3,9 @@ name = "wyvern-examples"
 version = "0.0.0"
 edition = "2024"
 
+[dev-dependencies]
+wyvern-mc = { path = "../crates/wyvern-mc" }
+
 [[example]]
 name = "simple"
 path = "./simple.rs"

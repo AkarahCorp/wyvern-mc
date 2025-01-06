@@ -1,7 +1,9 @@
 [workspace]
-edition = "2024"
 resolver = "3"
 members = [
     "examples",
     "crates/*"
 ]
+
+[workspace.dependencies]
+voxidian-protocol = { git = "https://github.com/LighthouseMC/VoxidianProtocol.git" }
