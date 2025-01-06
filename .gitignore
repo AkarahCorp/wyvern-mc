@@ -1,0 +1,15 @@
+target
+crates/**/target
+benches/**/target
+tools/**/target
+**/*.rs.bk
+
+Cargo.lock
+.cargo/config
+.cargo/config.toml
+
+.idea
+.vscode
+.zed
+dxcompiler.dll
+dxil.dll

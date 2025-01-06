@@ -1,0 +1,8 @@
+[package]
+name = "wyvern-examples"
+version = "0.0.0"
+edition = "2024"
+
+[[example]]
+name = "simple"
+path = "./simple.rs"
