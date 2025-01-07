@@ -5,3 +5,4 @@ edition = "2024"
 
 [dependencies]
 voxidian-protocol = { workspace = true } 
+tokio = { workspace = true }

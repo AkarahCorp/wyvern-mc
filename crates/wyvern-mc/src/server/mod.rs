@@ -1,5 +1,6 @@
-use std::{collections::VecDeque, net::{Ipv4Addr, SocketAddrV4, TcpListener}};
+use std::{collections::VecDeque, net::{Ipv4Addr, SocketAddrV4}};
 
+use tokio::net::TcpListener;
 use voxidian_protocol::packet::processing::{CompressionMode, PacketProcessing, SecretCipher};
 
 use crate::player::net::RawConnection;
@@ -12,18 +13,17 @@ pub struct Server {
 }
 
 impl Server {
-    pub fn start(mut self) {
+    pub async fn start(mut self) {
         let listener = TcpListener::bind(
-            SocketAddrV4::new(Ipv4Addr::new(127, 0, 0, 1), 25565)).unwrap();
-        listener.set_nonblocking(true).expect("tcp must support non-blocking mode");
+            SocketAddrV4::new(Ipv4Addr::new(127, 0, 0, 1), 25565)).await.unwrap();
 
         println!("Server now listening on 127.0.0.1:25565");
         loop {
-            let new_client = listener.accept();
+            println!("iter");
+            let new_client = listener.accept().await;
             match new_client {
                 Ok((stream, addr)) => {
                     println!("Accepted new client: {:?}", addr);
-                    stream.set_nonblocking(true).expect("tcp must support non-blocking mode");
                     let raw = RawConnection { 
                         stream, 
                         addr: addr.ip(), 
@@ -38,11 +38,10 @@ impl Server {
                 },
                 Err(_err) => {},
             }
-
             self.connections.retain(|x| !x.removed);
 
             for connection in &mut self.connections {
-                connection.event_loop();
+                connection.event_loop().await;
             }
         }
     }

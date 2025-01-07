@@ -7,3 +7,4 @@ members = [
 
 [workspace.dependencies]
 voxidian-protocol = { git = "https://github.com/LighthouseMC/VoxidianProtocol.git" }
+tokio = { version = "1.42.0", features = ["full"] }

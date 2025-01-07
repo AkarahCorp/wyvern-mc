@@ -1,5 +1,6 @@
-use std::{collections::VecDeque, io::{ErrorKind, Read}, net::{IpAddr, TcpStream}};
+use std::{collections::VecDeque, io::ErrorKind, net::IpAddr};
 
+use tokio::net::TcpStream;
 use voxidian_protocol::packet::processing::PacketProcessing;
 
 pub struct RawConnection {
@@ -13,14 +14,14 @@ pub struct RawConnection {
 }
 
 impl RawConnection {
-    pub fn event_loop(&mut self) {
-        self.handle_incoming_bytes();
-        self.write_outgoing_packets();
+    pub async fn event_loop(&mut self) {
+        self.handle_incoming_bytes().await;
+        self.write_outgoing_packets().await;
     }
 
-    pub fn handle_incoming_bytes(&mut self) {
+    pub async fn handle_incoming_bytes(&mut self) {
         let mut buf = [0; 256];
-        let bytes_read = self.stream.read(&mut buf);
+        let bytes_read = self.stream.try_read(&mut buf);
         match bytes_read {
             Ok(bytes_read) => {
                 if bytes_read == 0 {
@@ -41,17 +42,17 @@ impl RawConnection {
             Err(e) if e.kind() == ErrorKind::WouldBlock => {
 
             }
-            Err(_e) => {
-
+            Err(e) => {
+                panic!("{:?}", e);
             }
         }
     }
 
-    pub fn handle_incoming_packets(&mut self) {
-        
+    pub async fn handle_incoming_packets(&mut self) {
+
     }
 
-    pub fn write_outgoing_packets(&mut self) {
+    pub async fn write_outgoing_packets(&mut self) {
 
     }
 }

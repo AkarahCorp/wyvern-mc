@@ -1,6 +1,8 @@
 use wyvern_mc::server::builder::ServerBuilder;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     ServerBuilder::new()
-        .start();
+        .start()
+        .await;
 }
