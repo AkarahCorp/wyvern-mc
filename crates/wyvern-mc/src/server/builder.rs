@@ -10,8 +10,10 @@ impl ServerBuilder {
     }
 
     pub async fn start(self) {
-        let server = Server {};
-        
+        let server = Server {
+            connections: Vec::new()
+        };
+
         server.start().await;
     }
 }
