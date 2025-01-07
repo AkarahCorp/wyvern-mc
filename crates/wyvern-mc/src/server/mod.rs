@@ -1,4 +1,6 @@
-use std::net::{Ipv4Addr, SocketAddrV4, TcpListener};
+use std::{collections::VecDeque, net::{Ipv4Addr, SocketAddrV4, TcpListener}};
+
+use voxidian_protocol::packet::processing::{CompressionMode, PacketProcessing, SecretCipher};
 
 use crate::player::net::RawConnection;
 
@@ -22,15 +24,22 @@ impl Server {
                 Ok((stream, addr)) => {
                     println!("Accepted new client: {:?}", addr);
                     stream.set_nonblocking(true).expect("tcp must support non-blocking mode");
-                    let raw = RawConnection { stream, addr: addr.ip(), removed: false };
+                    let raw = RawConnection { 
+                        stream, 
+                        addr: addr.ip(), 
+                        removed: false,
+                        received_bytes: VecDeque::new(),
+                        packet_processing: PacketProcessing {
+                            secret_cipher: SecretCipher::no_cipher(),
+                            compression: CompressionMode::None,
+                        }
+                    };
                     self.connections.push(raw);
                 },
                 Err(_err) => {},
             }
 
             self.connections.retain(|x| !x.removed);
-
-            println!("Conns: {:?}", self.connections);
 
             for connection in &mut self.connections {
                 connection.event_loop();
