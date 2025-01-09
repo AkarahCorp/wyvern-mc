@@ -1,7 +1,6 @@
 use std::{net::{Ipv4Addr, SocketAddrV4}, sync::Arc};
 
 use tokio::net::TcpListener;
-use voxidian_protocol::packet::{c2s::handshake::C2SHandshakePackets, Stage};
 
 use crate::player::{net::ConnectionData, proxy::ConnectionWithSignal};
 
@@ -30,37 +29,9 @@ impl Server {
                     );
                     let proxy = ConnectionWithSignal {
                         messenger: Arc::new(messenger),
-                        signal,
+                        _signal: signal,
                     };
-                    let lowered = proxy.lower();
-                    tokio::spawn(async move {
-                        loop {
-                            match lowered.get_stage().await {
-                                Stage::Handshake => {
-                                    let Some(packet) = lowered.read_handshaking_packet().await else {
-                                        tokio::task::yield_now().await;
-                                        continue;
-                                    };
-                                    println!("handshake packet: {:?}", packet);
-                                }
-                                Stage::Status => {
-                                    let Some(packet) = lowered.read_status_packet().await else {
-                                        tokio::task::yield_now().await;
-                                        continue;
-                                    };
-                                    println!("status packet: {:?}", packet);
-                                }
-                                Stage::Login => {
-                                    let Some(packet) = lowered.read_login_packet().await else {
-                                        tokio::task::yield_now().await;
-                                        continue;
-                                    };
-                                    println!("login packet: {:?}", packet);
-                                }
-                                _ => {}
-                            }
-                        }
-                    });
+                    let _lowered = proxy.lower();
                     self.connections.push(proxy);
                 },
                 Err(_err) => {},

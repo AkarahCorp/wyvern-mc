@@ -1,15 +1,19 @@
 use std::{collections::VecDeque, fmt::Debug, io::ErrorKind, net::IpAddr};
 
-use tokio::{io::AsyncWriteExt, net::TcpStream, sync::*};
-use voxidian_protocol::packet::{c2s::{config::C2SConfigPackets, handshake::C2SHandshakePackets, login::C2SLoginPackets, play::C2SPlayPackets, status::C2SStatusPackets}, processing::{CompressionMode, PacketProcessing, SecretCipher}, DecodeError, PacketBuf, PrefixedPacketDecode, PrefixedPacketEncode, Stage};
+use tokio::{net::TcpStream, sync::*};
+use voxidian_protocol::packet::{c2s::handshake::C2SHandshakePackets, processing::{CompressionMode, PacketProcessing, SecretCipher}, DecodeError, PrefixedPacketDecode, Stage};
 
 use super::message::ConnectionMessage;
 
 pub struct ConnectionData {
     stream: TcpStream,
+    #[allow(dead_code)]
     addr: IpAddr,
 
     received_bytes: VecDeque<u8>,
+
+    bytes_to_send: VecDeque<u8>,
+
     packet_processing: PacketProcessing,
 
     receiver: mpsc::Receiver<ConnectionMessage>,
@@ -43,6 +47,9 @@ impl ConnectionData {
             stream,
             addr,
             received_bytes: VecDeque::new(),
+
+            bytes_to_send: VecDeque::new(),
+
             packet_processing: PacketProcessing {
                 secret_cipher: SecretCipher::no_cipher(),
                 compression: CompressionMode::None,
@@ -65,6 +72,8 @@ impl ConnectionData {
                 break;
             }
             self.handle_messages().await;
+            self.read_incoming_packets().await;
+            self.write_outgoing_packets().await;
             tokio::task::yield_now().await;
         }
     }
@@ -98,6 +107,43 @@ impl ConnectionData {
         }
     }
 
+    pub async fn read_incoming_packets(&mut self) {
+        match self.stage {
+            Stage::Handshake => {
+                self.read_packets(|packet: C2SHandshakePackets| {
+                    println!("{:?}", packet);
+                });
+            },
+            Stage::Status => todo!(),
+            Stage::Login => todo!(),
+            Stage::Config => todo!(),
+            Stage::Play => todo!(),
+            Stage::Transfer => todo!("doesn't exist, this needs to be removed D:"),
+        }
+    }
+
+    pub async fn write_outgoing_packets(&mut self) {
+        loop {
+            if self.bytes_to_send.is_empty() {
+                break;
+            }
+            self.bytes_to_send.make_contiguous();
+            match self.stream.try_write(self.bytes_to_send.as_slices().0) {
+                Ok(bytes_sent) => {
+                    for _ in 0..bytes_sent {
+                        self.bytes_to_send.pop_front();
+                    }
+                }
+                Err(e) if e.kind() == ErrorKind::WouldBlock => {
+                    break;
+                },
+                Err(e) => {
+                    panic!("{:?}", e);
+                }
+            }
+        }
+    }
+
     pub async fn handle_messages(&mut self) {
         loop {
             match self.receiver.try_recv() {
@@ -118,51 +164,19 @@ impl ConnectionData {
             ConnectionMessage::GetStage(sender) => {
                 sender.send(self.stage.clone()).unwrap();
             },
-            ConnectionMessage::ReadHandshakingPacket(sender) => {
-                sender.send(self.read_packets::<C2SHandshakePackets>()).unwrap();
+            ConnectionMessage::SendPacket(buf) => {
+                self.bytes_to_send.extend(buf.as_slice());
             }
-            ConnectionMessage::ReadStatusPacket(sender) => {
-                sender.send(self.read_packets::<C2SStatusPackets>()).unwrap();
-            }
-            ConnectionMessage::SendStatusPacket(packet) => {
-                let mut buf = PacketBuf::new();
-                packet.encode_prefixed(&mut buf).unwrap();
-                self.stream.write_all(buf.as_slice()).await.unwrap();
-            }
-            ConnectionMessage::ReadLoginPacket(sender) => {
-                sender.send(self.read_packets::<C2SLoginPackets>()).unwrap();
-            }
-            ConnectionMessage::SendLoginPacket(packet) => {
-                let mut buf = PacketBuf::new();
-                packet.encode_prefixed(&mut buf).unwrap();
-                self.stream.write_all(buf.as_slice()).await.unwrap();
-            }
-            ConnectionMessage::ReadConfigPacket(sender) => {
-                sender.send(self.read_packets::<C2SConfigPackets>()).unwrap();
-            }
-            ConnectionMessage::SendConfigPacket(packet) => {
-                let mut buf = PacketBuf::new();
-                packet.encode_prefixed(&mut buf).unwrap();
-                self.stream.write_all(buf.as_slice()).await.unwrap();
-            }
-            ConnectionMessage::ReadPlayPacket(sender) => {
-                sender.send(self.read_packets::<C2SPlayPackets>()).unwrap();
-            }
-            ConnectionMessage::SendPlayPacket(packet) => {
-                let mut buf = PacketBuf::new();
-                packet.encode_prefixed(&mut buf).unwrap();
-                self.stream.write_all(buf.as_slice()).await.unwrap();
-            }
+            #[allow(unreachable_patterns)]
             _ => todo!("unrecognized message")
         }
     }
 
-    pub fn read_packets<T: PrefixedPacketDecode + Debug>(&mut self) -> Option<T> {
-        
-        let output = match self.packet_processing.decode_from_raw_queue(self.received_bytes.iter().map(|x| *x)) {
+    pub fn read_packets<T: PrefixedPacketDecode + Debug, F: FnOnce(T)>(&mut self, f: F) {
+        match self.packet_processing.decode_from_raw_queue(self.received_bytes.iter().map(|x| *x)) {
             Ok((mut buf, consumed)) => {
                 if consumed == 0 {
-                    return None;
+                    return;
                 }
 
                 for _ in 0..consumed {
@@ -170,19 +184,17 @@ impl ConnectionData {
                 }
 
                 match T::decode_prefixed(&mut buf) {
-                    Ok(packet) => Some(packet),
-                    Err(DecodeError::EndOfBuffer) => None,
+                    Ok(packet) => f(packet),
+                    Err(DecodeError::EndOfBuffer) => {},
                     Err(e) => {
                         panic!("{:?}", e);
                     }
                 }
             }
-            Err(DecodeError::EndOfBuffer) => None,
+            Err(DecodeError::EndOfBuffer) => {},
             Err(e) => {
                 panic!("err: {:?}", e);
             }
-        };
-
-        output
+        }
     }
 }
