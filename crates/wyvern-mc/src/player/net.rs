@@ -1,6 +1,5 @@
 use std::{collections::VecDeque, fmt::Debug, io::ErrorKind, net::IpAddr};
 
-use mpsc::error::TryRecvError;
 use tokio::{io::AsyncWriteExt, net::TcpStream, sync::*};
 use voxidian_protocol::packet::{c2s::{config::C2SConfigPackets, handshake::C2SHandshakePackets, login::C2SLoginPackets, play::C2SPlayPackets, status::C2SStatusPackets}, processing::{CompressionMode, PacketProcessing, SecretCipher}, DecodeError, PacketBuf, PrefixedPacketDecode, PrefixedPacketEncode, Stage};
 
