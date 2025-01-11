@@ -1,11 +1,11 @@
-use std::{collections::VecDeque, fmt::Debug, io::ErrorKind, net::IpAddr};
+use std::{collections::VecDeque, fmt::Debug, io::ErrorKind, net::IpAddr, sync::Arc};
 
 use tokio::{net::TcpStream, sync::*};
-use voxidian_protocol::packet::{c2s::handshake::C2SHandshakePackets, processing::{CompressionMode, PacketProcessing, SecretCipher}, DecodeError, PrefixedPacketDecode, Stage};
+use voxidian_protocol::packet::{c2s::{handshake::C2SHandshakePackets, status::C2SStatusPackets}, processing::{CompressionMode, PacketProcessing, SecretCipher}, DecodeError, PrefixedPacketDecode, Stage};
 
 use crate::{server::proxy::Server, systems::{events::ReceivePacketEvent, parameters::{Event, Param}, typemap::TypeMap}};
 
-use super::message::ConnectionMessage;
+use super::{message::ConnectionMessage, proxy::Player};
 
 pub struct ConnectionData {
     stream: TcpStream,
@@ -18,6 +18,7 @@ pub struct ConnectionData {
 
     packet_processing: PacketProcessing,
 
+    sender: mpsc::Sender<ConnectionMessage>,
     receiver: mpsc::Receiver<ConnectionMessage>,
     signal: mpsc::Sender<ConnectionStoppedSignal>,
 
@@ -37,7 +38,7 @@ impl ConnectionData {
         let (signal_tx, signal_rx) = mpsc::channel(1);
         let (data_tx, data_rx) = mpsc::channel(256);
 
-        tokio::spawn(ConnectionData::execute_connection(stream, addr, data_rx, signal_tx, server));
+        tokio::spawn(ConnectionData::execute_connection(stream, addr, data_tx.clone(), data_rx, signal_tx, server));
 
         (data_tx, signal_rx)
     }
@@ -45,6 +46,7 @@ impl ConnectionData {
     pub async fn execute_connection(
         stream: TcpStream,
         addr: IpAddr,
+        sender: mpsc::Sender<ConnectionMessage>,
         receiver: mpsc::Receiver<ConnectionMessage>,
         signal: mpsc::Sender<ConnectionStoppedSignal>,
         server: Server
@@ -61,6 +63,7 @@ impl ConnectionData {
                 compression: CompressionMode::None,
             },
 
+            sender,
             receiver,
             signal,
 
@@ -79,8 +82,8 @@ impl ConnectionData {
                 let _ = self.signal.send(ConnectionStoppedSignal).await;
                 break;
             }
-            self.handle_messages().await;
             self.read_incoming_packets().await;
+            self.handle_messages().await;
             self.write_outgoing_packets().await;
             tokio::task::yield_now().await;
         }
@@ -119,14 +122,26 @@ impl ConnectionData {
         match self.stage {
             Stage::Handshake => {
                 let server = self.connected_server.clone();
-                self.read_packets(async |packet: C2SHandshakePackets| {
+                let conn = Player { messenger: Arc::new(self.sender.clone()) };
+                self.read_packets(|packet: C2SHandshakePackets| {
                     let mut params = TypeMap::new();
                     params.insert(Event::<ReceivePacketEvent<C2SHandshakePackets>>::new());
                     params.insert(Param::new(packet));
+                    params.insert(Param::new(conn));
                     tokio::spawn(async move { server.fire_systems(params).await; });
-                }).await;
+                });
             },
-            Stage::Status => todo!(),
+            Stage::Status => {
+                let server = self.connected_server.clone();
+                let conn = Player { messenger: Arc::new(self.sender.clone()) };
+                self.read_packets(|packet: C2SStatusPackets| {
+                    let mut params = TypeMap::new();
+                    params.insert(Event::<ReceivePacketEvent<C2SStatusPackets>>::new());
+                    params.insert(Param::new(packet));
+                    params.insert(Param::new(conn));
+                    tokio::spawn(async move { server.fire_systems(params).await; });
+                });
+            },
             Stage::Login => todo!(),
             Stage::Config => todo!(),
             Stage::Play => todo!(),
@@ -186,9 +201,10 @@ impl ConnectionData {
         }
     }
 
-    pub async fn read_packets<T: PrefixedPacketDecode + Debug, F: AsyncFnOnce(T)>(&mut self, f: F) {
+    pub fn read_packets<T: PrefixedPacketDecode + Debug, F: FnOnce(T)>(&mut self, f: F) {
         match self.packet_processing.decode_from_raw_queue(self.received_bytes.iter().map(|x| *x)) {
             Ok((mut buf, consumed)) => {
+                println!("decoded! Buf: {:?}", buf);
                 if consumed == 0 {
                     return;
                 }
@@ -198,7 +214,10 @@ impl ConnectionData {
                 }
 
                 match T::decode_prefixed(&mut buf) {
-                    Ok(packet) => f(packet).await,
+                    Ok(packet) => {
+                        println!("decoding worked: {:?}", packet);
+                        f(packet)
+                    },
                     Err(DecodeError::EndOfBuffer) => {},
                     Err(e) => {
                         panic!("{:?}", e);

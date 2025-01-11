@@ -66,7 +66,6 @@ impl ServerData {
 
         println!("Server now listening on 127.0.0.1:25565");
         loop {
-            println!("iter");
             let new_client = listener.accept().await;
             match new_client {
                 Ok((stream, addr)) => {

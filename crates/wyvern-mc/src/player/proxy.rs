@@ -8,30 +8,30 @@ use crate::server::proxy::Server;
 use super::{message::ConnectionMessage, net::ConnectionStoppedSignal};
 
 #[derive(Clone)]
-pub struct Connection {
+pub struct Player {
     pub(crate) messenger: Arc<Sender<ConnectionMessage>>,
 }
 
-impl Connection {
+impl Player {
     pub async fn get_stage(&self) -> Stage {
         let (tx, rx) = channel();
-        self.messenger.send(ConnectionMessage::GetStage(tx)).await.unwrap();
+        let _ = self.messenger.send(ConnectionMessage::GetStage(tx)).await;
         rx.await.unwrap()
     }
 
     pub async fn set_stage(&self, stage: Stage) {
-        self.messenger.send(ConnectionMessage::SetStage(stage)).await.unwrap();
+        let _ = self.messenger.send(ConnectionMessage::SetStage(stage)).await;
     }
 
     pub async fn write_packet<P: PrefixedPacketEncode>(&self, packet: P) {
         let mut buf = PacketBuf::new();
         packet.encode_prefixed(&mut buf).unwrap();
-        self.messenger.send(ConnectionMessage::SendPacket(buf)).await.unwrap();
+        let _ = self.messenger.send(ConnectionMessage::SendPacket(buf)).await;
     }
 
     pub async fn get_server(&self) -> Server {
         let (tx, rx) = channel();
-        self.messenger.send(ConnectionMessage::GetServer(tx)).await.unwrap();
+        let _ = self.messenger.send(ConnectionMessage::GetServer(tx)).await;
         rx.await.unwrap()
     }
 }
@@ -42,7 +42,7 @@ pub struct ConnectionWithSignal {
 }
 
 impl ConnectionWithSignal {
-    pub fn lower(&self) -> Connection {
-        Connection { messenger: self.messenger.clone() }
+    pub fn lower(&self) -> Player {
+        Player { messenger: self.messenger.clone() }
     }
 }
