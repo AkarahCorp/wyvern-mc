@@ -1,9 +1,11 @@
 use tokio::sync::oneshot::Sender;
 use voxidian_protocol::packet::{PacketBuf, Stage};
 
-#[derive(Debug)]
+use crate::server::proxy::Server;
+
 pub enum ConnectionMessage {
     SetStage(Stage),
     GetStage(Sender<Stage>),
-    SendPacket(PacketBuf)
+    SendPacket(PacketBuf),
+    GetServer(Sender<Server>)
 }

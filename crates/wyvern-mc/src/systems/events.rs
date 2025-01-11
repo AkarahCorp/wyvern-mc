@@ -1,7 +1,9 @@
+use std::marker::PhantomData;
+
 use super::parameters::EventType;
 
 #[derive(Default, Clone, Debug)]
 pub struct ReceivePacketEvent<P> {
-    _phantom: P
+    _phantom: PhantomData<P>
 }
 impl<P> EventType for ReceivePacketEvent<P> {}

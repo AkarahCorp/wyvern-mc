@@ -1,4 +1,4 @@
-use crate::systems::{intos::IntoSystem, system::System};
+use crate::systems::{intos::IntoSystem, parameters::SystemParameter, system::System};
 
 use super::ServerData;
 
@@ -13,7 +13,7 @@ impl ServerBuilder {
         }
     }
 
-    pub fn add_system<I, S>(&mut self, s: S)
+    pub fn add_system<I: SystemParameter, S>(&mut self, s: S)
     where 
         S: IntoSystem<I>,
         <S as IntoSystem<I>>::System: Send + Sync + 'static {

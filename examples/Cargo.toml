@@ -6,6 +6,7 @@ edition = "2024"
 [dev-dependencies]
 wyvern-mc = { path = "../crates/wyvern-mc" }
 tokio = { workspace = true }
+voxidian-protocol = { workspace = true }
 
 [[example]]
 name = "simple"

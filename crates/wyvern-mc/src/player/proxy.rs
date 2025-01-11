@@ -3,6 +3,8 @@ use std::sync::Arc;
 use tokio::sync::{mpsc::{Receiver, Sender}, oneshot::channel};
 use voxidian_protocol::packet::{PacketBuf, PrefixedPacketEncode, Stage};
 
+use crate::server::proxy::Server;
+
 use super::{message::ConnectionMessage, net::ConnectionStoppedSignal};
 
 #[derive(Clone)]
@@ -25,6 +27,12 @@ impl Connection {
         let mut buf = PacketBuf::new();
         packet.encode_prefixed(&mut buf).unwrap();
         self.messenger.send(ConnectionMessage::SendPacket(buf)).await.unwrap();
+    }
+
+    pub async fn get_server(&self) -> Server {
+        let (tx, rx) = channel();
+        self.messenger.send(ConnectionMessage::GetServer(tx)).await.unwrap();
+        rx.await.unwrap()
     }
 }
 

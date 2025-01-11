@@ -1,5 +1,6 @@
-use crate::player::proxy::ConnectionWithSignal;
+use crate::{player::proxy::ConnectionWithSignal, systems::typemap::TypeMap};
 
 pub enum ServerMessage {
-    SpawnConnection(ConnectionWithSignal)
+    SpawnConnection(ConnectionWithSignal),
+    FireSystems(TypeMap)
 }

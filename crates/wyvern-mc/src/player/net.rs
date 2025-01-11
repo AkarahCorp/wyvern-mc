@@ -3,6 +3,8 @@ use std::{collections::VecDeque, fmt::Debug, io::ErrorKind, net::IpAddr};
 use tokio::{net::TcpStream, sync::*};
 use voxidian_protocol::packet::{c2s::handshake::C2SHandshakePackets, processing::{CompressionMode, PacketProcessing, SecretCipher}, DecodeError, PrefixedPacketDecode, Stage};
 
+use crate::{server::proxy::Server, systems::{events::ReceivePacketEvent, parameters::{Event, Param}, typemap::TypeMap}};
+
 use super::message::ConnectionMessage;
 
 pub struct ConnectionData {
@@ -19,7 +21,9 @@ pub struct ConnectionData {
     receiver: mpsc::Receiver<ConnectionMessage>,
     signal: mpsc::Sender<ConnectionStoppedSignal>,
 
-    stage: Stage
+    stage: Stage,
+
+    connected_server: Server
 }
 
 pub struct ConnectionStoppedSignal;
@@ -27,12 +31,13 @@ pub struct ConnectionStoppedSignal;
 impl ConnectionData {
     pub fn connection_channel(
         stream: TcpStream,
-        addr: IpAddr
+        addr: IpAddr,
+        server: Server
     ) -> (mpsc::Sender<ConnectionMessage>, mpsc::Receiver<ConnectionStoppedSignal>) {
         let (signal_tx, signal_rx) = mpsc::channel(1);
         let (data_tx, data_rx) = mpsc::channel(256);
 
-        tokio::spawn(ConnectionData::execute_connection(stream, addr, data_rx, signal_tx));
+        tokio::spawn(ConnectionData::execute_connection(stream, addr, data_rx, signal_tx, server));
 
         (data_tx, signal_rx)
     }
@@ -41,7 +46,8 @@ impl ConnectionData {
         stream: TcpStream,
         addr: IpAddr,
         receiver: mpsc::Receiver<ConnectionMessage>,
-        signal: mpsc::Sender<ConnectionStoppedSignal>
+        signal: mpsc::Sender<ConnectionStoppedSignal>,
+        server: Server
     ) {
         let mut conn = ConnectionData {
             stream,
@@ -58,7 +64,9 @@ impl ConnectionData {
             receiver,
             signal,
 
-            stage: Stage::Handshake
+            stage: Stage::Handshake,
+
+            connected_server: server
         };
 
         conn.event_loop().await;
@@ -110,9 +118,13 @@ impl ConnectionData {
     pub async fn read_incoming_packets(&mut self) {
         match self.stage {
             Stage::Handshake => {
-                self.read_packets(|packet: C2SHandshakePackets| {
-                    println!("{:?}", packet);
-                });
+                let server = self.connected_server.clone();
+                self.read_packets(async |packet: C2SHandshakePackets| {
+                    let mut params = TypeMap::new();
+                    params.insert(Event::<ReceivePacketEvent<C2SHandshakePackets>>::new());
+                    params.insert(Param::new(packet));
+                    tokio::spawn(async move { server.fire_systems(params).await; });
+                }).await;
             },
             Stage::Status => todo!(),
             Stage::Login => todo!(),
@@ -162,17 +174,19 @@ impl ConnectionData {
                 self.stage = stage;
             },
             ConnectionMessage::GetStage(sender) => {
-                sender.send(self.stage.clone()).unwrap();
+                let _ = sender.send(self.stage.clone());
             },
             ConnectionMessage::SendPacket(buf) => {
                 self.bytes_to_send.extend(buf.as_slice());
+            },
+            ConnectionMessage::GetServer(sender) => {
+                let server = Server { sender: self.connected_server.sender.clone() };
+                let _ = sender.send(server);
             }
-            #[allow(unreachable_patterns)]
-            _ => todo!("unrecognized message")
         }
     }
 
-    pub fn read_packets<T: PrefixedPacketDecode + Debug, F: FnOnce(T)>(&mut self, f: F) {
+    pub async fn read_packets<T: PrefixedPacketDecode + Debug, F: AsyncFnOnce(T)>(&mut self, f: F) {
         match self.packet_processing.decode_from_raw_queue(self.received_bytes.iter().map(|x| *x)) {
             Ok((mut buf, consumed)) => {
                 if consumed == 0 {
@@ -184,7 +198,7 @@ impl ConnectionData {
                 }
 
                 match T::decode_prefixed(&mut buf) {
-                    Ok(packet) => f(packet),
+                    Ok(packet) => f(packet).await,
                     Err(DecodeError::EndOfBuffer) => {},
                     Err(e) => {
                         panic!("{:?}", e);

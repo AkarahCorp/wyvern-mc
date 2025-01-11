@@ -34,7 +34,9 @@ impl ServerData {
             for system in &mut self.systems {
                 let mut map = TypeMap::new();
                 let server = Server { sender: tx.clone() };
-                tokio::spawn(system.run(&mut map, server));
+                if let Some(fut) = system.run(&mut map, server) {
+                    tokio::spawn(fut);
+                }
             }
 
 
@@ -43,6 +45,14 @@ impl ServerData {
                     ServerMessage::SpawnConnection(connection_with_signal) => {
                         self.connections.push(connection_with_signal);
                     },
+                    ServerMessage::FireSystems(mut parameters) => {
+                        for system in &mut self.systems {
+                            let server = Server { sender: tx.clone() };
+                            if let Some(fut) = system.run(&mut parameters, server) {
+                                tokio::spawn(fut);
+                            }
+                        }
+                    }
                 }
             };
 
@@ -62,9 +72,12 @@ impl ServerData {
                 Ok((stream, addr)) => {
                     println!("Accepted new client: {:?}", addr);
 
+                    
+                    let server = Server { sender: tx.clone() };
                     let (messenger, signal) = ConnectionData::connection_channel(
                         stream, 
-                        addr.ip()
+                        addr.ip(),
+                        server
                     );
                     let proxy = ConnectionWithSignal {
                         messenger: Arc::new(messenger),
