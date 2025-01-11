@@ -1,6 +1,6 @@
 use crate::systems::{intos::IntoSystem, scheduler::StoredSystem};
 
-use super::Server;
+use super::ServerData;
 
 pub struct ServerBuilder {
     systems: Vec<StoredSystem>
@@ -21,7 +21,7 @@ impl ServerBuilder {
     }
 
     pub async fn start(self) {
-        let server = Server {
+        let server = ServerData {
             connections: Vec::new()
         };
 
