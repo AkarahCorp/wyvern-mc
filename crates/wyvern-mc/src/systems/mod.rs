@@ -1,6 +1,5 @@
 use std::pin::Pin;
 
-pub mod scheduler;
 pub mod system;
 pub mod typemap;
 pub mod function;

@@ -1,43 +1,50 @@
 use std::{net::{Ipv4Addr, SocketAddrV4}, sync::Arc};
 
 use message::ServerMessage;
+use proxy::Server;
 use tokio::{net::TcpListener, sync::mpsc::{Receiver, Sender}};
 
-use crate::player::{net::ConnectionData, proxy::ConnectionWithSignal};
+use crate::{player::{net::ConnectionData, proxy::ConnectionWithSignal}, systems::{system::System, typemap::TypeMap}};
 
 pub mod builder;
 pub mod proxy;
 pub mod message;
 
 pub struct ServerData {
-    connections: Vec<ConnectionWithSignal>
+    connections: Vec<ConnectionWithSignal>,
+    systems: Vec<Box<dyn System + Send + Sync + 'static>>
 }
 
 impl ServerData {
     pub async fn start(self) {
         let (tx, rx) = tokio::sync::mpsc::channel::<ServerMessage>(16);
-        tokio::spawn(self.handle_messages(rx));
+        tokio::spawn(self.handle_loops(tx.clone(), rx));
         tokio::spawn(Self::networking_loop(tx));
 
         loop {}
     }
 
-    pub async fn handle_messages(mut self, mut rx: Receiver<ServerMessage>) {
+    pub async fn handle_loops(mut self, tx: Sender<ServerMessage>, mut rx: Receiver<ServerMessage>) {
         loop {
             self.connections
                 .retain_mut(|connection| {
                     connection._signal.try_recv().is_err()
                 });
-            
-            let Some(msg) = rx.recv().await else {
-                continue;
-            };
 
-            match msg {
-                ServerMessage::SpawnConnection(connection_with_signal) => {
-                    self.connections.push(connection_with_signal);
-                },
+            for system in &mut self.systems {
+                let mut map = TypeMap::new();
+                let server = Server { sender: tx.clone() };
+                tokio::spawn(system.run(&mut map, server));
             }
+
+
+            if let Ok(msg) = rx.try_recv() {
+                match msg {
+                    ServerMessage::SpawnConnection(connection_with_signal) => {
+                        self.connections.push(connection_with_signal);
+                    },
+                }
+            };
 
             
         }

@@ -8,5 +8,5 @@ async fn main() {
 }
 
 async fn some_system() {
-
+    println!("System is executing!");
 }
