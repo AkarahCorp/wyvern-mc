@@ -1,4 +1,4 @@
-use super::{function::FunctionSystem, typemap::TypeMap, BoxedFuture};
+use super::{function::FunctionSystem, parameters::SystemParameter, typemap::TypeMap, BoxedFuture};
 
 pub trait System {
     fn run(&mut self, resources: &mut TypeMap) -> BoxedFuture;
@@ -17,7 +17,7 @@ where
     Fut: Future<Output = ()> + Send + Sync + 'static,
     F: FnMut(T1) -> Fut,
     
-    T1: 'static + Clone {
+    T1: SystemParameter + Clone + 'static {
     fn run(&mut self, resources: &mut TypeMap) -> BoxedFuture {
         Box::pin((self.f)(resources.get::<T1>().unwrap().clone()))
     }
