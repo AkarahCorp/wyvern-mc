@@ -18,10 +18,17 @@ impl ServerData {
         let (tx, rx) = tokio::sync::mpsc::channel::<ServerMessage>(16);
         tokio::spawn(self.handle_messages(rx));
         tokio::spawn(Self::networking_loop(tx));
+
+        loop {}
     }
 
     pub async fn handle_messages(mut self, mut rx: Receiver<ServerMessage>) {
         loop {
+            self.connections
+                .retain_mut(|connection| {
+                    connection._signal.try_recv().is_err()
+                });
+            
             let Some(msg) = rx.recv().await else {
                 continue;
             };
@@ -31,6 +38,8 @@ impl ServerData {
                     self.connections.push(connection_with_signal);
                 },
             }
+
+            
         }
     }
 
