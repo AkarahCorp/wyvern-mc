@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use tokio::sync::{mpsc::{Receiver, Sender}, oneshot::channel};
-use voxidian_protocol::packet::{PacketBuf, PrefixedPacketEncode, Stage};
+use voxidian_protocol::{packet::{PacketBuf, PacketEncode, PrefixedPacketEncode, Stage}, value::VarInt};
 
 use crate::server::proxy::Server;
 
@@ -26,6 +26,11 @@ impl Player {
     pub async fn write_packet<P: PrefixedPacketEncode>(&self, packet: P) {
         let mut buf = PacketBuf::new();
         packet.encode_prefixed(&mut buf).unwrap();
+
+        let mut len_buf = PacketBuf::new();
+        VarInt::from(buf.iter().count()).encode(&mut len_buf).unwrap();
+
+        let _ = self.messenger.send(ConnectionMessage::SendPacket(len_buf)).await;
         let _ = self.messenger.send(ConnectionMessage::SendPacket(buf)).await;
     }
 
