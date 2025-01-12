@@ -2,6 +2,7 @@ use std::{net::{Ipv4Addr, SocketAddrV4}, sync::Arc};
 
 use message::ServerMessage;
 use proxy::Server;
+use registries::RegistryContainer;
 use tokio::{net::TcpListener, sync::mpsc::{Receiver, Sender}};
 
 use crate::{player::{net::ConnectionData, proxy::ConnectionWithSignal}, systems::{system::System, typemap::TypeMap}};
@@ -9,10 +10,12 @@ use crate::{player::{net::ConnectionData, proxy::ConnectionWithSignal}, systems:
 pub mod builder;
 pub mod proxy;
 pub mod message;
+pub mod registries;
 
 pub struct ServerData {
     connections: Vec<ConnectionWithSignal>,
-    systems: Vec<Box<dyn System + Send + Sync + 'static>>
+    systems: Vec<Box<dyn System + Send + Sync + 'static>>,
+    registries: RegistryContainer
 }
 
 impl ServerData {
