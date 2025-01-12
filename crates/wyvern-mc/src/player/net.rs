@@ -1,11 +1,11 @@
-use std::{collections::VecDeque, fmt::Debug, io::ErrorKind, net::IpAddr, sync::Arc};
+use std::{collections::VecDeque, fmt::Debug, io::ErrorKind, net::IpAddr};
 
 use tokio::{net::TcpStream, sync::*};
-use voxidian_protocol::packet::{c2s::{handshake::C2SHandshakePackets, status::C2SStatusPackets}, processing::{CompressionMode, PacketProcessing, SecretCipher}, DecodeError, PrefixedPacketDecode, Stage};
+use voxidian_protocol::packet::{c2s::handshake::C2SHandshakePackets, processing::{CompressionMode, PacketProcessing, SecretCipher}, DecodeError, PrefixedPacketDecode, Stage};
 
-use crate::{server::proxy::Server, systems::{events::ReceivePacketEvent, parameters::{Event, Param}, typemap::TypeMap}};
+use crate::server::proxy::Server;
 
-use super::{message::ConnectionMessage, proxy::Player};
+use super::{data::PlayerData, message::ConnectionMessage};
 
 pub struct ConnectionData {
     pub(crate) stream: TcpStream,
@@ -18,7 +18,8 @@ pub struct ConnectionData {
     pub(crate) receiver: mpsc::Receiver<ConnectionMessage>,
     pub(crate) signal: mpsc::Sender<ConnectionStoppedSignal>,
     pub(crate) stage: Stage,
-    pub(crate) connected_server: Server
+    pub(crate) connected_server: Server,
+    pub(crate) associated_data: PlayerData
 }
 
 pub struct ConnectionStoppedSignal;
@@ -49,21 +50,17 @@ impl ConnectionData {
             stream,
             addr,
             received_bytes: VecDeque::new(),
-
             bytes_to_send: VecDeque::new(),
-
             packet_processing: PacketProcessing {
                 secret_cipher: SecretCipher::no_cipher(),
                 compression: CompressionMode::None,
             },
-
             sender,
             receiver,
             signal,
-
             stage: Stage::Handshake,
-
-            connected_server: server
+            connected_server: server,
+            associated_data: PlayerData::default()
         };
 
         conn.event_loop().await;
@@ -124,7 +121,9 @@ impl ConnectionData {
             Stage::Status => {
                 self.status_stage();
             },
-            Stage::Login => todo!(),
+            Stage::Login => {
+                self.login_stage();
+            },
             Stage::Config => todo!(),
             Stage::Play => todo!(),
             Stage::Transfer => todo!("doesn't exist, this needs to be removed D:"),
