@@ -8,23 +8,17 @@ use crate::{server::proxy::Server, systems::{events::ReceivePacketEvent, paramet
 use super::{message::ConnectionMessage, proxy::Player};
 
 pub struct ConnectionData {
-    stream: TcpStream,
+    pub(crate) stream: TcpStream,
     #[allow(dead_code)]
-    addr: IpAddr,
-
-    received_bytes: VecDeque<u8>,
-
-    bytes_to_send: VecDeque<u8>,
-
-    packet_processing: PacketProcessing,
-
-    sender: mpsc::Sender<ConnectionMessage>,
-    receiver: mpsc::Receiver<ConnectionMessage>,
-    signal: mpsc::Sender<ConnectionStoppedSignal>,
-
-    stage: Stage,
-
-    connected_server: Server
+    pub(crate) addr: IpAddr,
+    pub(crate) received_bytes: VecDeque<u8>,
+    pub(crate) bytes_to_send: VecDeque<u8>,
+    pub(crate) packet_processing: PacketProcessing,
+    pub(crate) sender: mpsc::Sender<ConnectionMessage>,
+    pub(crate) receiver: mpsc::Receiver<ConnectionMessage>,
+    pub(crate) signal: mpsc::Sender<ConnectionStoppedSignal>,
+    pub(crate) stage: Stage,
+    pub(crate) connected_server: Server
 }
 
 pub struct ConnectionStoppedSignal;
@@ -120,27 +114,15 @@ impl ConnectionData {
 
     pub async fn read_incoming_packets(&mut self) {
         match self.stage {
+            
             Stage::Handshake => {
-                let server = self.connected_server.clone();
-                let conn = Player { messenger: Arc::new(self.sender.clone()) };
-                self.read_packets(|packet: C2SHandshakePackets| {
-                    let mut params = TypeMap::new();
-                    params.insert(Event::<ReceivePacketEvent<C2SHandshakePackets>>::new());
-                    params.insert(Param::new(packet));
-                    params.insert(Param::new(conn));
-                    tokio::spawn(async move { server.fire_systems(params).await; });
+                self.read_packets(|packet: C2SHandshakePackets, this| {
+                    let C2SHandshakePackets::Intention(packet) = packet;
+                    this.stage = packet.intended_stage.into_stage();
                 });
             },
             Stage::Status => {
-                let server = self.connected_server.clone();
-                let conn = Player { messenger: Arc::new(self.sender.clone()) };
-                self.read_packets(|packet: C2SStatusPackets| {
-                    let mut params = TypeMap::new();
-                    params.insert(Event::<ReceivePacketEvent<C2SStatusPackets>>::new());
-                    params.insert(Param::new(packet));
-                    params.insert(Param::new(conn));
-                    tokio::spawn(async move { server.fire_systems(params).await; });
-                });
+                self.status_stage();
             },
             Stage::Login => todo!(),
             Stage::Config => todo!(),
@@ -157,9 +139,11 @@ impl ConnectionData {
             self.bytes_to_send.make_contiguous();
             match self.stream.try_write(self.bytes_to_send.as_slices().0) {
                 Ok(bytes_sent) => {
+                    println!("before: {:?}", self.bytes_to_send);
                     for _ in 0..bytes_sent {
                         self.bytes_to_send.pop_front();
                     }
+                    println!("after: {:?}", self.bytes_to_send);
                 }
                 Err(e) if e.kind() == ErrorKind::WouldBlock => {
                     break;
@@ -201,7 +185,7 @@ impl ConnectionData {
         }
     }
 
-    pub fn read_packets<T: PrefixedPacketDecode + Debug, F: FnOnce(T)>(&mut self, f: F) {
+    pub fn read_packets<T: PrefixedPacketDecode + Debug, F: FnOnce(T, &mut Self)>(&mut self, f: F) {
         match self.packet_processing.decode_from_raw_queue(self.received_bytes.iter().map(|x| *x)) {
             Ok((mut buf, consumed)) => {
                 println!("decoded! Buf: {:?}", buf);
@@ -216,7 +200,7 @@ impl ConnectionData {
                 match T::decode_prefixed(&mut buf) {
                     Ok(packet) => {
                         println!("decoding worked: {:?}", packet);
-                        f(packet)
+                        f(packet, self)
                     },
                     Err(DecodeError::EndOfBuffer) => {},
                     Err(e) => {
