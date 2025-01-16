@@ -3,7 +3,7 @@ use std::{collections::VecDeque, fmt::Debug, io::ErrorKind, net::IpAddr};
 use tokio::{net::TcpStream, sync::*};
 use voxidian_protocol::packet::{c2s::handshake::C2SHandshakePackets, processing::{CompressionMode, PacketProcessing, SecretCipher}, DecodeError, PrefixedPacketDecode, Stage};
 
-use crate::{server::proxy::Server, systems::{events::ReceivePacketEvent, parameters::{Event, Param}, typemap::TypeMap}};
+use crate::{server::server::Server, systems::{events::ReceivePacketEvent, parameters::{Event, Param}, typemap::TypeMap}};
 
 use super::{data::PlayerData, message::ConnectionMessage};
 

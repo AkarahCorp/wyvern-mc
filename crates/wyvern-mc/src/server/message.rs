@@ -1,4 +1,4 @@
-use crate::{player::proxy::ConnectionWithSignal, systems::typemap::TypeMap};
+use crate::{player::player::ConnectionWithSignal, systems::typemap::TypeMap};
 
 #[derive(Debug)]
 pub enum ServerMessage {

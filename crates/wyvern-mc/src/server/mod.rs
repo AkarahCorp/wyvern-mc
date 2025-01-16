@@ -1,14 +1,14 @@
 use std::{net::{Ipv4Addr, SocketAddrV4}, sync::Arc};
 
 use message::ServerMessage;
-use proxy::Server;
+use server::Server;
 use registries::RegistryContainer;
 use tokio::{net::TcpListener, sync::mpsc::{Receiver, Sender}};
 
-use crate::{player::{net::ConnectionData, proxy::ConnectionWithSignal}, systems::{system::System, typemap::TypeMap}};
+use crate::{player::{net::ConnectionData, player::ConnectionWithSignal}, systems::{system::System, typemap::TypeMap}};
 
 pub mod builder;
-pub mod proxy;
+pub mod server;
 pub mod message;
 pub mod registries;
 

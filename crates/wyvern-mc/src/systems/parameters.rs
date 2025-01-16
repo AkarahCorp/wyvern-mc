@@ -1,6 +1,6 @@
 use std::{fmt::Debug, marker::PhantomData, ops::{Deref, DerefMut}, sync::Arc};
 
-use crate::server::proxy::Server;
+use crate::server::server::Server;
 
 use super::typemap::TypeMap;
 
