@@ -41,6 +41,7 @@ impl Player {
     }
 }
 
+#[derive(Debug)]
 pub struct ConnectionWithSignal {
     pub(crate) messenger: Arc<Sender<ConnectionMessage>>,
     pub(crate) _signal: Receiver<ConnectionStoppedSignal>

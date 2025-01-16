@@ -44,6 +44,7 @@ impl ServerData {
 
 
             if let Ok(msg) = rx.try_recv() {
+                println!("msg: {:?}", msg);
                 match msg {
                     ServerMessage::SpawnConnection(connection_with_signal) => {
                         self.connections.push(connection_with_signal);

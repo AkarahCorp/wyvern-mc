@@ -19,8 +19,8 @@ impl ConnectionData {
         });
     }
 
-    pub fn status_stage(&mut self) {
-        self.read_packets(|packet: C2SStatusPackets, this| {
+    pub async fn status_stage(&mut self) {
+        self.read_packets(async |packet: C2SStatusPackets, this| {
             match packet {
                 C2SStatusPackets::StatusRequest(_packet) => {
                     this.write_packet(
@@ -45,11 +45,11 @@ impl ConnectionData {
                     this.write_packet(PongResponseS2CStatusPacket { timestamp: packet.timestamp });
                 },
             }
-        });
+        }).await;
     }
 
-    pub fn login_stage(&mut self) {
-        self.read_packets(|packet: C2SLoginPackets, this| {
+    pub async fn login_stage(&mut self) {
+        self.read_packets(async |packet: C2SLoginPackets, this| {
             match packet {
                 C2SLoginPackets::CustomQueryAnswer(_packet) => todo!(),
                 C2SLoginPackets::LoginAcknowledged(_packet) => {
@@ -67,6 +67,6 @@ impl ConnectionData {
                 },
                 C2SLoginPackets::CookieResponse(_packet) => todo!(),
             }
-        });
+        }).await;
     }
 }

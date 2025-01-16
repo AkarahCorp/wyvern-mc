@@ -3,7 +3,7 @@ use std::{collections::VecDeque, fmt::Debug, io::ErrorKind, net::IpAddr};
 use tokio::{net::TcpStream, sync::*};
 use voxidian_protocol::packet::{c2s::handshake::C2SHandshakePackets, processing::{CompressionMode, PacketProcessing, SecretCipher}, DecodeError, PrefixedPacketDecode, Stage};
 
-use crate::server::proxy::Server;
+use crate::{server::proxy::Server, systems::{events::ReceivePacketEvent, parameters::{Event, Param}, typemap::TypeMap}};
 
 use super::{data::PlayerData, message::ConnectionMessage};
 
@@ -96,7 +96,6 @@ impl ConnectionData {
                             .unwrap()
                     );
                 }
-                println!("recv: {:?}", self.received_bytes);
 
                 Ok(())
             }
@@ -113,16 +112,24 @@ impl ConnectionData {
         match self.stage {
             
             Stage::Handshake => {
-                self.read_packets(|packet: C2SHandshakePackets, this| {
+                self.read_packets(async |packet: C2SHandshakePackets, this: &mut Self| {
                     let C2SHandshakePackets::Intention(packet) = packet;
                     this.stage = packet.intended_stage.into_stage();
-                });
+
+                    let mut map = TypeMap::new();
+                    map.insert(Event::<ReceivePacketEvent<C2SHandshakePackets>>::new());
+                    map.insert(Param::new(packet));
+                    let connected_server = this.connected_server.clone();
+                    tokio::spawn(async move {
+                        connected_server.fire_systems(map).await;
+                    });
+                }).await;
             },
             Stage::Status => {
-                self.status_stage();
+                self.status_stage().await;
             },
             Stage::Login => {
-                self.login_stage();
+                self.login_stage().await;
             },
             Stage::Config => todo!(),
             Stage::Play => todo!(),
@@ -138,11 +145,9 @@ impl ConnectionData {
             self.bytes_to_send.make_contiguous();
             match self.stream.try_write(self.bytes_to_send.as_slices().0) {
                 Ok(bytes_sent) => {
-                    println!("before: {:?}", self.bytes_to_send);
                     for _ in 0..bytes_sent {
                         self.bytes_to_send.pop_front();
                     }
-                    println!("after: {:?}", self.bytes_to_send);
                 }
                 Err(e) if e.kind() == ErrorKind::WouldBlock => {
                     break;
@@ -184,10 +189,9 @@ impl ConnectionData {
         }
     }
 
-    pub fn read_packets<T: PrefixedPacketDecode + Debug, F: FnOnce(T, &mut Self)>(&mut self, f: F) {
+    pub async fn read_packets<T: PrefixedPacketDecode + Debug, F: AsyncFnOnce(T, &mut Self)>(&mut self, f: F) {
         match self.packet_processing.decode_from_raw_queue(self.received_bytes.iter().map(|x| *x)) {
             Ok((mut buf, consumed)) => {
-                println!("decoded! Buf: {:?}", buf);
                 if consumed == 0 {
                     return;
                 }
@@ -198,8 +202,7 @@ impl ConnectionData {
 
                 match T::decode_prefixed(&mut buf) {
                     Ok(packet) => {
-                        println!("decoding worked: {:?}", packet);
-                        f(packet, self)
+                        f(packet, self).await;
                     },
                     Err(DecodeError::EndOfBuffer) => {},
                     Err(e) => {

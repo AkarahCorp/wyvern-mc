@@ -1,4 +1,4 @@
-use std::{marker::PhantomData, ops::{Deref, DerefMut}, sync::Arc};
+use std::{fmt::Debug, marker::PhantomData, ops::{Deref, DerefMut}, sync::Arc};
 
 use crate::server::proxy::Server;
 
@@ -34,13 +34,12 @@ pub trait EventType {}
 
 
 
-
-
-pub struct Param<T> {
+#[derive(Debug)]
+pub struct Param<T: Debug> {
     data: Arc<T>
 }
 
-impl<T> Param<T> {
+impl<T: Debug> Param<T> {
     pub fn new(data: T) -> Self {
         Param { data: Arc::new(data) }
     }
@@ -50,7 +49,7 @@ impl<T> Param<T> {
     }
 }
 
-impl<T> Deref for Param<T> {
+impl<T: Debug> Deref for Param<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -58,7 +57,7 @@ impl<T> Deref for Param<T> {
     }
 }
 
-impl<T> Clone for Param<T> {
+impl<T: Debug> Clone for Param<T> {
     fn clone(&self) -> Self {
         Self { data: self.data.clone() }
     }
@@ -66,12 +65,12 @@ impl<T> Clone for Param<T> {
 
 
 
-#[derive(Clone)]
-pub struct Query<T: Clone> {
+#[derive(Clone, Debug)]
+pub struct Query<T: Clone + Debug> {
     data: T
 }
 
-impl<T: Clone> Query<T> {
+impl<T: Clone + Debug> Query<T> {
     pub fn new(data: T) -> Self {
         Query { data }
     }
@@ -81,7 +80,7 @@ impl<T: Clone> Query<T> {
     }
 }
 
-impl<T: Clone> Deref for Query<T> {
+impl<T: Clone + Debug> Deref for Query<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -89,7 +88,7 @@ impl<T: Clone> Deref for Query<T> {
     }
 }
 
-impl<T: Clone> DerefMut for Query<T> {
+impl<T: Clone + Debug> DerefMut for Query<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.data
     }
@@ -106,9 +105,11 @@ impl<T: EventType + 'static + Send + Sync> SystemParameter for Event<T> {
     }
 }
 
-impl<T: 'static + Send + Sync> SystemParameter for Param<T> {
+impl<T: 'static + Send + Sync + Debug> SystemParameter for Param<T> {
     fn query(resources: &TypeMap, _server: &Server) -> Option<Self> {
-        resources.get::<Self>().cloned()
+        let out = resources.get::<Self>().cloned();
+        println!("querying parameter: {:?}", out);
+        out
     }
 }
 
