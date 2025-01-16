@@ -23,8 +23,6 @@ impl ServerData {
         let (tx, rx) = tokio::sync::mpsc::channel::<ServerMessage>(16);
         tokio::spawn(self.handle_loops(tx.clone(), rx));
         tokio::spawn(Self::networking_loop(tx));
-
-        loop {}
     }
 
     pub async fn handle_loops(mut self, tx: Sender<ServerMessage>, mut rx: Receiver<ServerMessage>) {
