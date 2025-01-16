@@ -2,18 +2,18 @@ use voxidian_protocol::{registry::Registry, value::{Biome, DamageType}};
 
 use crate::systems::{intos::IntoSystem, parameters::SystemParameter, system::System};
 
-use super::{registries::RegistryContainer, ServerData};
+use super::{registries::{RegistryContainer, RegistryContainerBuilder}, ServerData};
 
 pub struct ServerBuilder {
     systems: Vec<Box<dyn System + Send + Sync + 'static>>,
-    registries: RegistryContainer
+    registries: RegistryContainerBuilder
 }
 
 impl ServerBuilder {
     pub fn new() -> ServerBuilder {
         ServerBuilder { 
             systems: Vec::new(),
-            registries: RegistryContainer {
+            registries: RegistryContainerBuilder {
                 damage_types: DamageType::vanilla_registry(),
                 biomes: Biome::vanilla_registry(),
                 wolf_variants: Registry::new(),
@@ -34,7 +34,7 @@ impl ServerBuilder {
         let server = ServerData {
             connections: Vec::new(),
             systems: self.systems,
-            registries: self.registries
+            registries: self.registries.into()
         };
 
         server.start().await;

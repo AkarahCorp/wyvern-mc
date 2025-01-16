@@ -131,7 +131,9 @@ impl ConnectionData {
             Stage::Login => {
                 self.login_stage().await;
             },
-            Stage::Config => todo!(),
+            Stage::Config => {
+                self.configuration_stage().await;
+            },
             Stage::Play => todo!(),
             Stage::Transfer => todo!("doesn't exist, this needs to be removed D:"),
         }

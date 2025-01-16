@@ -42,7 +42,6 @@ impl ServerData {
 
 
             if let Ok(msg) = rx.try_recv() {
-                println!("msg: {:?}", msg);
                 match msg {
                     ServerMessage::SpawnConnection(connection_with_signal) => {
                         self.connections.push(connection_with_signal);
@@ -55,6 +54,21 @@ impl ServerData {
                             }
                         }
                     }
+                    ServerMessage::DamageTypeRegistry(sender) => {
+                        sender.send(self.registries.damage_types.clone());
+                    },
+                    ServerMessage::BiomeRegistry(sender) => {
+                        sender.send(self.registries.biomes.clone());
+                    },
+                    ServerMessage::WolfRegistry(sender) => {
+                        sender.send(self.registries.wolf_variants.clone());
+                    },
+                    ServerMessage::PaintingRegistry(sender) => {
+                        sender.send(self.registries.painting_variants.clone());
+                    },
+                    ServerMessage::DimTypeRegistry(sender) => {
+                        sender.send(self.registries.dimension_types.clone());
+                    },
                 }
             };
 
