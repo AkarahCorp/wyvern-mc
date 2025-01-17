@@ -3,16 +3,12 @@ use std::ops::Add;
 pub struct Position<T> {
     x: T,
     y: T,
-    z: T
+    z: T,
 }
 
 impl<T> Position<T> {
     pub fn new(x: T, y: T, z: T) -> Position<T> {
-        Position {
-            x,
-            y,
-            z
-        }
+        Position { x, y, z }
     }
 
     pub fn x(&self) -> &T {
@@ -29,7 +25,8 @@ impl<T> Position<T> {
 }
 
 impl<T> Add<Position<T>> for Position<T>
-    where T: Add<T, Output = T> 
+where
+    T: Add<T, Output = T>,
 {
     type Output = Position<T>;
 
@@ -37,7 +34,7 @@ impl<T> Add<Position<T>> for Position<T>
         Position {
             x: self.x + rhs.x,
             y: self.y + rhs.y,
-            z: self.z + rhs.z
+            z: self.z + rhs.z,
         }
     }
 }

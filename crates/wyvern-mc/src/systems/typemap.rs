@@ -1,17 +1,24 @@
-use std::{any::{Any, TypeId}, collections::{hash_map::Values, HashMap}};
+use std::{
+    any::{Any, TypeId},
+    collections::{HashMap, hash_map::Values},
+};
 
 #[derive(Debug)]
 pub struct TypeMap {
-    inner: HashMap<TypeId, Box<dyn Any + Send + Sync>>
+    inner: HashMap<TypeId, Box<dyn Any + Send + Sync>>,
 }
 
 impl TypeMap {
     pub fn new() -> Self {
-        TypeMap { inner: HashMap::new() }
+        TypeMap {
+            inner: HashMap::new(),
+        }
     }
 
     pub fn get<T: Send + Sync + 'static>(&self) -> Option<&T> {
-        self.inner.get(&TypeId::of::<T>()).map(|x| x.downcast_ref::<T>().unwrap())
+        self.inner
+            .get(&TypeId::of::<T>())
+            .map(|x| x.downcast_ref::<T>().unwrap())
     }
 
     pub fn insert<T: Send + Sync + 'static>(&mut self, value: T) {

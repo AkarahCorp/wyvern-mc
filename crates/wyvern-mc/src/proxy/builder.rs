@@ -1,13 +1,13 @@
 use crate::server::builder::ServerBuilder;
 
 pub struct ProxyBuilder {
-    servers: Vec<ServerBuilder>
+    servers: Vec<ServerBuilder>,
 }
 
 impl ProxyBuilder {
     pub fn new() -> ProxyBuilder {
         ProxyBuilder {
-            servers: Vec::new()
+            servers: Vec::new(),
         }
     }
 
@@ -20,6 +20,8 @@ impl ProxyBuilder {
             tokio::spawn(server.start());
         }
 
-        loop { tokio::task::yield_now().await; }
+        loop {
+            tokio::task::yield_now().await;
+        }
     }
 }

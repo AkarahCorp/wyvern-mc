@@ -1,9 +1,20 @@
 use std::{collections::VecDeque, fmt::Debug, io::ErrorKind, net::IpAddr};
 
 use tokio::{net::TcpStream, sync::*};
-use voxidian_protocol::packet::{c2s::handshake::C2SHandshakePackets, processing::{CompressionMode, PacketProcessing, SecretCipher}, DecodeError, PrefixedPacketDecode, Stage};
+use voxidian_protocol::packet::{
+    DecodeError, PrefixedPacketDecode, Stage,
+    c2s::handshake::C2SHandshakePackets,
+    processing::{CompressionMode, PacketProcessing, SecretCipher},
+};
 
-use crate::{server::server::Server, systems::{events::ReceivePacketEvent, parameters::{Event, Param}, typemap::TypeMap}};
+use crate::{
+    server::server::Server,
+    systems::{
+        events::ReceivePacketEvent,
+        parameters::{Event, Param},
+        typemap::TypeMap,
+    },
+};
 
 use super::{data::PlayerData, message::ConnectionMessage};
 
@@ -19,7 +30,7 @@ pub struct ConnectionData {
     pub(crate) signal: mpsc::Sender<ConnectionStoppedSignal>,
     pub(crate) stage: Stage,
     pub(crate) connected_server: Server,
-    pub(crate) associated_data: PlayerData
+    pub(crate) associated_data: PlayerData,
 }
 
 pub struct ConnectionStoppedSignal;
@@ -28,12 +39,22 @@ impl ConnectionData {
     pub fn connection_channel(
         stream: TcpStream,
         addr: IpAddr,
-        server: Server
-    ) -> (mpsc::Sender<ConnectionMessage>, mpsc::Receiver<ConnectionStoppedSignal>) {
+        server: Server,
+    ) -> (
+        mpsc::Sender<ConnectionMessage>,
+        mpsc::Receiver<ConnectionStoppedSignal>,
+    ) {
         let (signal_tx, signal_rx) = mpsc::channel(1);
         let (data_tx, data_rx) = mpsc::channel(256);
 
-        tokio::spawn(ConnectionData::execute_connection(stream, addr, data_tx.clone(), data_rx, signal_tx, server));
+        tokio::spawn(ConnectionData::execute_connection(
+            stream,
+            addr,
+            data_tx.clone(),
+            data_rx,
+            signal_tx,
+            server,
+        ));
 
         (data_tx, signal_rx)
     }
@@ -44,7 +65,7 @@ impl ConnectionData {
         sender: mpsc::Sender<ConnectionMessage>,
         receiver: mpsc::Receiver<ConnectionMessage>,
         signal: mpsc::Sender<ConnectionStoppedSignal>,
-        server: Server
+        server: Server,
     ) {
         let mut conn = ConnectionData {
             stream,
@@ -60,7 +81,7 @@ impl ConnectionData {
             signal,
             stage: Stage::Handshake,
             connected_server: server,
-            associated_data: PlayerData::default()
+            associated_data: PlayerData::default(),
         };
 
         conn.event_loop().await;
@@ -93,15 +114,13 @@ impl ConnectionData {
                         self.packet_processing
                             .secret_cipher
                             .decrypt_u8(*byte)
-                            .unwrap()
+                            .unwrap(),
                     );
                 }
 
                 Ok(())
             }
-            Err(e) if e.kind() == ErrorKind::WouldBlock => {
-                Ok(())
-            }
+            Err(e) if e.kind() == ErrorKind::WouldBlock => Ok(()),
             Err(e) => {
                 panic!("{:?}", e);
             }
@@ -110,7 +129,6 @@ impl ConnectionData {
 
     pub async fn read_incoming_packets(&mut self) {
         match self.stage {
-            
             Stage::Handshake => {
                 self.read_packets(async |packet: C2SHandshakePackets, this: &mut Self| {
                     let C2SHandshakePackets::Intention(packet) = packet;
@@ -123,17 +141,18 @@ impl ConnectionData {
                     tokio::spawn(async move {
                         connected_server.fire_systems(map).await;
                     });
-                }).await;
-            },
+                })
+                .await;
+            }
             Stage::Status => {
                 self.status_stage().await;
-            },
+            }
             Stage::Login => {
                 self.login_stage().await;
-            },
+            }
             Stage::Config => {
                 self.configuration_stage().await;
-            },
+            }
             Stage::Play => todo!(),
             Stage::Transfer => todo!("doesn't exist, this needs to be removed D:"),
         }
@@ -153,7 +172,7 @@ impl ConnectionData {
                 }
                 Err(e) if e.kind() == ErrorKind::WouldBlock => {
                     break;
-                },
+                }
                 Err(e) => {
                     panic!("{:?}", e);
                 }
@@ -167,7 +186,7 @@ impl ConnectionData {
                 Ok(message) => {
                     self.handle_message(message).await;
                     break;
-                },
+                }
                 Err(_err) => break,
             }
         }
@@ -177,22 +196,30 @@ impl ConnectionData {
         match message {
             ConnectionMessage::SetStage(stage) => {
                 self.stage = stage;
-            },
+            }
             ConnectionMessage::GetStage(sender) => {
                 let _ = sender.send(self.stage.clone());
-            },
+            }
             ConnectionMessage::SendPacket(buf) => {
                 self.bytes_to_send.extend(buf.as_slice());
-            },
+            }
             ConnectionMessage::GetServer(sender) => {
-                let server = Server { sender: self.connected_server.sender.clone() };
+                let server = Server {
+                    sender: self.connected_server.sender.clone(),
+                };
                 let _ = sender.send(server);
             }
         }
     }
 
-    pub async fn read_packets<T: PrefixedPacketDecode + Debug, F: AsyncFnOnce(T, &mut Self)>(&mut self, f: F) {
-        match self.packet_processing.decode_from_raw_queue(self.received_bytes.iter().map(|x| *x)) {
+    pub async fn read_packets<T: PrefixedPacketDecode + Debug, F: AsyncFnOnce(T, &mut Self)>(
+        &mut self,
+        f: F,
+    ) {
+        match self
+            .packet_processing
+            .decode_from_raw_queue(self.received_bytes.iter().map(|x| *x))
+        {
             Ok((mut buf, consumed)) => {
                 if consumed == 0 {
                     return;
@@ -205,14 +232,14 @@ impl ConnectionData {
                 match T::decode_prefixed(&mut buf) {
                     Ok(packet) => {
                         f(packet, self).await;
-                    },
-                    Err(DecodeError::EndOfBuffer) => {},
+                    }
+                    Err(DecodeError::EndOfBuffer) => {}
                     Err(e) => {
                         panic!("{:?}", e);
                     }
                 }
             }
-            Err(DecodeError::EndOfBuffer) => {},
+            Err(DecodeError::EndOfBuffer) => {}
             Err(e) => {
                 panic!("err: {:?}", e);
             }

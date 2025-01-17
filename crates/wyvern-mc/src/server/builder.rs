@@ -1,32 +1,39 @@
-use voxidian_protocol::{registry::Registry, value::{Biome, DamageType}};
+use voxidian_protocol::{
+    registry::Registry,
+    value::{Biome, DamageType},
+};
 
 use crate::systems::{intos::IntoSystem, parameters::SystemParameter, system::System};
 
-use super::{registries::{RegistryContainer, RegistryContainerBuilder}, ServerData};
+use super::{
+    ServerData,
+    registries::{RegistryContainer, RegistryContainerBuilder},
+};
 
 pub struct ServerBuilder {
     systems: Vec<Box<dyn System + Send + Sync + 'static>>,
-    registries: RegistryContainerBuilder
+    registries: RegistryContainerBuilder,
 }
 
 impl ServerBuilder {
     pub fn new() -> ServerBuilder {
-        ServerBuilder { 
+        ServerBuilder {
             systems: Vec::new(),
             registries: RegistryContainerBuilder {
                 damage_types: DamageType::vanilla_registry(),
                 biomes: Biome::vanilla_registry(),
                 wolf_variants: Registry::new(),
                 painting_variants: Registry::new(),
-                dimension_types: Registry::new()
-            }
+                dimension_types: Registry::new(),
+            },
         }
     }
 
     pub fn add_system<I: SystemParameter, S>(&mut self, s: S)
-    where 
+    where
         S: IntoSystem<I>,
-        <S as IntoSystem<I>>::System: Send + Sync + 'static {
+        <S as IntoSystem<I>>::System: Send + Sync + 'static,
+    {
         self.systems.push(Box::new(s.into_system()));
     }
 
@@ -34,7 +41,7 @@ impl ServerBuilder {
         let server = ServerData {
             connections: Vec::new(),
             systems: self.systems,
-            registries: self.registries.into()
+            registries: self.registries.into(),
         };
 
         server.start().await;

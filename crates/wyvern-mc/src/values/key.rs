@@ -5,12 +5,16 @@ use voxidian_protocol::value::Identifier;
 pub struct Key<T> {
     namespace: String,
     path: String,
-    _phantom: PhantomData<T>
+    _phantom: PhantomData<T>,
 }
 
 impl<T> Clone for Key<T> {
     fn clone(&self) -> Self {
-        Self { namespace: self.namespace.clone(), path: self.path.clone(), _phantom: self._phantom.clone() }
+        Self {
+            namespace: self.namespace.clone(),
+            path: self.path.clone(),
+            _phantom: self._phantom.clone(),
+        }
     }
 }
 
@@ -19,7 +23,7 @@ impl<T> Key<T> {
         Key {
             namespace: namespace.into(),
             path: path.into(),
-            _phantom: PhantomData::default()
+            _phantom: PhantomData::default(),
         }
     }
 

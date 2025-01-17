@@ -7,5 +7,5 @@ pub enum ConnectionMessage {
     SetStage(Stage),
     GetStage(Sender<Stage>),
     SendPacket(PacketBuf),
-    GetServer(Sender<Server>)
+    GetServer(Sender<Server>),
 }

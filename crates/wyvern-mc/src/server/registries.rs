@@ -1,6 +1,9 @@
 use std::sync::Arc;
 
-use voxidian_protocol::{registry::Registry, value::{Biome, DamageType, DimType, PaintingVariant, WolfVariant}};
+use voxidian_protocol::{
+    registry::Registry,
+    value::{Biome, DamageType, DimType, PaintingVariant, WolfVariant},
+};
 
 #[allow(dead_code)]
 pub struct RegistryContainer {
@@ -8,7 +11,7 @@ pub struct RegistryContainer {
     pub(crate) biomes: Arc<Registry<Biome>>,
     pub(crate) wolf_variants: Arc<Registry<WolfVariant>>,
     pub(crate) painting_variants: Arc<Registry<PaintingVariant>>,
-    pub(crate) dimension_types: Arc<Registry<DimType>>
+    pub(crate) dimension_types: Arc<Registry<DimType>>,
 }
 
 pub struct RegistryContainerBuilder {
@@ -16,7 +19,7 @@ pub struct RegistryContainerBuilder {
     pub(crate) biomes: Registry<Biome>,
     pub(crate) wolf_variants: Registry<WolfVariant>,
     pub(crate) painting_variants: Registry<PaintingVariant>,
-    pub(crate) dimension_types: Registry<DimType>
+    pub(crate) dimension_types: Registry<DimType>,
 }
 
 impl From<RegistryContainerBuilder> for RegistryContainer {
