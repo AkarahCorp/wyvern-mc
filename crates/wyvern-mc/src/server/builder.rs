@@ -1,18 +1,26 @@
+use std::collections::HashMap;
+
 use voxidian_protocol::{
     registry::Registry,
     value::{Biome, DamageType},
 };
 
-use crate::systems::{intos::IntoSystem, parameters::SystemParameter, system::System};
+use crate::{
+    dimension::DimensionData,
+    systems::{intos::IntoSystem, parameters::SystemParameter, system::System},
+    values::key::Key,
+};
 
 use super::{
     ServerData,
+    dimensions::DimensionContainer,
     registries::{RegistryContainer, RegistryContainerBuilder},
 };
 
 pub struct ServerBuilder {
     systems: Vec<Box<dyn System + Send + Sync + 'static>>,
     registries: RegistryContainerBuilder,
+    dimensions: DimensionContainer,
 }
 
 impl ServerBuilder {
@@ -25,6 +33,9 @@ impl ServerBuilder {
                 wolf_variants: Registry::new(),
                 painting_variants: Registry::new(),
                 dimension_types: Registry::new(),
+            },
+            dimensions: DimensionContainer {
+                dimensions: HashMap::new(),
             },
         }
     }
@@ -42,6 +53,7 @@ impl ServerBuilder {
             connections: Vec::new(),
             systems: self.systems,
             registries: self.registries.into(),
+            dimensions: self.dimensions,
         };
 
         server.start().await;

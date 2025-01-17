@@ -114,15 +114,18 @@ impl ConnectionData {
                     this.write_packet(LoginS2CPlayPacket {
                         entity: 0,
                         hardcore: false,
-                        dims: vec![Identifier::new("minecraft", "overworld")].into(),
+                        // fake dimensions so we can control client w/o extra storage
+                        dims: vec![Identifier::new("wyvern", "fake")].into(),
                         max_players: VarInt::from(0),
                         view_dist: VarInt::from(2),
                         sim_dist: VarInt::from(2),
                         reduced_debug: false,
                         respawn_screen: true,
                         limited_crafting: false,
+                        // TODO: Turn this into an actual Dimension Type lookup for
+                        // the root dimension
                         dim: unsafe { RegEntry::new_unchecked(0) },
-                        dim_name: Identifier::new("minecraft", "overworld"),
+                        dim_name: Identifier::new("wyvern", "fake"),
                         seed: 0,
                         gamemode: Gamemode::Survival,
                         old_gamemode: Gamemode::None,
@@ -194,7 +197,6 @@ impl ConnectionData {
                             .to_registry_data_packet(),
                     );
                     this.write_packet(FinishConfigurationS2CConfigPacket);
-                    println!("got here");
                 }
             }
         })

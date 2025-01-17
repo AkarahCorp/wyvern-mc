@@ -6,7 +6,10 @@ use voxidian_protocol::{
     value::{Biome, DamageType, DimType, PaintingVariant, WolfVariant},
 };
 
-use crate::{player::player::ConnectionWithSignal, systems::typemap::TypeMap};
+use crate::{
+    dimension::DimensionData, player::player::ConnectionWithSignal, systems::typemap::TypeMap,
+    values::key::Key,
+};
 
 pub enum ServerMessage {
     SpawnConnection(ConnectionWithSignal),
@@ -17,4 +20,6 @@ pub enum ServerMessage {
     WolfRegistry(Sender<Arc<Registry<WolfVariant>>>),
     PaintingRegistry(Sender<Arc<Registry<PaintingVariant>>>),
     DimTypeRegistry(Sender<Arc<Registry<DimType>>>),
+
+    GetDimension(Key<DimensionData>, Sender<Option<Arc<DimensionData>>>),
 }
