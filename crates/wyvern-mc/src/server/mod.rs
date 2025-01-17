@@ -1,3 +1,4 @@
+use core::panic;
 use std::{net::{Ipv4Addr, SocketAddrV4}, sync::Arc};
 
 use message::ServerMessage;
@@ -55,19 +56,34 @@ impl ServerData {
                         }
                     }
                     ServerMessage::DamageTypeRegistry(sender) => {
-                        sender.send(self.registries.damage_types.clone());
+                        match sender.send(self.registries.damage_types.clone()) {
+                            Ok(()) => {},
+                            Err(e) => panic!("DID NOT SEND AAA")
+                        };
                     },
                     ServerMessage::BiomeRegistry(sender) => {
-                        sender.send(self.registries.biomes.clone());
+                        match sender.send(self.registries.biomes.clone()) {
+                            Ok(()) => {},
+                            Err(e) => panic!("DID NOT SEND AAA")
+                        };
                     },
                     ServerMessage::WolfRegistry(sender) => {
-                        sender.send(self.registries.wolf_variants.clone());
+                        match sender.send(self.registries.wolf_variants.clone()) {
+                            Ok(()) => {},
+                            Err(e) => panic!("DID NOT SEND AAA")
+                        };
                     },
                     ServerMessage::PaintingRegistry(sender) => {
-                        sender.send(self.registries.painting_variants.clone());
+                        match sender.send(self.registries.painting_variants.clone()) {
+                            Ok(()) => {},
+                            Err(e) => panic!("DID NOT SEND AAA")
+                        };
                     },
                     ServerMessage::DimTypeRegistry(sender) => {
-                        sender.send(self.registries.dimension_types.clone());
+                        match sender.send(self.registries.dimension_types.clone()) {
+                            Ok(()) => {},
+                            Err(e) => panic!("DID NOT SEND AAA")
+                        };
                     },
                 }
             };

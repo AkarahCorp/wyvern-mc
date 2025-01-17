@@ -1,4 +1,4 @@
-use voxidian_protocol::{packet::{c2s::{config::C2SConfigPackets, login::C2SLoginPackets, status::C2SStatusPackets}, s2c::{config::{FinishConfigurationS2CConfigPacket, KnownPack, SelectKnownPacksS2CConfigPacket}, login::LoginFinishedS2CLoginPacket, status::{PongResponseS2CStatusPacket, StatusResponse, StatusResponsePlayers, StatusResponseVersion}}, PacketBuf, PacketEncode, PrefixedPacketEncode, Stage}, value::{LengthPrefixHashMap, Text, VarInt}};
+use voxidian_protocol::{packet::{c2s::{config::C2SConfigPackets, login::C2SLoginPackets, status::C2SStatusPackets}, s2c::{config::{FinishConfigurationS2CConfigPacket, KnownPack, SelectKnownPacksS2CConfigPacket}, login::LoginFinishedS2CLoginPacket, play::{Gamemode, LoginS2CPlayPacket, PlayerPositionS2CPlayPacket, TeleportFlags}, status::{PongResponseS2CStatusPacket, StatusResponse, StatusResponsePlayers, StatusResponseVersion}}, PacketBuf, PacketEncode, PrefixedPacketEncode, Stage}, registry::RegEntry, value::{Identifier, LengthPrefixHashMap, Text, VarInt}};
 
 use super::{message::ConnectionMessage, net::ConnectionData};
 
@@ -90,7 +90,51 @@ impl ConnectionData {
 
                 },
                 C2SConfigPackets::FinishConfiguration(_packet) => {
-                    
+                    this.stage = Stage::Play;
+                    this.write_packet(LoginS2CPlayPacket {
+                        entity: 0,
+                        hardcore: false,
+                        dims: vec![Identifier::new("minecraft", "overworld")].into(),
+                        max_players: VarInt::from(0),
+                        view_dist: VarInt::from(2),
+                        sim_dist: VarInt::from(2),
+                        reduced_debug: false,
+                        respawn_screen: true,
+                        limited_crafting: false,
+                        dim: unsafe { RegEntry::new_unchecked(0) },
+                        dim_name: Identifier::new("minecraft", "overworld"),
+                        seed: 0,
+                        gamemode: Gamemode::Survival,
+                        old_gamemode: Gamemode::None,
+                        is_debug: false,
+                        is_flat: false,
+                        death_loc: None,
+                        portal_cooldown: VarInt::from(0),
+                        sea_level: VarInt::from(64),
+                        enforce_chat_reports: false,
+                    });
+                    this.write_packet(PlayerPositionS2CPlayPacket {
+                        teleport_id: VarInt::from(0),
+                        x: 0.0,
+                        y: 0.0,
+                        z: 0.0,
+                        vx: 0.0,
+                        vy: 0.0,
+                        vz: 0.0,
+                        adyaw_deg: 0.0,
+                        adpitch_deg: 0.0,
+                        flags: TeleportFlags {
+                            relative_x: false,
+                            relative_y: false,
+                            relative_z: false,
+                            relative_pitch: false,
+                            relative_yaw: false,
+                            relative_vx: false,
+                            relative_vy: false,
+                            relative_vz: false,
+                            rotate_velocity: false,
+                        },
+                    });
                 },
                 C2SConfigPackets::ResourcePack(_packet) => todo!(),
                 C2SConfigPackets::CookieResponse(_packet) => todo!(),
@@ -100,6 +144,7 @@ impl ConnectionData {
                 },
                 C2SConfigPackets::KeepAlive(_packet) => todo!(),
                 C2SConfigPackets::SelectKnownPacks(_packet) => {
+                    println!("pk: {:?}", _packet);
                     this.write_packet(this.connected_server.biomes().await.to_registry_data_packet());
                     this.write_packet(this.connected_server.damage_types().await.to_registry_data_packet());
                     this.write_packet(this.connected_server.wolf_variants().await.to_registry_data_packet());
