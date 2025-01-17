@@ -1,4 +1,4 @@
-use std::{io::stdin, sync::Arc};
+use std::{io::{stdin, stdout}, sync::Arc};
 
 use tokio::sync::{mpsc::Sender, oneshot::{self, Receiver}};
 use voxidian_protocol::{registry::Registry, value::{Biome, DamageType, DimType, PaintingVariant, WolfVariant}};
@@ -56,7 +56,6 @@ pub(crate) async fn poll_receiver<T>(rx: &mut Receiver<T>) -> T {
         match rx.try_recv() {
             Ok(v) => return v,
             Err(e) => {
-                println!("don't remove this println or things will stop working for some reason");
                 tokio::task::yield_now().await;
             },
         }

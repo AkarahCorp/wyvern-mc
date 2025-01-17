@@ -151,6 +151,7 @@ impl ConnectionData {
                     this.write_packet(this.connected_server.painting_variants().await.to_registry_data_packet());
                     this.write_packet(this.connected_server.dimension_types().await.to_registry_data_packet());
                     this.write_packet(FinishConfigurationS2CConfigPacket);
+                    println!("got here");
                 },
             }
         }).await;
