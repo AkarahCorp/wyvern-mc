@@ -1,7 +1,4 @@
-use std::{
-    io::{stdin, stdout},
-    sync::Arc,
-};
+use std::sync::Arc;
 
 use tokio::sync::{
     mpsc::Sender,
@@ -89,7 +86,7 @@ pub(crate) async fn poll_receiver<T>(rx: &mut Receiver<T>) -> T {
     loop {
         match rx.try_recv() {
             Ok(v) => return v,
-            Err(e) => {
+            Err(_e) => {
                 tokio::task::yield_now().await;
             }
         }

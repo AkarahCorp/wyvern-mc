@@ -16,6 +16,7 @@ pub mod message;
 
 pub use dimension::*;
 
+#[allow(dead_code)]
 pub struct DimensionData {
     pub(crate) name: Key<DimensionData>,
     pub(crate) chunks: HashMap<Position<i32>, ChunkSection>,

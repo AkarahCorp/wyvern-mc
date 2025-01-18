@@ -6,6 +6,7 @@ use crate::values::key::Key;
 
 use super::{DimensionData, message::DimensionMessage};
 
+#[allow(dead_code)]
 pub struct Dimension {
     pub(crate) tx: Sender<DimensionMessage>,
 }

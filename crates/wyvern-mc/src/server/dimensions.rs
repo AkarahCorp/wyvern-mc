@@ -1,9 +1,8 @@
 use std::collections::HashMap;
 
-use voxidian_protocol::{registry::Registry, value::Identifier};
 
 use crate::{
-    dimension::{Dimension, DimensionData},
+    dimension::Dimension,
     values::key::Key,
 };
 

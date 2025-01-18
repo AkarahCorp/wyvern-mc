@@ -218,7 +218,7 @@ impl ConnectionData {
     }
 
     pub async fn play_phase(&mut self) {
-        self.read_packets(async |packet: C2SPlayPackets, this: &mut Self| {
+        self.read_packets(async |packet: C2SPlayPackets, _this: &mut Self| {
             println!("play packet: {:?}", packet);
         })
         .await;

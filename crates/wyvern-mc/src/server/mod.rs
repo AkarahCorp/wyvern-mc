@@ -73,7 +73,7 @@ impl ServerData {
     pub async fn handle_messages(
         &mut self,
         tx: &Sender<ServerMessage>,
-        mut rx: &mut Receiver<ServerMessage>,
+        rx: &mut Receiver<ServerMessage>,
     ) {
         if let Ok(msg) = rx.try_recv() {
             match msg {
@@ -118,7 +118,9 @@ impl ServerData {
                         Err(_e) => panic!("DID NOT SEND AAA"),
                     };
                 }
-                ServerMessage::GetDimension(key, sender) => {}
+                ServerMessage::GetDimension(_key, _sender) => {
+                    todo!()
+                }
             }
         };
     }

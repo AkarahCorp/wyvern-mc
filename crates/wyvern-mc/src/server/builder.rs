@@ -2,19 +2,15 @@ use std::collections::HashMap;
 
 use voxidian_protocol::{
     registry::Registry,
-    value::{Biome, DamageType, DimType, PaintingVariant, WolfVariant},
+    value::{Biome, DamageType},
 };
 
-use crate::{
-    dimension::DimensionData,
-    systems::{intos::IntoSystem, parameters::SystemParameter, system::System},
-    values::key::Key,
-};
+use crate::systems::{intos::IntoSystem, parameters::SystemParameter, system::System};
 
 use super::{
     ServerData,
     dimensions::DimensionContainer,
-    registries::{RegistryContainer, RegistryContainerBuilder},
+    registries::RegistryContainerBuilder,
 };
 
 pub struct ServerBuilder {

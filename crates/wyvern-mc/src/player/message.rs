@@ -1,7 +1,7 @@
 use tokio::sync::oneshot::Sender;
 use voxidian_protocol::packet::{PacketBuf, Stage};
 
-use crate::{dimension::DimensionData, server::server::Server, values::key::Key};
+use crate::server::server::Server;
 
 pub enum ConnectionMessage {
     SetStage(Stage),
