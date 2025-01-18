@@ -33,8 +33,6 @@ impl Player {
     }
 
     pub async fn write_packet<P: PrefixedPacketEncode + Debug>(&self, packet: P) {
-        println!("sending: {:?}", packet);
-
         let mut buf = PacketBuf::new();
         packet.encode_prefixed(&mut buf).unwrap();
 

@@ -1,6 +1,6 @@
 use std::{collections::VecDeque, fmt::Debug, io::ErrorKind, net::IpAddr};
 
-use tokio::{net::TcpStream, sync::*};
+use tokio::{io::AsyncWriteExt, net::TcpStream, sync::*};
 use voxidian_protocol::packet::{
     DecodeError, PrefixedPacketDecode, Stage,
     c2s::handshake::C2SHandshakePackets,
@@ -23,7 +23,7 @@ pub struct ConnectionData {
     #[allow(dead_code)]
     pub(crate) addr: IpAddr,
     pub(crate) received_bytes: VecDeque<u8>,
-    pub(crate) bytes_to_send: VecDeque<u8>,
+    pub(crate) bytes_to_send: Vec<u8>,
     pub(crate) packet_processing: PacketProcessing,
     pub(crate) sender: mpsc::Sender<ConnectionMessage>,
     pub(crate) receiver: mpsc::Receiver<ConnectionMessage>,
@@ -71,7 +71,7 @@ impl ConnectionData {
             stream,
             addr,
             received_bytes: VecDeque::new(),
-            bytes_to_send: VecDeque::new(),
+            bytes_to_send: Vec::new(),
             packet_processing: PacketProcessing {
                 secret_cipher: SecretCipher::no_cipher(),
                 compression: CompressionMode::None,
@@ -95,8 +95,8 @@ impl ConnectionData {
                 break;
             }
             self.read_incoming_packets().await;
-            self.handle_messages().await;
             self.write_outgoing_packets().await;
+            self.handle_messages().await;
             tokio::task::yield_now().await;
         }
     }
@@ -153,7 +153,9 @@ impl ConnectionData {
             Stage::Config => {
                 self.configuration_stage().await;
             }
-            Stage::Play => todo!(),
+            Stage::Play => {
+                // self.play_phase().await;
+            }
             Stage::Transfer => todo!("doesn't exist, this needs to be removed D:"),
         }
     }
@@ -163,20 +165,17 @@ impl ConnectionData {
             if self.bytes_to_send.is_empty() {
                 break;
             }
-            self.bytes_to_send.make_contiguous();
-            match self.stream.try_write(self.bytes_to_send.as_slices().0) {
-                Ok(bytes_sent) => {
-                    for _ in 0..bytes_sent {
-                        self.bytes_to_send.pop_front();
-                    }
-                }
-                Err(e) if e.kind() == ErrorKind::WouldBlock => {
-                    break;
-                }
-                Err(e) => {
-                    panic!("{:?}", e);
-                }
+
+            if self.bytes_to_send.len() < 100 {
+                println!("Bytes actually sent: {:?}", self.bytes_to_send);
+            } else {
+                println!("Sent big byte vector");
             }
+
+            self.stream.write_all(&self.bytes_to_send).await.unwrap();
+
+            self.bytes_to_send.clear();
+            tokio::task::yield_now().await;
         }
     }
 
@@ -225,15 +224,19 @@ impl ConnectionData {
                     return;
                 }
 
+                let mut rv = Vec::with_capacity(consumed);
                 for _ in 0..consumed {
-                    self.received_bytes.pop_front();
+                    rv.push(self.received_bytes.pop_front().unwrap());
                 }
 
                 match T::decode_prefixed(&mut buf) {
                     Ok(packet) => {
+                        println!("Received and processing bytes: {:?}", rv);
                         f(packet, self).await;
                     }
-                    Err(DecodeError::EndOfBuffer) => {}
+                    Err(DecodeError::EndOfBuffer) => {
+                        println!("Failed to process for EoB: {:?}", rv);
+                    }
                     Err(e) => {
                         panic!("{:?}", e);
                     }

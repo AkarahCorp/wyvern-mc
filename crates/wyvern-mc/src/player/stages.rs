@@ -3,7 +3,10 @@ use std::fmt::Debug;
 use voxidian_protocol::{
     packet::{
         PacketBuf, PacketEncode, PrefixedPacketEncode, Stage,
-        c2s::{config::C2SConfigPackets, login::C2SLoginPackets, status::C2SStatusPackets},
+        c2s::{
+            config::C2SConfigPackets, login::C2SLoginPackets, play::C2SPlayPackets,
+            status::C2SStatusPackets,
+        },
         s2c::{
             config::{
                 FinishConfigurationS2CConfigPacket, KnownPack, SelectKnownPacksS2CConfigPacket,
@@ -23,8 +26,7 @@ use voxidian_protocol::{
 use super::{message::ConnectionMessage, net::ConnectionData};
 
 impl ConnectionData {
-    pub fn write_packet<P: PrefixedPacketEncode + Debug>(&mut self, packet: P) {
-        println!("Sending: {:?}", packet);
+    pub async fn write_packet<P: PrefixedPacketEncode + Debug>(&mut self, packet: P) {
         let mut buf = PacketBuf::new();
         packet.encode_prefixed(&mut buf).unwrap();
 
@@ -32,14 +34,12 @@ impl ConnectionData {
         VarInt::from(buf.iter().count())
             .encode(&mut len_buf)
             .unwrap();
+        len_buf.write_u8s(buf.as_slice());
 
         let snd = self.sender.clone();
-        tokio::spawn(async move {
-            snd.send(ConnectionMessage::SendPacket(len_buf))
-                .await
-                .unwrap();
-            snd.send(ConnectionMessage::SendPacket(buf)).await.unwrap();
-        });
+        snd.send(ConnectionMessage::SendPacket(len_buf))
+            .await
+            .unwrap();
     }
 
     pub async fn status_stage(&mut self) {
@@ -62,12 +62,14 @@ impl ConnectionData {
                         prevent_chat_reports: true,
                     }
                     .to_packet(),
-                );
+                )
+                .await;
             }
             C2SStatusPackets::PingRequest(packet) => {
                 this.write_packet(PongResponseS2CStatusPacket {
                     timestamp: packet.timestamp,
-                });
+                })
+                .await;
             }
         })
         .await;
@@ -88,7 +90,8 @@ impl ConnectionData {
                             version: "1.21.4".to_string(),
                         }]
                         .into(),
-                    });
+                    })
+                    .await;
                 }
                 C2SLoginPackets::Key(_packet) => todo!(),
                 C2SLoginPackets::Hello(packet) => {
@@ -98,7 +101,8 @@ impl ConnectionData {
                         uuid: packet.uuid,
                         username: packet.username,
                         props: LengthPrefixHashMap::new(),
-                    });
+                    })
+                    .await;
                 }
                 C2SLoginPackets::CookieResponse(_packet) => todo!(),
             }
@@ -115,11 +119,11 @@ impl ConnectionData {
                 C2SConfigPackets::FinishConfiguration(_packet) => {
                     this.stage = Stage::Play;
                     this.write_packet(LoginS2CPlayPacket {
-                        entity: 0,
+                        entity: 1,
                         hardcore: false,
                         // fake dimensions so we can control client w/o extra storage
                         dims: vec![Identifier::new("wyvern", "fake")].into(),
-                        max_players: VarInt::from(0),
+                        max_players: VarInt::from(100),
                         view_dist: VarInt::from(2),
                         sim_dist: VarInt::from(2),
                         reduced_debug: false,
@@ -138,7 +142,8 @@ impl ConnectionData {
                         portal_cooldown: VarInt::from(0),
                         sea_level: VarInt::from(64),
                         enforce_chat_reports: false,
-                    });
+                    })
+                    .await;
                     this.write_packet(PlayerPositionS2CPlayPacket {
                         teleport_id: VarInt::from(0),
                         x: 0.0,
@@ -160,7 +165,8 @@ impl ConnectionData {
                             relative_vz: false,
                             rotate_velocity: false,
                         },
-                    });
+                    })
+                    .await;
                 }
                 C2SConfigPackets::ResourcePack(_packet) => todo!(),
                 C2SConfigPackets::CookieResponse(_packet) => todo!(),
@@ -174,34 +180,46 @@ impl ConnectionData {
                             .biomes()
                             .await
                             .to_registry_data_packet(),
-                    );
+                    )
+                    .await;
                     this.write_packet(
                         this.connected_server
                             .damage_types()
                             .await
                             .to_registry_data_packet(),
-                    );
+                    )
+                    .await;
                     this.write_packet(
                         this.connected_server
                             .wolf_variants()
                             .await
                             .to_registry_data_packet(),
-                    );
+                    )
+                    .await;
                     this.write_packet(
                         this.connected_server
                             .painting_variants()
                             .await
                             .to_registry_data_packet(),
-                    );
+                    )
+                    .await;
                     this.write_packet(
                         this.connected_server
                             .dimension_types()
                             .await
                             .to_registry_data_packet(),
-                    );
-                    this.write_packet(FinishConfigurationS2CConfigPacket);
+                    )
+                    .await;
+                    this.write_packet(FinishConfigurationS2CConfigPacket).await;
                 }
             }
+        })
+        .await;
+    }
+
+    pub async fn play_phase(&mut self) {
+        self.read_packets(async |packet: C2SPlayPackets, this: &mut Self| {
+            println!("play packet: {:?}", packet);
         })
         .await;
     }

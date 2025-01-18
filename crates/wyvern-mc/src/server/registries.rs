@@ -50,4 +50,8 @@ impl RegistryContainerBuilder {
     pub fn painting_variant(&mut self, key: Key<PaintingVariant>, value: PaintingVariant) {
         self.painting_variants.insert(key.into(), value.into());
     }
+
+    pub fn dimension_type(&mut self, key: Key<DimType>, value: DimType) {
+        self.dimension_types.insert(key.into(), value);
+    }
 }
