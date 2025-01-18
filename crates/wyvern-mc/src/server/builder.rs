@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use voxidian_protocol::{
     registry::Registry,
-    value::{Biome, DamageType},
+    value::{Biome, DamageType, DimType, PaintingVariant, WolfVariant},
 };
 
 use crate::{
@@ -46,6 +46,10 @@ impl ServerBuilder {
         <S as IntoSystem<I>>::System: Send + Sync + 'static,
     {
         self.systems.push(Box::new(s.into_system()));
+    }
+
+    pub fn modify_registries<F: FnOnce(&mut RegistryContainerBuilder)>(&mut self, f: F) {
+        f(&mut self.registries)
     }
 
     pub async fn start(self) {

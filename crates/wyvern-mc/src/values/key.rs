@@ -16,6 +16,14 @@ impl<T> Key<T> {
         }
     }
 
+    pub fn empty() -> Key<T> {
+        Key {
+            namespace: "".into(),
+            path: "".into(),
+            _phantom: PhantomData::default(),
+        }
+    }
+
     pub fn namespace(&self) -> &str {
         &self.namespace
     }

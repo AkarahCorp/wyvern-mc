@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use voxidian_protocol::{
     packet::{
         PacketBuf, PacketEncode, PrefixedPacketEncode, Stage,
@@ -21,7 +23,8 @@ use voxidian_protocol::{
 use super::{message::ConnectionMessage, net::ConnectionData};
 
 impl ConnectionData {
-    pub fn write_packet<P: PrefixedPacketEncode>(&mut self, packet: P) {
+    pub fn write_packet<P: PrefixedPacketEncode + Debug>(&mut self, packet: P) {
+        println!("Sending: {:?}", packet);
         let mut buf = PacketBuf::new();
         packet.encode_prefixed(&mut buf).unwrap();
 
