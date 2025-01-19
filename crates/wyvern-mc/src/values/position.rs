@@ -1,5 +1,6 @@
 use std::ops::Add;
 
+#[derive(PartialEq, Eq, Hash, Clone)]
 pub struct Position<T> {
     x: T,
     y: T,

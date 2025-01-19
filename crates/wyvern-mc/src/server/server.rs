@@ -9,11 +9,11 @@ use voxidian_protocol::{
     value::{Biome, DamageType, DimType, PaintingVariant, WolfVariant},
 };
 
-use crate::{dimension::DimensionData, systems::typemap::TypeMap, values::key::Key};
+use crate::{dimension::Dimension, systems::typemap::TypeMap, values::key::Key};
 
 use super::message::ServerMessage;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Server {
     #[allow(dead_code)]
     pub(crate) sender: Sender<ServerMessage>,
@@ -72,7 +72,7 @@ impl Server {
         poll_receiver(&mut rx).await
     }
 
-    pub async fn dimension(&self, name: Key<DimensionData>) -> Option<Arc<DimensionData>> {
+    pub async fn dimension(&self, name: Key<Dimension>) -> Option<Dimension> {
         let (tx, mut rx) = oneshot::channel();
         self.sender
             .send(ServerMessage::GetDimension(name, tx))

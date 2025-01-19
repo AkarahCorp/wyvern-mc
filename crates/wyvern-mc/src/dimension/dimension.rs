@@ -1,25 +1,23 @@
-use std::collections::HashMap;
+use tokio::sync::{mpsc::Sender, oneshot};
 
-use tokio::sync::mpsc::{Sender, channel};
+use crate::{server::server::Server, values::position::Position};
 
-use crate::values::key::Key;
-
-use super::{DimensionData, message::DimensionMessage};
+use super::{chunk::ChunkSection, message::DimensionMessage};
 
 #[allow(dead_code)]
+#[derive(Debug, Clone)]
 pub struct Dimension {
+    pub(crate) server: Server,
     pub(crate) tx: Sender<DimensionMessage>,
 }
 
 impl Dimension {
-    pub fn root() -> DimensionData {
-        let chan = channel(1024);
-        DimensionData {
-            name: Key::new("wyvern", "root"),
-            chunks: HashMap::new(),
-            server: None,
-            rx: chan.1,
-            tx: chan.0,
-        }
+    pub async fn get_chunk_at(&self, pos: Position<i32>) -> Option<ChunkSection> {
+        let (tx, rx) = oneshot::channel();
+        self.tx
+            .send(DimensionMessage::GetChunkSection(pos, tx))
+            .await
+            .unwrap();
+        rx.await.unwrap()
     }
 }

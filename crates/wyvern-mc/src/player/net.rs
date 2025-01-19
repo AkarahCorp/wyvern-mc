@@ -154,7 +154,7 @@ impl ConnectionData {
                 self.configuration_stage().await;
             }
             Stage::Play => {
-                // self.play_phase().await;
+                self.play_phase().await;
             }
             Stage::Transfer => todo!("doesn't exist, this needs to be removed D:"),
         }

@@ -7,7 +7,7 @@ use voxidian_protocol::{
 };
 
 use crate::{
-    dimension::DimensionData, player::player::ConnectionWithSignal, systems::typemap::TypeMap,
+    dimension::Dimension, player::player::ConnectionWithSignal, systems::typemap::TypeMap,
     values::key::Key,
 };
 
@@ -21,5 +21,5 @@ pub enum ServerMessage {
     PaintingRegistry(Sender<Arc<Registry<PaintingVariant>>>),
     DimTypeRegistry(Sender<Arc<Registry<DimType>>>),
 
-    GetDimension(Key<DimensionData>, Sender<Option<Arc<DimensionData>>>),
+    GetDimension(Key<Dimension>, Sender<Option<Dimension>>),
 }

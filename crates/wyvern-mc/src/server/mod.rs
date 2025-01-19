@@ -36,12 +36,16 @@ pub struct ServerData {
 impl ServerData {
     pub async fn start(mut self) {
         let (tx, rx) = tokio::sync::mpsc::channel::<ServerMessage>(16);
-        let root_dim =
-            DimensionData::new(Key::new("wyvern", "root"), Server { sender: tx.clone() });
+        let root_dim = DimensionData::new(
+            Key::new("wyvern", "root"),
+            Server { sender: tx.clone() },
+            Key::new("minecraft", "overworld"),
+        );
 
         self.dimensions
             .insert(Key::new("wyvern", "root"), Dimension {
                 tx: root_dim.tx.clone(),
+                server: Server { sender: tx.clone() },
             });
 
         tokio::spawn(root_dim.handle_messages());
@@ -118,8 +122,11 @@ impl ServerData {
                         Err(_e) => panic!("DID NOT SEND AAA"),
                     };
                 }
-                ServerMessage::GetDimension(_key, _sender) => {
-                    todo!()
+                ServerMessage::GetDimension(key, sender) => {
+                    match sender.send(self.dimensions.get(&key).cloned()) {
+                        Ok(()) => {}
+                        Err(_e) => panic!("DID NOT SEND AAA"),
+                    }
                 }
             }
         };

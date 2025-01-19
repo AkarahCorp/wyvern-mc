@@ -12,7 +12,11 @@ use voxidian_protocol::{
                 FinishConfigurationS2CConfigPacket, KnownPack, SelectKnownPacksS2CConfigPacket,
             },
             login::LoginFinishedS2CLoginPacket,
-            play::{Gamemode, LoginS2CPlayPacket, PlayerPositionS2CPlayPacket, TeleportFlags},
+            play::{
+                GameEvent, GameEventS2CPlayPacket, Gamemode,
+                LoginS2CPlayPacket, PlayerPositionS2CPlayPacket, SetChunkCacheCenterS2CPlayPacket,
+                TeleportFlags,
+            },
             status::{
                 PongResponseS2CStatusPacket, StatusResponse, StatusResponsePlayers,
                 StatusResponseVersion,
@@ -20,8 +24,13 @@ use voxidian_protocol::{
         },
     },
     registry::RegEntry,
-    value::{Identifier, LengthPrefixHashMap, Text, VarInt},
+    value::{
+        Identifier, LengthPrefixHashMap, Text,
+        VarInt,
+    },
 };
+
+use crate::values::key::Key;
 
 use super::{message::ConnectionMessage, net::ConnectionData};
 
@@ -36,6 +45,7 @@ impl ConnectionData {
             .unwrap();
         len_buf.write_u8s(buf.as_slice());
 
+        println!("Sending packet: {:?}", packet);
         let snd = self.sender.clone();
         snd.send(ConnectionMessage::SendPacket(len_buf))
             .await
@@ -146,11 +156,11 @@ impl ConnectionData {
                     .await;
                     this.write_packet(PlayerPositionS2CPlayPacket {
                         teleport_id: VarInt::from(0),
-                        x: 0.0,
-                        y: 0.0,
-                        z: 0.0,
+                        x: 1.0,
+                        y: 5.0,
+                        z: 2.0,
                         vx: 0.0,
-                        vy: 0.0,
+                        vy: 0.5,
                         vz: 0.0,
                         adyaw_deg: 0.0,
                         adpitch_deg: 0.0,
@@ -218,8 +228,33 @@ impl ConnectionData {
     }
 
     pub async fn play_phase(&mut self) {
-        self.read_packets(async |packet: C2SPlayPackets, _this: &mut Self| {
+        self.read_packets(async |packet: C2SPlayPackets, this: &mut Self| {
             println!("play packet: {:?}", packet);
+            match packet {
+                C2SPlayPackets::AcceptTeleportation(packet) => {
+                    if packet.teleport_id.as_i32() == 0 {
+                        this.associated_data.dimension = this
+                            .connected_server
+                            .dimension(Key::new("wyvern", "root"))
+                            .await;
+
+                        this.write_packet(GameEventS2CPlayPacket {
+                            event: GameEvent::WaitForChunks,
+                            value: 0.0,
+                        })
+                        .await;
+
+                        // TODO: proper chunk sending system
+
+                        this.write_packet(SetChunkCacheCenterS2CPlayPacket {
+                            chunk_x: VarInt::from(0),
+                            chunk_z: VarInt::from(0),
+                        })
+                        .await;
+                    }
+                }
+                _ => {}
+            }
         })
         .await;
     }

@@ -10,6 +10,7 @@ use crate::values::position::Position;
 
 use super::blocks::BlockState;
 
+#[derive(Clone)]
 pub struct ChunkSection {
     block_count: i16,
     blocks: [[[RegEntry<ProtocolState>; 16]; 16]; 16],
