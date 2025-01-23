@@ -12,7 +12,7 @@ pub struct DimensionContainer {
 
 impl DimensionContainer {
     pub fn get(&self, key: &Key<Dimension>) -> Option<&Dimension> {
-        self.dimensions.get(&key)
+        self.dimensions.get(key)
     }
 
     pub fn insert(&mut self, key: Key<Dimension>, dim: Dimension) {
@@ -30,10 +30,7 @@ impl DimensionContainer {
     pub fn assert_root_dim_exists(&self) {
         if !self.dimensions.contains_key(&Key::new("wyvern", "root")) {
             println!(
-                "\n\n{}\n\n{}\n{}\n\n",
-                "Server Setup Error",
-                "Please define a root dimension with ServerBuilder::root_dimension",
-                "This is the dimension where players will spawn."
+                "\n\nServer Setup Error\n\nPlease define a root dimension with ServerBuilder::root_dimension\nThis is the dimension where players will spawn.\n\n"
             );
             std::process::exit(0)
         }

@@ -4,6 +4,12 @@ pub struct ProxyBuilder {
     servers: Vec<ServerBuilder>,
 }
 
+impl Default for ProxyBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ProxyBuilder {
     pub fn new() -> ProxyBuilder {
         ProxyBuilder {

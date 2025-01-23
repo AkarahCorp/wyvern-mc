@@ -1,5 +1,3 @@
-use std::sync::atomic::AtomicI32;
-
 use voxidian_protocol::value::Uuid;
 
 use crate::{dimension::Dimension, values::position::Position};
@@ -9,6 +7,7 @@ pub struct PlayerData {
     pub(crate) username: String,
     pub(crate) dimension: Option<Dimension>,
 
+    #[allow(unused)]
     pub(crate) teleport_sync: i32,
     pub(crate) last_position: Position<f64, f64>,
     pub(crate) loaded_chunks: Vec<Position<i32>>,

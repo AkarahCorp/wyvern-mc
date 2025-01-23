@@ -46,24 +46,21 @@ impl DimensionData {
 
     pub fn default_chunk(&mut self, pos: &Position<i32>) {
         if !self.chunks.contains_key(pos) {
-            self.chunks.insert(pos.clone(), ChunkSection::empty());
+            self.chunks.insert(*pos, ChunkSection::empty());
         }
     }
 
     pub async fn handle_messages(mut self) {
         loop {
-            match self.rx.recv().await {
-                Some(msg) => match msg {
-                    DimensionMessage::GetChunkSection(position, sender) => {
-                        let chunk = self.chunks.get(&position);
-                        let _ = sender.send(chunk.cloned());
-                    }
-                    DimensionMessage::GetDimensionType(sender) => {
-                        let _ = sender.send(self.dim_type.clone());
-                    }
-                },
-                None => {}
-            };
+            if let Some(msg) = self.rx.recv().await { match msg {
+                DimensionMessage::GetChunkSection(position, sender) => {
+                    let chunk = self.chunks.get(&position);
+                    let _ = sender.send(chunk.cloned());
+                }
+                DimensionMessage::GetDimensionType(sender) => {
+                    let _ = sender.send(self.dim_type.clone());
+                }
+            } };
         }
     }
 }

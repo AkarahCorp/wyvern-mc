@@ -1,8 +1,8 @@
 use voxidian_protocol::{
-    packet::s2c::play::{ChunkBlockEntity, LevelChunkWithLightS2CPlayPacket, LightMask},
+    packet::s2c::play::LevelChunkWithLightS2CPlayPacket,
     registry::RegEntry,
     value::{
-        ChunkSection, ChunkSectionData, Identifier, Nbt, NbtCompound, PaletteFormat,
+        ChunkSection, ChunkSectionData, Nbt, NbtCompound, PaletteFormat,
         PalettedContainer,
     },
 };

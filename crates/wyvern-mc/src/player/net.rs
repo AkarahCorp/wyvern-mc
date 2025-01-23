@@ -90,7 +90,7 @@ impl ConnectionData {
     pub async fn event_loop(&mut self) {
         loop {
             let result = self.handle_incoming_bytes().await;
-            if let Err(_) = result {
+            if result.is_err() {
                 let _ = self.signal.send(ConnectionStoppedSignal).await;
                 break;
             }
@@ -180,14 +180,9 @@ impl ConnectionData {
     }
 
     pub async fn handle_messages(&mut self) {
-        loop {
-            match self.receiver.try_recv() {
-                Ok(message) => {
-                    self.handle_message(message).await;
-                    break;
-                }
-                Err(_err) => break,
-            }
+        while let Ok(message) = self.receiver.try_recv() {
+            self.handle_message(message).await;
+            tokio::task::yield_now().await;
         }
     }
 
@@ -197,7 +192,7 @@ impl ConnectionData {
                 self.stage = stage;
             }
             ConnectionMessage::GetStage(sender) => {
-                let _ = sender.send(self.stage.clone());
+                let _ = sender.send(self.stage);
             }
             ConnectionMessage::SendPacket(buf) => {
                 self.bytes_to_send.extend(buf.as_slice());
@@ -217,7 +212,7 @@ impl ConnectionData {
     ) {
         match self
             .packet_processing
-            .decode_from_raw_queue(self.received_bytes.iter().map(|x| *x))
+            .decode_from_raw_queue(self.received_bytes.iter().copied())
         {
             Ok((mut buf, consumed)) => {
                 if consumed == 0 {

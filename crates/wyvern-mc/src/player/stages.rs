@@ -102,7 +102,7 @@ impl ConnectionData {
                 C2SLoginPackets::Key(_packet) => todo!(),
                 C2SLoginPackets::Hello(packet) => {
                     this.associated_data.username = packet.username.clone();
-                    this.associated_data.uuid = packet.uuid.clone();
+                    this.associated_data.uuid = packet.uuid;
                     this.write_packet(LoginFinishedS2CLoginPacket {
                         uuid: packet.uuid,
                         username: packet.username,
@@ -228,30 +228,27 @@ impl ConnectionData {
     pub async fn play_phase(&mut self) {
         self.read_packets(async |packet: C2SPlayPackets, this: &mut Self| {
             println!("packet: {:?}", packet);
-            match packet {
-                C2SPlayPackets::AcceptTeleportation(packet) => {
-                    if packet.teleport_id.as_i32() == 0 {
-                        this.associated_data.dimension = this
-                            .connected_server
-                            .dimension(Key::new("wyvern", "root"))
-                            .await;
-
-                        this.write_packet(GameEventS2CPlayPacket {
-                            event: GameEvent::WaitForChunks,
-                            value: 0.0,
-                        })
+            if let C2SPlayPackets::AcceptTeleportation(packet) = packet {
+                if packet.teleport_id.as_i32() == 0 {
+                    this.associated_data.dimension = this
+                        .connected_server
+                        .dimension(Key::new("wyvern", "root"))
                         .await;
 
-                        this.write_packet(SetChunkCacheCenterS2CPlayPacket {
-                            chunk_x: VarInt::from(0),
-                            chunk_z: VarInt::from(0),
-                        })
-                        .await;
+                    this.write_packet(GameEventS2CPlayPacket {
+                        event: GameEvent::WaitForChunks,
+                        value: 0.0,
+                    })
+                    .await;
 
-                        this.send_chunks().await;
-                    }
+                    this.write_packet(SetChunkCacheCenterS2CPlayPacket {
+                        chunk_x: VarInt::from(0),
+                        chunk_z: VarInt::from(0),
+                    })
+                    .await;
+
+                    this.send_chunks().await;
                 }
-                _ => {}
             }
         })
         .await;

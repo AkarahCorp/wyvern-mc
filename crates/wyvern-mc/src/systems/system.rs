@@ -22,7 +22,7 @@ where
     T1: SystemParameter + Clone + 'static,
 {
     fn run(&mut self, resources: &mut TypeMap, server: Server) -> Option<BoxedFuture> {
-        Some(Box::pin((self.f)(T1::query(&resources, &server)?.clone())))
+        Some(Box::pin((self.f)(T1::query(resources, &server)?.clone())))
     }
 }
 
@@ -35,8 +35,8 @@ where
 {
     fn run(&mut self, resources: &mut TypeMap, server: Server) -> Option<BoxedFuture> {
         Some(Box::pin((self.f)(
-            T1::query(&resources, &server)?.clone(),
-            T2::query(&resources, &server)?.clone(),
+            T1::query(resources, &server)?.clone(),
+            T2::query(resources, &server)?.clone(),
         )))
     }
 }
@@ -51,9 +51,9 @@ where
 {
     fn run(&mut self, resources: &mut TypeMap, server: Server) -> Option<BoxedFuture> {
         Some(Box::pin((self.f)(
-            T1::query(&resources, &server)?.clone(),
-            T2::query(&resources, &server)?.clone(),
-            T3::query(&resources, &server)?.clone(),
+            T1::query(resources, &server)?.clone(),
+            T2::query(resources, &server)?.clone(),
+            T3::query(resources, &server)?.clone(),
         )))
     }
 }

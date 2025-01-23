@@ -19,6 +19,12 @@ pub struct ServerBuilder {
     dimensions: DimensionContainer,
 }
 
+impl Default for ServerBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ServerBuilder {
     pub fn new() -> ServerBuilder {
         ServerBuilder {

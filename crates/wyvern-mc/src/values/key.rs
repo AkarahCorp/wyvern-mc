@@ -12,7 +12,7 @@ impl<T> Key<T> {
         Key {
             namespace: namespace.into(),
             path: path.into(),
-            _phantom: PhantomData::default(),
+            _phantom: PhantomData,
         }
     }
 
@@ -20,7 +20,7 @@ impl<T> Key<T> {
         Key {
             namespace: "".into(),
             path: "".into(),
-            _phantom: PhantomData::default(),
+            _phantom: PhantomData,
         }
     }
 
@@ -71,7 +71,7 @@ impl<T> Clone for Key<T> {
         Self {
             namespace: self.namespace.clone(),
             path: self.path.clone(),
-            _phantom: self._phantom.clone(),
+            _phantom: self._phantom,
         }
     }
 }

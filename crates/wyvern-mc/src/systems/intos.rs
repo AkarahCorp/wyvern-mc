@@ -17,7 +17,7 @@ where
     fn into_system(self) -> Self::System {
         FunctionSystem {
             f: self,
-            _phantom: PhantomData::default(),
+            _phantom: PhantomData,
         }
     }
 }
@@ -32,7 +32,7 @@ where
     fn into_system(self) -> Self::System {
         FunctionSystem {
             f: self,
-            _phantom: PhantomData::default(),
+            _phantom: PhantomData,
         }
     }
 }
@@ -48,7 +48,7 @@ where
     fn into_system(self) -> Self::System {
         FunctionSystem {
             f: self,
-            _phantom: PhantomData::default(),
+            _phantom: PhantomData,
         }
     }
 }
@@ -65,7 +65,7 @@ where
     fn into_system(self) -> Self::System {
         FunctionSystem {
             f: self,
-            _phantom: PhantomData::default(),
+            _phantom: PhantomData,
         }
     }
 }

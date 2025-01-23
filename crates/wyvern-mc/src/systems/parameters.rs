@@ -19,10 +19,16 @@ pub struct Event<T: EventType> {
     _data: PhantomData<T>,
 }
 
+impl<T: EventType> Default for Event<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<T: EventType> Event<T> {
     pub fn new() -> Self {
         Event {
-            _data: PhantomData::default(),
+            _data: PhantomData,
         }
     }
 }
@@ -30,7 +36,7 @@ impl<T: EventType> Event<T> {
 impl<T: EventType> Clone for Event<T> {
     fn clone(&self) -> Self {
         Self {
-            _data: PhantomData::default(),
+            _data: PhantomData,
         }
     }
 }
@@ -102,7 +108,7 @@ impl<T: Clone + Debug> DerefMut for Query<T> {
 impl<T: EventType + 'static + Send + Sync> SystemParameter for Event<T> {
     fn query(resources: &TypeMap, _server: &Server) -> Option<Self> {
         resources.get::<Self>().map(|_| Event {
-            _data: PhantomData::default(),
+            _data: PhantomData,
         })
     }
 }
