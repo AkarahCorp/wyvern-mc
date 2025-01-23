@@ -63,7 +63,7 @@ impl DimensionData {
                     }
                 },
                 None => {}
-            }
+            };
         }
     }
 }

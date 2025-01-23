@@ -1,6 +1,10 @@
 use tokio::sync::{mpsc::Sender, oneshot};
+use voxidian_protocol::value::DimType;
 
-use crate::{server::server::Server, values::position::Position};
+use crate::{
+    server::server::Server,
+    values::{key::Key, position::Position},
+};
 
 use super::{chunk::ChunkSection, message::DimensionMessage};
 
@@ -16,6 +20,15 @@ impl Dimension {
         let (tx, rx) = oneshot::channel();
         self.tx
             .send(DimensionMessage::GetChunkSection(pos, tx))
+            .await
+            .unwrap();
+        rx.await.unwrap()
+    }
+
+    pub async fn get_dimension_type(&self) -> Key<DimType> {
+        let (tx, rx) = oneshot::channel();
+        self.tx
+            .send(DimensionMessage::GetDimensionType(tx))
             .await
             .unwrap();
         rx.await.unwrap()

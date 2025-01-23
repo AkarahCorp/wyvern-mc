@@ -13,9 +13,8 @@ use voxidian_protocol::{
             },
             login::LoginFinishedS2CLoginPacket,
             play::{
-                GameEvent, GameEventS2CPlayPacket, Gamemode,
-                LoginS2CPlayPacket, PlayerPositionS2CPlayPacket, SetChunkCacheCenterS2CPlayPacket,
-                TeleportFlags,
+                GameEvent, GameEventS2CPlayPacket, Gamemode, LoginS2CPlayPacket,
+                PlayerPositionS2CPlayPacket, SetChunkCacheCenterS2CPlayPacket, TeleportFlags,
             },
             status::{
                 PongResponseS2CStatusPacket, StatusResponse, StatusResponsePlayers,
@@ -24,10 +23,7 @@ use voxidian_protocol::{
         },
     },
     registry::RegEntry,
-    value::{
-        Identifier, LengthPrefixHashMap, Text,
-        VarInt,
-    },
+    value::{Identifier, LengthPrefixHashMap, Text, VarInt},
 };
 
 use crate::values::key::Key;
@@ -35,7 +31,7 @@ use crate::values::key::Key;
 use super::{message::ConnectionMessage, net::ConnectionData};
 
 impl ConnectionData {
-    pub async fn write_packet<P: PrefixedPacketEncode + Debug>(&mut self, packet: P) {
+    pub async fn write_packet<P: PrefixedPacketEncode + Debug>(&self, packet: P) {
         let mut buf = PacketBuf::new();
         packet.encode_prefixed(&mut buf).unwrap();
 
@@ -144,7 +140,7 @@ impl ConnectionData {
                         dim: unsafe { RegEntry::new_unchecked(0) },
                         dim_name: Identifier::new("wyvern", "fake"),
                         seed: 0,
-                        gamemode: Gamemode::Survival,
+                        gamemode: Gamemode::Creative,
                         old_gamemode: Gamemode::None,
                         is_debug: false,
                         is_flat: false,
@@ -181,7 +177,9 @@ impl ConnectionData {
                 C2SConfigPackets::ResourcePack(_packet) => todo!(),
                 C2SConfigPackets::CookieResponse(_packet) => todo!(),
                 C2SConfigPackets::Pong(_packet) => todo!(),
-                C2SConfigPackets::ClientInformation(_packet) => {}
+                C2SConfigPackets::ClientInformation(packet) => {
+                    this.associated_data.render_distance = packet.info.view_distance as i32;
+                }
                 C2SConfigPackets::KeepAlive(_packet) => todo!(),
                 C2SConfigPackets::SelectKnownPacks(_packet) => {
                     println!("pk: {:?}", _packet);
@@ -229,7 +227,7 @@ impl ConnectionData {
 
     pub async fn play_phase(&mut self) {
         self.read_packets(async |packet: C2SPlayPackets, this: &mut Self| {
-            println!("play packet: {:?}", packet);
+            println!("packet: {:?}", packet);
             match packet {
                 C2SPlayPackets::AcceptTeleportation(packet) => {
                     if packet.teleport_id.as_i32() == 0 {
@@ -244,13 +242,13 @@ impl ConnectionData {
                         })
                         .await;
 
-                        // TODO: proper chunk sending system
-
                         this.write_packet(SetChunkCacheCenterS2CPlayPacket {
                             chunk_x: VarInt::from(0),
                             chunk_z: VarInt::from(0),
                         })
                         .await;
+
+                        this.send_chunks().await;
                     }
                 }
                 _ => {}

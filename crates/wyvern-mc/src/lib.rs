@@ -1,3 +1,5 @@
+#![feature(try_blocks)]
+
 pub mod dimension;
 pub mod player;
 pub mod proxy;
