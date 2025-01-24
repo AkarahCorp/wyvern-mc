@@ -33,6 +33,11 @@ impl ChunkSection {
             unsafe { RegEntry::new_unchecked(block.protocol_id().try_into().unwrap()) };
     }
 
+    pub fn get_block_at(&mut self, pos: Position<usize>) -> BlockState {
+        let ptc = self.blocks[*pos.x()][*pos.y()][*pos.z()];
+        BlockState::from_protocol_id(ptc.id() as i32)
+    }
+
     pub fn flatten_blocks(&self) -> [RegEntry<ProtocolState>; 4096] {
         let mut arr = [unsafe { RegEntry::new_unchecked(0) }; 4096];
         let mut idx = 0;

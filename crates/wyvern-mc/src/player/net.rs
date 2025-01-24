@@ -203,6 +203,11 @@ impl ConnectionData {
                 };
                 let _ = sender.send(server);
             }
+            ConnectionMessage::GetDimension(sender) => {
+                sender
+                    .send(self.associated_data.dimension.clone().unwrap())
+                    .unwrap();
+            }
         }
     }
 
@@ -226,7 +231,6 @@ impl ConnectionData {
 
                 match T::decode_prefixed(&mut buf) {
                     Ok(packet) => {
-                        println!("Received and processing bytes: {:?}", rv);
                         f(packet, self).await;
                     }
                     Err(DecodeError::EndOfBuffer) => {

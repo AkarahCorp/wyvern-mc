@@ -9,13 +9,13 @@ use voxidian_protocol::{
     value::VarInt,
 };
 
-use crate::server::Server;
+use crate::{dimension::Dimension, server::Server};
 
 use super::{message::ConnectionMessage, net::ConnectionStoppedSignal};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Player {
-    pub(crate) messenger: Arc<Sender<ConnectionMessage>>,
+    pub(crate) messenger: Sender<ConnectionMessage>,
 }
 
 impl Player {
@@ -56,11 +56,20 @@ impl Player {
         let _ = self.messenger.send(ConnectionMessage::GetServer(tx)).await;
         rx.await.unwrap()
     }
+
+    pub async fn get_dimension(&self) -> Dimension {
+        let (tx, rx) = channel();
+        let _ = self
+            .messenger
+            .send(ConnectionMessage::GetDimension(tx))
+            .await;
+        rx.await.unwrap()
+    }
 }
 
 #[derive(Debug)]
 pub struct ConnectionWithSignal {
-    pub(crate) messenger: Arc<Sender<ConnectionMessage>>,
+    pub(crate) messenger: Sender<ConnectionMessage>,
     pub(crate) _signal: Receiver<ConnectionStoppedSignal>,
 }
 

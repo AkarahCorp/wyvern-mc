@@ -26,9 +26,16 @@ use voxidian_protocol::{
     value::{Identifier, LengthPrefixHashMap, Text, VarInt},
 };
 
-use crate::values::Key;
+use crate::{
+    systems::{
+        events::PlayerMoveEvent,
+        parameters::{Event, Param},
+        typemap::TypeMap,
+    },
+    values::Key,
+};
 
-use super::{message::ConnectionMessage, net::ConnectionData};
+use super::{message::ConnectionMessage, net::ConnectionData, player::Player};
 
 impl ConnectionData {
     pub async fn write_packet<P: PrefixedPacketEncode + Debug>(&self, packet: P) {
@@ -41,7 +48,6 @@ impl ConnectionData {
             .unwrap();
         len_buf.write_u8s(buf.as_slice());
 
-        println!("Sending packet: {:?}", packet);
         let snd = self.sender.clone();
         snd.send(ConnectionMessage::SendPacket(len_buf))
             .await
@@ -150,6 +156,7 @@ impl ConnectionData {
                         enforce_chat_reports: false,
                     })
                     .await;
+
                     this.write_packet(PlayerPositionS2CPlayPacket {
                         teleport_id: VarInt::from(0),
                         x: 1.0,
@@ -173,6 +180,8 @@ impl ConnectionData {
                         },
                     })
                     .await;
+
+                    this.send_chunks().await;
                 }
                 C2SConfigPackets::ResourcePack(_packet) => todo!(),
                 C2SConfigPackets::CookieResponse(_packet) => todo!(),
@@ -226,31 +235,75 @@ impl ConnectionData {
     }
 
     pub async fn play_phase(&mut self) {
-        self.read_packets(async |packet: C2SPlayPackets, this: &mut Self| {
-            println!("packet: {:?}", packet);
-            if let C2SPlayPackets::AcceptTeleportation(packet) = packet {
-                if packet.teleport_id.as_i32() == 0 {
-                    this.associated_data.dimension = this
-                        .connected_server
-                        .dimension(Key::new("wyvern", "root"))
+        self.read_packets(
+            async |packet: C2SPlayPackets, this: &mut Self| match packet {
+                C2SPlayPackets::AcceptTeleportation(packet) => {
+                    if packet.teleport_id.as_i32() == 0 {
+                        this.associated_data.dimension = this
+                            .connected_server
+                            .dimension(Key::new("wyvern", "root"))
+                            .await;
+
+                        this.write_packet(GameEventS2CPlayPacket {
+                            event: GameEvent::WaitForChunks,
+                            value: 0.0,
+                        })
                         .await;
-
-                    this.write_packet(GameEventS2CPlayPacket {
-                        event: GameEvent::WaitForChunks,
-                        value: 0.0,
-                    })
-                    .await;
-
-                    this.write_packet(SetChunkCacheCenterS2CPlayPacket {
-                        chunk_x: VarInt::from(0),
-                        chunk_z: VarInt::from(0),
-                    })
-                    .await;
+                    }
+                }
+                C2SPlayPackets::MovePlayerPos(packet) => {
+                    this.associated_data.last_position = this
+                        .associated_data
+                        .last_position
+                        .with_x(packet.x)
+                        .with_y(packet.y)
+                        .with_z(packet.z);
 
                     this.send_chunks().await;
                 }
-            }
-        })
+                C2SPlayPackets::MovePlayerPosRot(packet) => {
+                    this.associated_data.last_position = this
+                        .associated_data
+                        .last_position
+                        .with_x(packet.x)
+                        .with_y(packet.y)
+                        .with_z(packet.z)
+                        .with_pitch(packet.pitch as f64)
+                        .with_yaw(packet.yaw as f64);
+
+                    this.send_chunks().await;
+                }
+                C2SPlayPackets::MovePlayerRot(packet) => {
+                    this.associated_data.last_position = this
+                        .associated_data
+                        .last_position
+                        .with_pitch(packet.pitch as f64)
+                        .with_yaw(packet.yaw as f64);
+
+                    this.connected_server
+                        .fire_systems({
+                            let mut map = TypeMap::new();
+                            map.insert(Event::<PlayerMoveEvent>::new());
+                            map.insert(Param::new(this.associated_data.last_position.clone()));
+                            map.insert(Param::new(Player {
+                                messenger: this.sender.clone(),
+                            }));
+                            map
+                        })
+                        .await;
+                }
+                C2SPlayPackets::ClientInformation(packet) => {
+                    this.associated_data.render_distance = packet.info.view_distance as i32;
+                }
+                C2SPlayPackets::PlayerInput(packet) => {
+                    this.associated_data.input_flags = packet.flags;
+                }
+                C2SPlayPackets::ClientTickEnd(_) => {}
+                packet => {
+                    println!("Received unknown play packet: {:?}", packet);
+                }
+            },
+        )
         .await;
     }
 }

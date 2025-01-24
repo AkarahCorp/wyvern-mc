@@ -167,7 +167,7 @@ impl ServerData {
                     let (messenger, signal) =
                         ConnectionData::connection_channel(stream, addr.ip(), server);
                     let proxy = ConnectionWithSignal {
-                        messenger: Arc::new(messenger),
+                        messenger: messenger.clone(),
                         _signal: signal,
                     };
                     let _lowered = proxy.lower();

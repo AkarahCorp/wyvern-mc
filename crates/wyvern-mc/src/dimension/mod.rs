@@ -61,6 +61,29 @@ impl DimensionData {
                     DimensionMessage::GetDimensionType(sender) => {
                         let _ = sender.send(self.dim_type.clone());
                     }
+                    DimensionMessage::SetBlockAt(position, block_state) => {
+                        let chunk = position.map_into_coords(|x| x / 16);
+                        let pos_in_chunk = position.map_into_coords(|x| (x % 16) as usize);
+
+                        if !self.chunks.contains_key(&chunk) {
+                            self.chunks.insert(chunk.clone(), ChunkSection::empty());
+                        }
+
+                        let chunk = self.chunks.get_mut(&chunk).unwrap();
+                        chunk.set_block_at(pos_in_chunk, block_state);
+                    }
+                    DimensionMessage::GetBlockAt(position, sender) => {
+                        let chunk = position.map_into_coords(|x| x / 16);
+                        let pos_in_chunk = position.map_into_coords(|x| (x % 16) as usize);
+
+                        if !self.chunks.contains_key(&chunk) {
+                            self.chunks.insert(chunk.clone(), ChunkSection::empty());
+                        }
+
+                        let chunk = self.chunks.get_mut(&chunk).unwrap();
+                        let block_state = chunk.get_block_at(pos_in_chunk);
+                        let _ = sender.send(block_state);
+                    }
                 }
             };
         }

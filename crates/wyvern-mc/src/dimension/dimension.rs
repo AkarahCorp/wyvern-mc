@@ -6,7 +6,7 @@ use crate::{
     values::{Key, Position},
 };
 
-use super::{chunk::ChunkSection, message::DimensionMessage};
+use super::{blocks::BlockState, chunk::ChunkSection, message::DimensionMessage};
 
 #[allow(dead_code)]
 #[derive(Debug, Clone)]
@@ -20,6 +20,22 @@ impl Dimension {
         let (tx, rx) = oneshot::channel();
         self.tx
             .send(DimensionMessage::GetChunkSection(pos, tx))
+            .await
+            .unwrap();
+        rx.await.unwrap()
+    }
+
+    pub async fn set_block_at(&self, pos: Position<i32>, block: BlockState) {
+        self.tx
+            .send(DimensionMessage::SetBlockAt(pos, block))
+            .await
+            .unwrap();
+    }
+
+    pub async fn get_block_at(&self, pos: Position<i32>) -> BlockState {
+        let (tx, rx) = oneshot::channel();
+        self.tx
+            .send(DimensionMessage::GetBlockAt(pos, tx))
             .await
             .unwrap();
         rx.await.unwrap()

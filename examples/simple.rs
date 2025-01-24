@@ -3,14 +3,16 @@ use voxidian_protocol::{
     value::{DimEffects, DimMonsterSpawnLightLevel, DimType},
 };
 use wyvern_mc::{
+    dimension::blocks::BlockState,
+    player::player::Player,
     proxy::ProxyBuilder,
     server::{Server, ServerBuilder},
     systems::{
-        events::{ReceivePacketEvent, ServerTickEvent},
+        events::{PlayerMoveEvent, ReceivePacketEvent, ServerTickEvent},
         parameters::{Event, Param},
     },
     values::{
-        Key,
+        Key, Position,
         regval::{PaintingVariant, WolfVariant},
     },
 };
@@ -69,3 +71,16 @@ async fn example_system(
 }
 
 async fn on_tick(_event: Event<ServerTickEvent>, server: Param<Server>) {}
+
+async fn on_move(
+    _event: Event<PlayerMoveEvent>,
+    player: Param<Player>,
+    pos: Param<Position<f64, f64>>,
+) {
+    let dim = player.get_dimension().await;
+    dim.set_block_at(
+        pos.map_angled(|x| (x + 2.0) as i32, |_| ()),
+        BlockState::from_protocol_id(1),
+    )
+    .await;
+}

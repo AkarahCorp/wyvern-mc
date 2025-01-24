@@ -11,3 +11,7 @@ impl<P> EventType for ReceivePacketEvent<P> {}
 #[derive(Default, Clone, Debug)]
 pub struct ServerTickEvent;
 impl EventType for ServerTickEvent {}
+
+#[derive(Default, Clone, Debug)]
+pub struct PlayerMoveEvent;
+impl EventType for PlayerMoveEvent {}
