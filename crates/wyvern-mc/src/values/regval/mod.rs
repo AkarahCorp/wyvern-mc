@@ -1,2 +1,4 @@
-pub mod painting_variant;
-pub mod wolf_variant;
+mod painting_variant;
+pub use painting_variant::*;
+mod wolf_variant;
+pub use wolf_variant::*;

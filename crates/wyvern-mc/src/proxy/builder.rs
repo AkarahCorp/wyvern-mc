@@ -1,4 +1,4 @@
-use crate::server::builder::ServerBuilder;
+use crate::server::ServerBuilder;
 
 pub struct ProxyBuilder {
     servers: Vec<ServerBuilder>,

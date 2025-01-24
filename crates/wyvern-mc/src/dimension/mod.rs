@@ -6,8 +6,8 @@ use tokio::sync::mpsc::{Receiver, Sender, channel};
 use voxidian_protocol::value::DimType;
 
 use crate::{
-    server::server::Server,
-    values::{key::Key, position::Position},
+    server::Server,
+    values::{Key, Position},
 };
 
 pub mod blocks;
@@ -52,15 +52,17 @@ impl DimensionData {
 
     pub async fn handle_messages(mut self) {
         loop {
-            if let Some(msg) = self.rx.recv().await { match msg {
-                DimensionMessage::GetChunkSection(position, sender) => {
-                    let chunk = self.chunks.get(&position);
-                    let _ = sender.send(chunk.cloned());
+            if let Some(msg) = self.rx.recv().await {
+                match msg {
+                    DimensionMessage::GetChunkSection(position, sender) => {
+                        let chunk = self.chunks.get(&position);
+                        let _ = sender.send(chunk.cloned());
+                    }
+                    DimensionMessage::GetDimensionType(sender) => {
+                        let _ = sender.send(self.dim_type.clone());
+                    }
                 }
-                DimensionMessage::GetDimensionType(sender) => {
-                    let _ = sender.send(self.dim_type.clone());
-                }
-            } };
+            };
         }
     }
 }

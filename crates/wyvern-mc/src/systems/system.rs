@@ -1,4 +1,4 @@
-use crate::server::server::Server;
+use crate::server::Server;
 
 use super::{BoxedFuture, function::FunctionSystem, parameters::SystemParameter, typemap::TypeMap};
 

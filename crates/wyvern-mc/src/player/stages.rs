@@ -26,7 +26,7 @@ use voxidian_protocol::{
     value::{Identifier, LengthPrefixHashMap, Text, VarInt},
 };
 
-use crate::values::key::Key;
+use crate::values::Key;
 
 use super::{message::ConnectionMessage, net::ConnectionData};
 

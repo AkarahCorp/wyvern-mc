@@ -5,7 +5,7 @@ use std::{
     sync::Arc,
 };
 
-use crate::server::server::Server;
+use crate::server::Server;
 
 use super::typemap::TypeMap;
 

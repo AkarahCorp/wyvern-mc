@@ -2,8 +2,8 @@ use tokio::sync::{mpsc::Sender, oneshot};
 use voxidian_protocol::value::DimType;
 
 use crate::{
-    server::server::Server,
-    values::{key::Key, position::Position},
+    server::Server,
+    values::{Key, Position},
 };
 
 use super::{chunk::ChunkSection, message::DimensionMessage};

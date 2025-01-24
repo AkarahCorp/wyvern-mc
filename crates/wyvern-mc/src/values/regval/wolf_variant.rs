@@ -1,4 +1,4 @@
-use crate::values::{key::Key, resource::Texture};
+use crate::values::{Key, resource::Texture};
 use voxidian_protocol::value::{Biome, Identifier, WolfVariant as PtcWolfVariant};
 
 pub struct WolfVariant {

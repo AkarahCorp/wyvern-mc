@@ -9,7 +9,7 @@ use voxidian_protocol::{
     value::VarInt,
 };
 
-use crate::server::server::Server;
+use crate::server::Server;
 
 use super::{message::ConnectionMessage, net::ConnectionStoppedSignal};
 

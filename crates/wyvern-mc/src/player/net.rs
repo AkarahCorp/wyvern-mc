@@ -8,7 +8,7 @@ use voxidian_protocol::packet::{
 };
 
 use crate::{
-    server::server::Server,
+    server::Server,
     systems::{
         events::ReceivePacketEvent,
         parameters::{Event, Param},

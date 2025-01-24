@@ -8,7 +8,7 @@ use voxidian_protocol::{
 
 use crate::{
     dimension::Dimension, player::player::ConnectionWithSignal, systems::typemap::TypeMap,
-    values::key::Key,
+    values::Key,
 };
 
 pub enum ServerMessage {

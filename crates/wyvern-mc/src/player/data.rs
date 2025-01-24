@@ -1,6 +1,6 @@
 use voxidian_protocol::value::Uuid;
 
-use crate::{dimension::Dimension, values::position::Position};
+use crate::{dimension::Dimension, values::Position};
 
 pub struct PlayerData {
     pub(crate) uuid: Uuid,

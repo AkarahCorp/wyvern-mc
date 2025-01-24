@@ -1,13 +1,10 @@
 use voxidian_protocol::{
     packet::s2c::play::LevelChunkWithLightS2CPlayPacket,
     registry::RegEntry,
-    value::{
-        ChunkSection, ChunkSectionData, Nbt, NbtCompound, PaletteFormat,
-        PalettedContainer,
-    },
+    value::{ChunkSection, ChunkSectionData, Nbt, NbtCompound, PaletteFormat, PalettedContainer},
 };
 
-use crate::values::position::Position;
+use crate::values::Position;
 
 use super::net::ConnectionData;
 

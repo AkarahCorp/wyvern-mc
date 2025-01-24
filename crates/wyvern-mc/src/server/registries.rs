@@ -9,8 +9,8 @@ use voxidian_protocol::{
 };
 
 use crate::values::{
-    key::Key,
-    regval::{painting_variant::PaintingVariant, wolf_variant::WolfVariant},
+    Key,
+    regval::{PaintingVariant, WolfVariant},
 };
 
 #[allow(dead_code)]

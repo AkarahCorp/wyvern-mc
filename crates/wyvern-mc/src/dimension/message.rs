@@ -1,7 +1,7 @@
 use tokio::sync::oneshot::Sender;
 use voxidian_protocol::value::DimType;
 
-use crate::values::{key::Key, position::Position};
+use crate::values::{Key, Position};
 
 use super::chunk::ChunkSection;
 

@@ -3,15 +3,15 @@ use voxidian_protocol::{
     value::{DimEffects, DimMonsterSpawnLightLevel, DimType},
 };
 use wyvern_mc::{
-    proxy::builder::ProxyBuilder,
-    server::{builder::ServerBuilder, server::Server},
+    proxy::ProxyBuilder,
+    server::{Server, ServerBuilder},
     systems::{
         events::{ReceivePacketEvent, ServerTickEvent},
         parameters::{Event, Param},
     },
     values::{
-        key::Key,
-        regval::{painting_variant::PaintingVariant, wolf_variant::WolfVariant},
+        Key,
+        regval::{PaintingVariant, WolfVariant},
     },
 };
 

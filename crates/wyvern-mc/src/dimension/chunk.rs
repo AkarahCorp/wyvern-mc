@@ -6,7 +6,7 @@ use voxidian_protocol::{
     },
 };
 
-use crate::values::position::Position;
+use crate::values::Position;
 
 use super::blocks::BlockState;
 
