@@ -24,6 +24,7 @@ async fn main() {
         let mut b = ServerBuilder::new();
         b.add_system(example_system);
         b.add_system(on_tick);
+        b.add_system(on_move);
         b.modify_registries(|registries| {
             registries.wolf_variant(Key::new("minecraft", "pale"), WolfVariant {
                 angry_texture: Key::empty(),
@@ -79,7 +80,7 @@ async fn on_move(
 ) {
     let dim = player.get_dimension().await;
     dim.set_block_at(
-        pos.map_angled(|x| (x + 2.0) as i32, |_| ()),
+        pos.map_angled(|x| (x + 5.0) as i32, |_| ()),
         BlockState::from_protocol_id(1),
     )
     .await;

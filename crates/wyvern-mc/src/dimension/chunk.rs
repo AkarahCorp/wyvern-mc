@@ -18,14 +18,21 @@ pub struct ChunkSection {
 
 impl ChunkSection {
     pub fn empty() -> ChunkSection {
-        ChunkSection {
+        let mut section = ChunkSection {
             block_count: 0,
             blocks: std::array::from_fn(|_| {
                 std::array::from_fn(|_| {
                     std::array::from_fn(|_| unsafe { RegEntry::new_unchecked(0) })
                 })
             }),
+        };
+        for x in 0..15 {
+            for z in 0..15 {
+                section.set_block_at(Position::new(x, 0, z), BlockState::from_protocol_id(1));
+            }
         }
+
+        section
     }
 
     pub fn set_block_at(&mut self, pos: Position<usize>, block: BlockState) {
@@ -44,7 +51,7 @@ impl ChunkSection {
         for y in 0..16 {
             for z in 0..16 {
                 for x in 0..16 {
-                    arr[idx] = self.blocks[y][z][x];
+                    arr[idx] = self.blocks[x][y][z];
                     idx += 1;
                 }
             }

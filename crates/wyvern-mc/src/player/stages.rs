@@ -260,6 +260,18 @@ impl ConnectionData {
                         .with_z(packet.z);
 
                     this.send_chunks().await;
+
+                    this.connected_server
+                        .fire_systems({
+                            let mut map = TypeMap::new();
+                            map.insert(Event::<PlayerMoveEvent>::new());
+                            map.insert(Param::new(this.associated_data.last_position.clone()));
+                            map.insert(Param::new(Player {
+                                messenger: this.sender.clone(),
+                            }));
+                            map
+                        })
+                        .await;
                 }
                 C2SPlayPackets::MovePlayerPosRot(packet) => {
                     this.associated_data.last_position = this
@@ -272,6 +284,18 @@ impl ConnectionData {
                         .with_yaw(packet.yaw as f64);
 
                     this.send_chunks().await;
+
+                    this.connected_server
+                        .fire_systems({
+                            let mut map = TypeMap::new();
+                            map.insert(Event::<PlayerMoveEvent>::new());
+                            map.insert(Param::new(this.associated_data.last_position.clone()));
+                            map.insert(Param::new(Player {
+                                messenger: this.sender.clone(),
+                            }));
+                            map
+                        })
+                        .await;
                 }
                 C2SPlayPackets::MovePlayerRot(packet) => {
                     this.associated_data.last_position = this

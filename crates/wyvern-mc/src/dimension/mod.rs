@@ -3,7 +3,11 @@ use std::collections::HashMap;
 use chunk::ChunkSection;
 use message::DimensionMessage;
 use tokio::sync::mpsc::{Receiver, Sender, channel};
-use voxidian_protocol::value::DimType;
+use voxidian_protocol::{
+    packet::s2c::play::BlockUpdateS2CPlayPacket,
+    registry::RegEntry,
+    value::{BlockPos, DimType},
+};
 
 use crate::{
     server::Server,
@@ -62,15 +66,26 @@ impl DimensionData {
                         let _ = sender.send(self.dim_type.clone());
                     }
                     DimensionMessage::SetBlockAt(position, block_state) => {
-                        let chunk = position.map_into_coords(|x| x / 16);
+                        let chunk_pos = position.map_into_coords(|x| x / 16);
                         let pos_in_chunk = position.map_into_coords(|x| (x % 16) as usize);
 
-                        if !self.chunks.contains_key(&chunk) {
-                            self.chunks.insert(chunk.clone(), ChunkSection::empty());
+                        if !self.chunks.contains_key(&chunk_pos) {
+                            self.chunks.insert(chunk_pos.clone(), ChunkSection::empty());
                         }
 
-                        let chunk = self.chunks.get_mut(&chunk).unwrap();
-                        chunk.set_block_at(pos_in_chunk, block_state);
+                        let chunk = self.chunks.get_mut(&chunk_pos).unwrap();
+                        chunk.set_block_at(pos_in_chunk, block_state.clone());
+
+                        let pos = chunk_pos.map(|x| x * 16) + pos_in_chunk.map(|x| *x as i32);
+                        for conn in self.server.as_ref().unwrap().connections().await {
+                            conn.write_packet(BlockUpdateS2CPlayPacket {
+                                pos: BlockPos::new(*pos.x(), *pos.y(), *pos.z()),
+                                block: unsafe {
+                                    RegEntry::new_unchecked(block_state.protocol_id() as usize)
+                                },
+                            })
+                            .await;
+                        }
                     }
                     DimensionMessage::GetBlockAt(position, sender) => {
                         let chunk = position.map_into_coords(|x| x / 16);

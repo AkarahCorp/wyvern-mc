@@ -5,6 +5,7 @@ use crate::values::Key;
 
 pub struct Block {}
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct BlockState {
     block: Key<Block>,
     state: Vec<(String, String)>,
