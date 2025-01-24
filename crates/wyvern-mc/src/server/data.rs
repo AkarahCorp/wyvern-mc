@@ -1,7 +1,6 @@
 use core::panic;
 use std::{
     net::{Ipv4Addr, SocketAddrV4},
-    sync::Arc,
     time::{Duration, Instant},
 };
 

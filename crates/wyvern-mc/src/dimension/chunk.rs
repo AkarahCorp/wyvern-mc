@@ -26,8 +26,8 @@ impl ChunkSection {
                 })
             }),
         };
-        for x in 0..15 {
-            for z in 0..15 {
+        for x in 0..16 {
+            for z in 0..16 {
                 section.set_block_at(Position::new(x, 0, z), BlockState::from_protocol_id(1));
             }
         }
@@ -36,6 +36,15 @@ impl ChunkSection {
     }
 
     pub fn set_block_at(&mut self, pos: Position<usize>, block: BlockState) {
+        let old_block = self.blocks[*pos.x()][*pos.y()][*pos.z()].clone();
+        let new_block: RegEntry<BlockState> =
+            unsafe { RegEntry::new_unchecked(block.clone().protocol_id() as usize) };
+
+        if old_block.id() == 0 && new_block.id() != 0 {
+            self.block_count += 1;
+        } else if old_block.id() != 0 && new_block.id() == 0 {
+            self.block_count -= 1;
+        }
         self.blocks[*pos.x()][*pos.y()][*pos.z()] =
             unsafe { RegEntry::new_unchecked(block.protocol_id().try_into().unwrap()) };
     }

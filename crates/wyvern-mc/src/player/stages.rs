@@ -14,7 +14,7 @@ use voxidian_protocol::{
             login::LoginFinishedS2CLoginPacket,
             play::{
                 GameEvent, GameEventS2CPlayPacket, Gamemode, LoginS2CPlayPacket,
-                PlayerPositionS2CPlayPacket, SetChunkCacheCenterS2CPlayPacket, TeleportFlags,
+                PlayerPositionS2CPlayPacket, TeleportFlags,
             },
             status::{
                 PongResponseS2CStatusPacket, StatusResponse, StatusResponsePlayers,
@@ -88,9 +88,8 @@ impl ConnectionData {
     }
 
     pub async fn login_stage(&mut self) {
-        self.read_packets(async |packet: C2SLoginPackets, this: &mut Self| {
-            println!("login packet: {:?}", packet);
-            match packet {
+        self.read_packets(
+            async |packet: C2SLoginPackets, this: &mut Self| match packet {
                 C2SLoginPackets::CustomQueryAnswer(_packet) => todo!(),
                 C2SLoginPackets::LoginAcknowledged(_packet) => {
                     println!("login got acknowledged");
@@ -117,15 +116,13 @@ impl ConnectionData {
                     .await;
                 }
                 C2SLoginPackets::CookieResponse(_packet) => todo!(),
-            }
-        })
+            },
+        )
         .await;
     }
 
     pub async fn configuration_stage(&mut self) {
         self.read_packets(async |packet: C2SConfigPackets, this: &mut Self| {
-            println!("config packet: {:?}", packet);
-
             match packet {
                 C2SConfigPackets::CustomPayload(_packet) => {}
                 C2SConfigPackets::FinishConfiguration(_packet) => {
@@ -191,7 +188,6 @@ impl ConnectionData {
                 }
                 C2SConfigPackets::KeepAlive(_packet) => todo!(),
                 C2SConfigPackets::SelectKnownPacks(_packet) => {
-                    println!("pk: {:?}", _packet);
                     this.write_packet(
                         this.connected_server
                             .biomes()

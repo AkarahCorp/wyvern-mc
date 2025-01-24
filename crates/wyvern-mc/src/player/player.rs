@@ -1,4 +1,4 @@
-use std::{fmt::Debug, sync::Arc};
+use std::fmt::Debug;
 
 use tokio::sync::{
     mpsc::{Receiver, Sender},
@@ -33,8 +33,6 @@ impl Player {
     }
 
     pub async fn write_packet<P: PrefixedPacketEncode + Debug>(&self, packet: P) {
-        println!("writing packet: {:?}", packet);
-
         let mut buf = PacketBuf::new();
         packet.encode_prefixed(&mut buf).unwrap();
 

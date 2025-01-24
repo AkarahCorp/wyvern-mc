@@ -48,7 +48,7 @@ impl DimensionData {
         }
     }
 
-    pub fn default_chunk(&mut self, pos: &Position<i32>) {
+    pub async fn default_chunk(&mut self, pos: &Position<i32>) {
         if !self.chunks.contains_key(pos) {
             self.chunks.insert(*pos, ChunkSection::empty());
         }

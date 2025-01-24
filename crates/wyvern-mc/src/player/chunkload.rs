@@ -3,10 +3,7 @@ use voxidian_protocol::{
         ChunkBatchFinishedS2CPlayPacket, ChunkBatchStartS2CPlayPacket,
         LevelChunkWithLightS2CPlayPacket, SetChunkCacheCenterS2CPlayPacket,
     },
-    registry::RegEntry,
-    value::{
-        ChunkSection, ChunkSectionData, Nbt, NbtCompound, PaletteFormat, PalettedContainer, VarInt,
-    },
+    value::{ChunkSectionData, Nbt, NbtCompound, VarInt},
 };
 
 use crate::values::Position;
@@ -64,7 +61,6 @@ impl ConnectionData {
         let mut chunks = 0;
         for chunk_x in (cx - render_distance)..(cx + render_distance) {
             for chunk_z in (cz - render_distance)..(cz + render_distance) {
-                println!("x: {:?}, z: {:?}", chunk_x, chunk_z);
                 let pos = Position::new(chunk_x, 0, chunk_z);
                 if !self.associated_data.loaded_chunks.contains(&pos) {
                     let mut sections = Vec::new();
@@ -73,8 +69,6 @@ impl ConnectionData {
                         let chunk = dimension.get_chunk_at(pos).await;
                         sections.push(chunk.into_protocol_section());
                     }
-
-                    println!("Sent chunk pos: {:?} @ {:?} sections", pos, sections.len());
 
                     self.write_packet(LevelChunkWithLightS2CPlayPacket {
                         chunk_x,

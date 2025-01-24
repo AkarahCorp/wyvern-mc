@@ -1,14 +1,10 @@
-use voxidian_protocol::{
-    packet::c2s::handshake::C2SHandshakePackets,
-    value::{DimEffects, DimMonsterSpawnLightLevel, DimType},
-};
+use voxidian_protocol::value::{DimEffects, DimMonsterSpawnLightLevel, DimType};
 use wyvern_mc::{
-    dimension::blocks::BlockState,
     player::player::Player,
     proxy::ProxyBuilder,
-    server::{Server, ServerBuilder},
+    server::ServerBuilder,
     systems::{
-        events::{PlayerMoveEvent, ReceivePacketEvent, ServerTickEvent},
+        events::PlayerMoveEvent,
         parameters::{Event, Param},
     },
     values::{
@@ -22,8 +18,6 @@ async fn main() {
     let mut proxy = ProxyBuilder::new();
     proxy.with_server({
         let mut b = ServerBuilder::new();
-        b.add_system(example_system);
-        b.add_system(on_tick);
         b.add_system(on_move);
         b.modify_registries(|registries| {
             registries.wolf_variant(Key::new("minecraft", "pale"), WolfVariant {
@@ -47,9 +41,9 @@ async fn main() {
                 bed_works: true,
                 respawn_anchor_works: true,
                 min_y: 0,
-                max_y: 256,
-                logical_height: 256,
-                height: 256,
+                max_y: 16,
+                logical_height: 16,
+                height: 16,
                 infiniburn: "#minecraft:overworld_infiniburn".to_string(),
                 effects: DimEffects::Overworld,
                 ambient_light: 15.0,
@@ -64,24 +58,9 @@ async fn main() {
     proxy.start_all().await;
 }
 
-async fn example_system(
-    _event: Event<ReceivePacketEvent<C2SHandshakePackets>>,
-    packet: Param<C2SHandshakePackets>,
-) {
-    println!("packet: {:?}", *packet);
-}
-
-async fn on_tick(_event: Event<ServerTickEvent>, server: Param<Server>) {}
-
 async fn on_move(
     _event: Event<PlayerMoveEvent>,
-    player: Param<Player>,
-    pos: Param<Position<f64, f64>>,
+    _player: Param<Player>,
+    _pos: Param<Position<f64, f64>>,
 ) {
-    let dim = player.get_dimension().await;
-    dim.set_block_at(
-        pos.with_y(*pos.y() + 3.0).map_angled(|x| *x as i32, |x| ()),
-        BlockState::from_protocol_id(1),
-    )
-    .await;
 }
