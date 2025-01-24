@@ -7,7 +7,9 @@ use voxidian_protocol::{
 };
 
 use crate::{
-    dimension::Dimension, player::player::ConnectionWithSignal, systems::typemap::TypeMap,
+    dimension::Dimension,
+    player::player::{ConnectionWithSignal, Player},
+    systems::typemap::TypeMap,
     values::Key,
 };
 
@@ -22,4 +24,6 @@ pub enum ServerMessage {
     DimTypeRegistry(Sender<Arc<Registry<DimType>>>),
 
     GetDimension(Key<Dimension>, Sender<Option<Dimension>>),
+
+    GetConnections(Sender<Vec<Player>>),
 }

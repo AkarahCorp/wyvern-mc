@@ -12,7 +12,10 @@ use tokio::{
 
 use crate::{
     dimension::{Dimension, DimensionData},
-    player::{net::ConnectionData, player::ConnectionWithSignal},
+    player::{
+        net::ConnectionData,
+        player::{ConnectionWithSignal, Player},
+    },
     systems::{
         events::ServerTickEvent,
         parameters::{Event, Param},
@@ -146,6 +149,16 @@ impl ServerData {
                         Ok(()) => {}
                         Err(_e) => panic!("DID NOT SEND AAA"),
                     }
+                }
+                ServerMessage::GetConnections(sender) => {
+                    let _ = sender.send(
+                        self.connections
+                            .iter()
+                            .map(|x| Player {
+                                messenger: x.messenger.clone(),
+                            })
+                            .collect(),
+                    );
                 }
             }
         };

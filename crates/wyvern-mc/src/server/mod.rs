@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use message::ServerMessage;
 
-use crate::{dimension::Dimension, systems::typemap::TypeMap, values::Key};
+use crate::{dimension::Dimension, player::player::Player, systems::typemap::TypeMap, values::Key};
 
 mod builder;
 pub use builder::*;
@@ -83,6 +83,15 @@ impl Server {
         let (tx, mut rx) = oneshot::channel();
         self.sender
             .send(ServerMessage::GetDimension(name, tx))
+            .await
+            .unwrap();
+        poll_receiver(&mut rx).await
+    }
+
+    pub async fn connections(&self) -> Vec<Player> {
+        let (tx, mut rx) = oneshot::channel();
+        self.sender
+            .send(ServerMessage::GetConnections(tx))
             .await
             .unwrap();
         poll_receiver(&mut rx).await
