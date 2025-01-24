@@ -27,17 +27,13 @@ impl<T: EventType> Default for Event<T> {
 
 impl<T: EventType> Event<T> {
     pub fn new() -> Self {
-        Event {
-            _data: PhantomData,
-        }
+        Event { _data: PhantomData }
     }
 }
 
 impl<T: EventType> Clone for Event<T> {
     fn clone(&self) -> Self {
-        Self {
-            _data: PhantomData,
-        }
+        Self { _data: PhantomData }
     }
 }
 
@@ -107,16 +103,15 @@ impl<T: Clone + Debug> DerefMut for Query<T> {
 
 impl<T: EventType + 'static + Send + Sync> SystemParameter for Event<T> {
     fn query(resources: &TypeMap, _server: &Server) -> Option<Self> {
-        resources.get::<Self>().map(|_| Event {
-            _data: PhantomData,
-        })
+        resources
+            .get::<Self>()
+            .map(|_| Event { _data: PhantomData })
     }
 }
 
 impl<T: 'static + Send + Sync + Debug> SystemParameter for Param<T> {
     fn query(resources: &TypeMap, _server: &Server) -> Option<Self> {
         let out = resources.get::<Self>().cloned();
-        println!("querying parameter: {:?}", out);
         out
     }
 }

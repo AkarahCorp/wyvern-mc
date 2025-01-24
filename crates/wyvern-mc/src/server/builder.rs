@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, time::Instant};
 
 use voxidian_protocol::{
     registry::Registry,
@@ -7,11 +7,7 @@ use voxidian_protocol::{
 
 use crate::systems::{intos::IntoSystem, parameters::SystemParameter, system::System};
 
-use super::{
-    ServerData,
-    dimensions::DimensionContainer,
-    registries::RegistryContainerBuilder,
-};
+use super::{ServerData, dimensions::DimensionContainer, registries::RegistryContainerBuilder};
 
 pub struct ServerBuilder {
     systems: Vec<Box<dyn System + Send + Sync + 'static>>,
@@ -60,6 +56,7 @@ impl ServerBuilder {
             systems: self.systems,
             registries: self.registries.into(),
             dimensions: self.dimensions,
+            last_tick: Instant::now(),
         };
 
         server.start().await;

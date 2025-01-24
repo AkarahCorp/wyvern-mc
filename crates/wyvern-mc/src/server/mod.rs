@@ -2,6 +2,7 @@ use core::panic;
 use std::{
     net::{Ipv4Addr, SocketAddrV4},
     sync::Arc,
+    time::{Duration, Instant},
 };
 
 use dimensions::DimensionContainer;
@@ -16,7 +17,12 @@ use tokio::{
 use crate::{
     dimension::{Dimension, DimensionData},
     player::{net::ConnectionData, player::ConnectionWithSignal},
-    systems::{system::System, typemap::TypeMap},
+    systems::{
+        events::ServerTickEvent,
+        parameters::{Event, Param},
+        system::System,
+        typemap::TypeMap,
+    },
     values::key::Key,
 };
 
@@ -31,6 +37,7 @@ pub struct ServerData {
     systems: Vec<Box<dyn System + Send + Sync + 'static>>,
     registries: RegistryContainer,
     dimensions: DimensionContainer,
+    last_tick: Instant,
 }
 
 impl ServerData {
@@ -71,6 +78,24 @@ impl ServerData {
             }
 
             self.handle_messages(&tx, &mut rx).await;
+
+            let dur = Instant::now().duration_since(self.last_tick);
+            if dur > Duration::from_millis(50) {
+                self.last_tick = Instant::now();
+
+                let server = Server { sender: tx.clone() };
+                let tx_clone = tx.clone();
+                tokio::spawn(async move {
+                    tx_clone
+                        .send(ServerMessage::FireSystems({
+                            let mut map = TypeMap::new();
+                            map.insert(Event::<ServerTickEvent>::new());
+                            map.insert(Param::new(server));
+                            map
+                        }))
+                        .await
+                });
+            }
         }
     }
 

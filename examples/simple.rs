@@ -4,9 +4,9 @@ use voxidian_protocol::{
 };
 use wyvern_mc::{
     proxy::builder::ProxyBuilder,
-    server::builder::ServerBuilder,
+    server::{builder::ServerBuilder, server::Server},
     systems::{
-        events::ReceivePacketEvent,
+        events::{ReceivePacketEvent, ServerTickEvent},
         parameters::{Event, Param},
     },
     values::{
@@ -21,6 +21,7 @@ async fn main() {
     proxy.with_server({
         let mut b = ServerBuilder::new();
         b.add_system(example_system);
+        b.add_system(on_tick);
         b.modify_registries(|registries| {
             registries.wolf_variant(Key::new("minecraft", "pale"), WolfVariant {
                 angry_texture: Key::empty(),
@@ -66,3 +67,5 @@ async fn example_system(
 ) {
     println!("packet: {:?}", *packet);
 }
+
+async fn on_tick(_event: Event<ServerTickEvent>, server: Param<Server>) {}
