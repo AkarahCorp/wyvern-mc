@@ -250,6 +250,8 @@ impl ConnectionData {
                         })
                         .await;
                     }
+
+                    this.send_chunks().await;
                 }
                 C2SPlayPackets::MovePlayerPos(packet) => {
                     this.associated_data.last_position = this

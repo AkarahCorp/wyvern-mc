@@ -80,7 +80,7 @@ async fn on_move(
 ) {
     let dim = player.get_dimension().await;
     dim.set_block_at(
-        pos.map_angled(|x| (x + 5.0) as i32, |_| ()),
+        pos.with_y(*pos.y() + 3.0).map_angled(|x| *x as i32, |x| ()),
         BlockState::from_protocol_id(1),
     )
     .await;

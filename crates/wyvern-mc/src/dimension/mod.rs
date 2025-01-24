@@ -59,8 +59,12 @@ impl DimensionData {
             if let Some(msg) = self.rx.recv().await {
                 match msg {
                     DimensionMessage::GetChunkSection(position, sender) => {
-                        let chunk = self.chunks.get(&position);
-                        let _ = sender.send(chunk.cloned());
+                        if !self.chunks.contains_key(&position) {
+                            self.chunks.insert(position.clone(), ChunkSection::empty());
+                        }
+
+                        let chunk = self.chunks.get(&position).unwrap();
+                        let _ = sender.send(chunk.clone());
                     }
                     DimensionMessage::GetDimensionType(sender) => {
                         let _ = sender.send(self.dim_type.clone());

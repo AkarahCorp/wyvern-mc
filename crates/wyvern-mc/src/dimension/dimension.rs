@@ -16,7 +16,7 @@ pub struct Dimension {
 }
 
 impl Dimension {
-    pub async fn get_chunk_at(&self, pos: Position<i32>) -> Option<ChunkSection> {
+    pub async fn get_chunk_at(&self, pos: Position<i32>) -> ChunkSection {
         let (tx, rx) = oneshot::channel();
         self.tx
             .send(DimensionMessage::GetChunkSection(pos, tx))

@@ -1,7 +1,12 @@
 use voxidian_protocol::{
-    packet::s2c::play::{LevelChunkWithLightS2CPlayPacket, SetChunkCacheCenterS2CPlayPacket},
+    packet::s2c::play::{
+        ChunkBatchFinishedS2CPlayPacket, ChunkBatchStartS2CPlayPacket,
+        LevelChunkWithLightS2CPlayPacket, SetChunkCacheCenterS2CPlayPacket,
+    },
     registry::RegEntry,
-    value::{ChunkSection, ChunkSectionData, Nbt, NbtCompound, PaletteFormat, PalettedContainer},
+    value::{
+        ChunkSection, ChunkSectionData, Nbt, NbtCompound, PaletteFormat, PalettedContainer, VarInt,
+    },
 };
 
 use crate::values::Position;
@@ -35,7 +40,7 @@ impl ConnectionData {
         let cx = chunk_center.x().clone();
         let cz = chunk_center.z().clone();
 
-        let render_distance = self.associated_data.render_distance / 2;
+        let render_distance = (self.associated_data.render_distance / 2) + 2;
 
         *&mut self.associated_data.loaded_chunks = self
             .associated_data
@@ -55,6 +60,8 @@ impl ConnectionData {
             .get(&dimension.get_dimension_type().await.into())
             .unwrap();
 
+        self.write_packet(ChunkBatchStartS2CPlayPacket {}).await;
+        let mut chunks = 0;
         for chunk_x in (cx - render_distance)..(cx + render_distance) {
             for chunk_z in (cz - render_distance)..(cz + render_distance) {
                 println!("x: {:?}, z: {:?}", chunk_x, chunk_z);
@@ -64,25 +71,7 @@ impl ConnectionData {
                     for y in (dim_type.min_y..dim_type.max_y).step_by(16) {
                         let pos = Position::new(chunk_x, y, chunk_z);
                         let chunk = dimension.get_chunk_at(pos).await;
-                        if let Some(chunk) = chunk {
-                            sections.push(chunk.into_protocol_section());
-                        } else {
-                            sections.push(ChunkSection {
-                                block_count: 0,
-                                block_states: PalettedContainer {
-                                    bits_per_entry: 0,
-                                    format: PaletteFormat::SingleValued {
-                                        entry: unsafe { RegEntry::new_unchecked(0) },
-                                    },
-                                },
-                                biomes: PalettedContainer {
-                                    bits_per_entry: 0,
-                                    format: PaletteFormat::SingleValued {
-                                        entry: unsafe { RegEntry::new_unchecked(0) },
-                                    },
-                                },
-                            });
-                        }
+                        sections.push(chunk.into_protocol_section());
                     }
 
                     println!("Sent chunk pos: {:?} @ {:?} sections", pos, sections.len());
@@ -104,10 +93,16 @@ impl ConnectionData {
                         block_light_array: vec![].into(),
                     })
                     .await;
+                    chunks += 1;
 
                     self.associated_data.loaded_chunks.push(pos);
                 }
             }
         }
+
+        self.write_packet(ChunkBatchFinishedS2CPlayPacket {
+            size: VarInt::from(chunks),
+        })
+        .await;
     }
 }
