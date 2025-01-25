@@ -11,10 +11,7 @@ use tokio::{
 
 use crate::{
     dimension::{Dimension, DimensionData},
-    player::{
-        net::ConnectionData,
-        player::{ConnectionWithSignal, Player},
-    },
+    player::{ConnectionData, ConnectionWithSignal},
     systems::{
         events::ServerTickEvent,
         parameters::{Event, Param},
@@ -150,14 +147,7 @@ impl ServerData {
                     }
                 }
                 ServerMessage::GetConnections(sender) => {
-                    let _ = sender.send(
-                        self.connections
-                            .iter()
-                            .map(|x| Player {
-                                messenger: x.messenger.clone(),
-                            })
-                            .collect(),
-                    );
+                    let _ = sender.send(self.connections.iter().map(|x| x.lower()).collect());
                 }
             }
         };
@@ -176,14 +166,9 @@ impl ServerData {
                     println!("Accepted new client: {:?}", addr);
 
                     let server = Server { sender: tx.clone() };
-                    let (messenger, signal) =
-                        ConnectionData::connection_channel(stream, addr.ip(), server);
-                    let proxy = ConnectionWithSignal {
-                        messenger: messenger.clone(),
-                        _signal: signal,
-                    };
-                    let _lowered = proxy.lower();
-                    tx.send(ServerMessage::SpawnConnection(proxy))
+                    let signal = ConnectionData::connection_channel(stream, addr.ip(), server);
+                    let _lowered = signal.lower();
+                    tx.send(ServerMessage::SpawnConnection(signal))
                         .await
                         .unwrap();
                 }

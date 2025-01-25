@@ -27,12 +27,16 @@ impl RawPerson {
 #[tokio::main]
 async fn main() {
     let (sender, receiver) = tokio::sync::mpsc::channel(128);
-    let p = RawPerson {
+    let mut p = RawPerson {
         name: "John".to_string(),
         age: 35,
         receiver,
     };
-    tokio::spawn(Actor::handle_messages(p));
+    tokio::spawn(async move {
+        loop {
+            p.handle_messages().await;
+        }
+    });
 
     let p = Person { sender };
     eprintln!("{:?}", p.name().await);

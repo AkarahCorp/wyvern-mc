@@ -35,25 +35,9 @@ use crate::{
     values::Key,
 };
 
-use super::{message::ConnectionMessage, net::ConnectionData, player::Player};
+use super::{ConnectionData, Player};
 
 impl ConnectionData {
-    pub async fn write_packet<P: PrefixedPacketEncode + Debug>(&self, packet: P) {
-        let mut buf = PacketBuf::new();
-        packet.encode_prefixed(&mut buf).unwrap();
-
-        let mut len_buf = PacketBuf::new();
-        VarInt::from(buf.iter().count())
-            .encode(&mut len_buf)
-            .unwrap();
-        len_buf.write_u8s(buf.as_slice());
-
-        let snd = self.sender.clone();
-        snd.send(ConnectionMessage::SendPacket(len_buf))
-            .await
-            .unwrap();
-    }
-
     pub async fn status_stage(&mut self) {
         self.read_packets(async |packet: C2SStatusPackets, this| match packet {
             C2SStatusPackets::StatusRequest(_packet) => {
@@ -265,7 +249,7 @@ impl ConnectionData {
                             map.insert(Event::<PlayerMoveEvent>::new());
                             map.insert(Param::new(this.associated_data.last_position.clone()));
                             map.insert(Param::new(Player {
-                                messenger: this.sender.clone(),
+                                sender: this.sender.clone(),
                             }));
                             map
                         })
@@ -289,7 +273,7 @@ impl ConnectionData {
                             map.insert(Event::<PlayerMoveEvent>::new());
                             map.insert(Param::new(this.associated_data.last_position.clone()));
                             map.insert(Param::new(Player {
-                                messenger: this.sender.clone(),
+                                sender: this.sender.clone(),
                             }));
                             map
                         })
@@ -308,7 +292,7 @@ impl ConnectionData {
                             map.insert(Event::<PlayerMoveEvent>::new());
                             map.insert(Param::new(this.associated_data.last_position.clone()));
                             map.insert(Param::new(Player {
-                                messenger: this.sender.clone(),
+                                sender: this.sender.clone(),
                             }));
                             map
                         })

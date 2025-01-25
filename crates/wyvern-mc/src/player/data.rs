@@ -1,6 +1,5 @@
-use voxidian_protocol::{packet::c2s::play::InputFlags, value::Uuid};
-
 use crate::{dimension::Dimension, values::Position};
+use voxidian_protocol::{packet::c2s::play::InputFlags, value::Uuid};
 
 pub struct PlayerData {
     pub(crate) uuid: Uuid,

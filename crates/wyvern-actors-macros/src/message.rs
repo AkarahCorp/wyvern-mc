@@ -106,11 +106,11 @@ pub fn message(attr: TokenStream, item: TokenStream) -> TokenStream {
 
     let o = quote! {
 
-        pub enum #attr_message_type {
+        pub(crate) enum #attr_message_type {
             #(#enum_types)*
         }
         impl wyvern_mc::actors::Actor for #target_type {
-            async fn handle_messages(mut self) {
+            async fn handle_messages(&mut self) {
                 loop {
                     match self.receiver.try_recv() {
                         Ok(v) => {
@@ -118,7 +118,7 @@ pub fn message(attr: TokenStream, item: TokenStream) -> TokenStream {
                                 #(#enum_arms)*
                             }
                         },
-                        Err(tokio::sync::mpsc::error::TryRecvError::Empty) => {},
+                        Err(tokio::sync::mpsc::error::TryRecvError::Empty) => { return; },
                         Err(tokio::sync::mpsc::error::TryRecvError::Disconnected) => { return; }
                     }
                     tokio::task::yield_now().await;

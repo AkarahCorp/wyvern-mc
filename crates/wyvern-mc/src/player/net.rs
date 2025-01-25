@@ -2,12 +2,14 @@ use std::{collections::VecDeque, fmt::Debug, io::ErrorKind, net::IpAddr};
 
 use tokio::{io::AsyncWriteExt, net::TcpStream, sync::*};
 use voxidian_protocol::packet::{
-    DecodeError, PrefixedPacketDecode, Stage,
+    DecodeError, PacketBuf, PrefixedPacketDecode, Stage,
     c2s::handshake::C2SHandshakePackets,
     processing::{CompressionMode, PacketProcessing, SecretCipher},
 };
+use wyvern_actors::Actor;
 
 use crate::{
+    player::PlayerMessage,
     server::Server,
     systems::{
         events::ReceivePacketEvent,
@@ -16,22 +18,7 @@ use crate::{
     },
 };
 
-use super::{data::PlayerData, message::ConnectionMessage};
-
-pub struct ConnectionData {
-    pub(crate) stream: TcpStream,
-    #[allow(dead_code)]
-    pub(crate) addr: IpAddr,
-    pub(crate) received_bytes: VecDeque<u8>,
-    pub(crate) bytes_to_send: Vec<u8>,
-    pub(crate) packet_processing: PacketProcessing,
-    pub(crate) sender: mpsc::Sender<ConnectionMessage>,
-    pub(crate) receiver: mpsc::Receiver<ConnectionMessage>,
-    pub(crate) signal: mpsc::Sender<ConnectionStoppedSignal>,
-    pub(crate) stage: Stage,
-    pub(crate) connected_server: Server,
-    pub(crate) associated_data: PlayerData,
-}
+use super::{ConnectionData, ConnectionWithSignal, Player, data::PlayerData};
 
 pub struct ConnectionStoppedSignal;
 
@@ -40,10 +27,7 @@ impl ConnectionData {
         stream: TcpStream,
         addr: IpAddr,
         server: Server,
-    ) -> (
-        mpsc::Sender<ConnectionMessage>,
-        mpsc::Receiver<ConnectionStoppedSignal>,
-    ) {
+    ) -> ConnectionWithSignal {
         let (signal_tx, signal_rx) = mpsc::channel(1);
         let (data_tx, data_rx) = mpsc::channel(256);
 
@@ -56,14 +40,17 @@ impl ConnectionData {
             server,
         ));
 
-        (data_tx, signal_rx)
+        ConnectionWithSignal {
+            player: Player { sender: data_tx },
+            _signal: signal_rx,
+        }
     }
 
     pub async fn execute_connection(
         stream: TcpStream,
         addr: IpAddr,
-        sender: mpsc::Sender<ConnectionMessage>,
-        receiver: mpsc::Receiver<ConnectionMessage>,
+        sender: mpsc::Sender<PlayerMessage>,
+        receiver: mpsc::Receiver<PlayerMessage>,
         signal: mpsc::Sender<ConnectionStoppedSignal>,
         server: Server,
     ) {
@@ -76,8 +63,8 @@ impl ConnectionData {
                 secret_cipher: SecretCipher::no_cipher(),
                 compression: CompressionMode::None,
             },
-            sender,
             receiver,
+            sender: sender.clone(),
             signal,
             stage: Stage::Handshake,
             connected_server: server,
@@ -94,15 +81,15 @@ impl ConnectionData {
                 let _ = self.signal.send(ConnectionStoppedSignal).await;
                 break;
             }
+            self.handle_messages().await;
             self.read_incoming_packets().await;
             self.write_outgoing_packets().await;
-            self.handle_messages().await;
             tokio::task::yield_now().await;
         }
     }
 
     pub async fn handle_incoming_bytes(&mut self) -> Result<(), ()> {
-        let mut buf = [0; 256];
+        let mut buf = [0; 512];
         let bytes_read = self.stream.try_read(&mut buf);
         match bytes_read {
             Ok(bytes_read) => {
@@ -110,12 +97,12 @@ impl ConnectionData {
                     return Err(());
                 }
                 for byte in &buf[0..bytes_read] {
-                    self.received_bytes.push_back(
-                        self.packet_processing
-                            .secret_cipher
-                            .decrypt_u8(*byte)
-                            .unwrap(),
-                    );
+                    let byte = self
+                        .packet_processing
+                        .secret_cipher
+                        .decrypt_u8(*byte)
+                        .unwrap();
+                    self.received_bytes.push_back(byte);
                 }
 
                 Ok(())
@@ -179,38 +166,6 @@ impl ConnectionData {
         }
     }
 
-    pub async fn handle_messages(&mut self) {
-        while let Ok(message) = self.receiver.try_recv() {
-            self.handle_message(message).await;
-            tokio::task::yield_now().await;
-        }
-    }
-
-    pub async fn handle_message(&mut self, message: ConnectionMessage) {
-        match message {
-            ConnectionMessage::SetStage(stage) => {
-                self.stage = stage;
-            }
-            ConnectionMessage::GetStage(sender) => {
-                let _ = sender.send(self.stage);
-            }
-            ConnectionMessage::SendPacket(buf) => {
-                self.bytes_to_send.extend(buf.as_slice());
-            }
-            ConnectionMessage::GetServer(sender) => {
-                let server = Server {
-                    sender: self.connected_server.sender.clone(),
-                };
-                let _ = sender.send(server);
-            }
-            ConnectionMessage::GetDimension(sender) => {
-                sender
-                    .send(self.associated_data.dimension.clone().unwrap())
-                    .unwrap();
-            }
-        }
-    }
-
     pub async fn read_packets<T: PrefixedPacketDecode + Debug, F: AsyncFnOnce(T, &mut Self)>(
         &mut self,
         f: F,
@@ -224,17 +179,32 @@ impl ConnectionData {
                     return;
                 }
 
+                let byte_cache = self.received_bytes.clone();
                 let mut rv = Vec::with_capacity(consumed);
                 for _ in 0..consumed {
                     rv.push(self.received_bytes.pop_front().unwrap());
                 }
 
+                let buf_copy = buf.clone();
                 match T::decode_prefixed(&mut buf) {
                     Ok(packet) => {
                         f(packet, self).await;
                     }
                     Err(DecodeError::EndOfBuffer) => {
-                        println!("Failed to process for EoB: {:?}", rv);
+                        println!("--- EOF FAILURE LOG");
+                        println!(
+                            "Buffer received: {:?}",
+                            buf_copy.iter().collect::<Vec<u8>>()
+                        );
+                        println!(
+                            "Buffer after receiving: {:?}",
+                            buf.iter().collect::<Vec<u8>>()
+                        );
+                        println!("Received bytes before consuming: {:?}", byte_cache);
+                        println!("Bytes left to receive: {:?}", self.received_bytes);
+                        println!("Bytes consumed: {:?}", rv);
+
+                        println!("--- END LOG ------------------");
                     }
                     Err(e) => {
                         panic!("{:?}", e);

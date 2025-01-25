@@ -8,7 +8,7 @@ use voxidian_protocol::{
 
 use crate::{
     dimension::Dimension,
-    player::player::{ConnectionWithSignal, Player},
+    player::{ConnectionWithSignal, Player},
     systems::typemap::TypeMap,
     values::Key,
 };

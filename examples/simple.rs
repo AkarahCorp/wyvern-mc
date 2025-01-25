@@ -1,6 +1,6 @@
 use voxidian_protocol::value::{DimEffects, DimMonsterSpawnLightLevel, DimType};
 use wyvern_mc::{
-    player::player::Player,
+    player::Player,
     proxy::ProxyBuilder,
     server::ServerBuilder,
     systems::{

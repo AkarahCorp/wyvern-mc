@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use message::ServerMessage;
 
-use crate::{dimension::Dimension, player::player::Player, systems::typemap::TypeMap, values::Key};
+use crate::{dimension::Dimension, player::Player, systems::typemap::TypeMap, values::Key};
 
 mod builder;
 pub use builder::*;

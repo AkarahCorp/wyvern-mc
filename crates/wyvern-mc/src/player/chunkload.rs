@@ -8,7 +8,7 @@ use voxidian_protocol::{
 
 use crate::values::Position;
 
-use super::net::ConnectionData;
+use super::ConnectionData;
 
 impl ConnectionData {
     pub async fn send_chunks(&mut self) {
@@ -28,11 +28,6 @@ impl ConnectionData {
         }
 
         self.associated_data.last_chunk_position = chunk_center.clone();
-        self.write_packet(SetChunkCacheCenterS2CPlayPacket {
-            chunk_x: chunk_center.x().clone().into(),
-            chunk_z: chunk_center.z().clone().into(),
-        })
-        .await;
 
         let cx = chunk_center.x().clone();
         let cz = chunk_center.z().clone();
@@ -57,8 +52,7 @@ impl ConnectionData {
             .get(&dimension.get_dimension_type().await.into())
             .unwrap();
 
-        self.write_packet(ChunkBatchStartS2CPlayPacket {}).await;
-        let mut chunks = 0;
+        let mut packets = Vec::new();
         for chunk_x in (cx - render_distance)..(cx + render_distance) {
             for chunk_z in (cz - render_distance)..(cz + render_distance) {
                 let pos = Position::new(chunk_x, 0, chunk_z);
@@ -70,7 +64,7 @@ impl ConnectionData {
                         sections.push(chunk.into_protocol_section());
                     }
 
-                    self.write_packet(LevelChunkWithLightS2CPlayPacket {
+                    packets.push(LevelChunkWithLightS2CPlayPacket {
                         chunk_x,
                         chunk_z,
                         heightmaps: Nbt {
@@ -85,17 +79,24 @@ impl ConnectionData {
                         empty_block_light_mask: vec![0].into(),
                         sky_light_array: vec![].into(),
                         block_light_array: vec![].into(),
-                    })
-                    .await;
-                    chunks += 1;
+                    });
 
                     self.associated_data.loaded_chunks.push(pos);
                 }
             }
         }
 
+        self.write_packet(SetChunkCacheCenterS2CPlayPacket {
+            chunk_x: chunk_center.x().clone().into(),
+            chunk_z: chunk_center.z().clone().into(),
+        })
+        .await;
+        self.write_packet(ChunkBatchStartS2CPlayPacket {}).await;
+        for packet in &packets {
+            self.write_packet(packet).await;
+        }
         self.write_packet(ChunkBatchFinishedS2CPlayPacket {
-            size: VarInt::from(chunks),
+            size: VarInt::from(packets.len() as i32),
         })
         .await;
     }
