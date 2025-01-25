@@ -1,7 +1,7 @@
 use core::panic;
-use std::env::var;
+use std::{env::var, fmt::Debug, path::Display};
 
-use proc_macro2::TokenStream;
+use proc_macro2::{Span, TokenStream};
 use quote::{ToTokens, quote};
 use syn::{FnArg, Ident, ImplItem, ImplItemFn, ItemImpl, Meta, ReturnType, Type};
 
@@ -13,6 +13,28 @@ struct MessageVariant {
     parameters: Vec<FnArg>,
     returns: ReturnType,
     base_function: ImplItemFn,
+}
+
+impl Debug for MessageVariant {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("MessageVariant")
+            .field("enum_name", &self.enum_name.to_token_stream().to_string())
+            .field("name", &self.name.to_token_stream().to_string())
+            .field(
+                "parameters",
+                &self
+                    .parameters
+                    .iter()
+                    .map(|x| x.to_token_stream().to_string())
+                    .collect::<Vec<_>>(),
+            )
+            .field("returns", &self.returns.to_token_stream().to_string())
+            .field(
+                "base_function",
+                &self.base_function.to_token_stream().to_string(),
+            )
+            .finish()
+    }
 }
 pub fn message(attr: TokenStream, item: TokenStream) -> TokenStream {
     let attr: ActorInput = match syn::parse2(attr) {
@@ -66,15 +88,39 @@ pub fn message(attr: TokenStream, item: TokenStream) -> TokenStream {
 
     let assoc_fns = message_variants.iter().map(|v| &v.base_function);
     let mapped_fns = message_variants.iter().map(|x| create_fn_from_variant(x));
+    let enum_types = message_variants
+        .iter()
+        .map(|x| create_enum_types_from_variant(x))
+        .flatten()
+        .collect::<Vec<_>>();
+
+    let enum_arms = message_variants
+        .iter()
+        .map(|x| create_match_arm_from_variant(x))
+        .collect::<Vec<_>>();
+
+    eprintln!("enum types: {:#?}", enum_types);
 
     let attr_actor_type = attr.actor_type;
+    let attr_message_type = attr.message_type;
 
     let o = quote! {
+
+        pub enum #attr_message_type {
+            #(#enum_types)*
+        }
         impl wyvern_mc::actors::Actor for #target_type {
-            async fn handle_messages(self) {
+            async fn handle_messages(mut self) {
                 loop {
-                    eprintln!("I'm matching!");
-                    // TODO: actually match on messages
+                    match self.receiver.try_recv() {
+                        Ok(v) => {
+                            match v {
+                                #(#enum_arms)*
+                            }
+                        },
+                        Err(tokio::sync::mpsc::error::TryRecvError::Empty) => {},
+                        Err(tokio::sync::mpsc::error::TryRecvError::Disconnected) => { return; }
+                    }
                     tokio::task::yield_now().await;
                 }
             }
@@ -89,6 +135,38 @@ pub fn message(attr: TokenStream, item: TokenStream) -> TokenStream {
         }
     };
     eprintln!("\n\n{}\n\n", o.to_string());
+    o
+}
+
+fn create_enum_types_from_variant(variant: &MessageVariant) -> TokenStream {
+    let name = &variant.base_function.sig.ident;
+    let rt = match &variant.returns {
+        ReturnType::Default => quote! { () },
+        ReturnType::Type(rarrow, ty) => ty.to_token_stream(),
+    };
+    eprintln!("rt: {:?}", rt);
+
+    let mut param_types: Vec<Type> = variant
+        .parameters
+        .iter()
+        .map(|x| match x {
+            FnArg::Receiver(_) => None,
+            FnArg::Typed(pat_type) => Some(pat_type),
+        })
+        .filter(|x| x.is_some())
+        .map(|x| x.unwrap())
+        .map(|x| *x.ty.clone())
+        .collect::<Vec<_>>();
+
+    let sender_type: Type = syn::parse2(quote! { tokio::sync::oneshot::Sender<#rt> }).unwrap();
+    param_types.push(sender_type);
+
+    let variant_name = &variant.name;
+
+    let o = quote! {
+        #variant_name ( #(#param_types,)* ),
+    };
+    eprintln!("returnign enum variant: {:?}", o.to_string());
     o
 }
 
@@ -111,25 +189,82 @@ fn create_fn_from_variant(variant: &MessageVariant) -> TokenStream {
         .map(|x| *x.ty.clone())
         .collect::<Vec<_>>();
 
-    let mut enum_types = param_types.clone();
-    match &variant.returns {
-        ReturnType::Default => {}
-        ReturnType::Type(_, ty) => enum_types.push(*ty.clone()),
-    }
-    let enum_types = enum_types.into_iter().map(|x| x);
-    let param_types = param_types.into_iter().map(|x| x);
+    let param_types = param_types.iter();
+
+    let mut param_names: Vec<Ident> = variant
+        .parameters
+        .iter()
+        .map(|x| match x {
+            FnArg::Receiver(receiver) => None,
+            FnArg::Typed(pat_type) => Some(pat_type),
+        })
+        .filter(|x| x.is_some())
+        .map(|x| x.unwrap())
+        .map(|x| *x.pat.clone())
+        .map(|x| match x {
+            syn::Pat::Ident(pat_ident) => pat_ident,
+            _ => panic!("all patterns must be identifiers"),
+        })
+        .map(|x| x.ident)
+        .collect::<Vec<_>>();
 
     let enum_type = variant.enum_name.clone();
     let enum_variant = variant.name.clone();
 
-    let base_name = variant.base_function.sig.ident.clone();
-
-    // TODO: add support for input parameters in the enum variant
     let r = quote! {
-        pub async fn #name(&self, #(#param_types),*) -> #rt {
+        pub async fn #name(&self, #(#param_names: #param_types),*) -> #rt {
             let (tx, rx) = tokio::sync::oneshot::channel();
-            self.sender.send(#enum_type::#enum_variant(tx)).await;
+            self.sender.send(#enum_type::#enum_variant(#(#param_names,)* tx)).await;
             rx.await.unwrap()
+        }
+    };
+    r
+}
+
+fn create_match_arm_from_variant(variant: &MessageVariant) -> TokenStream {
+    let name = &variant.base_function.sig.ident;
+    let rt = match &variant.returns {
+        ReturnType::Default => quote! { () },
+        ReturnType::Type(rarrow, ty) => ty.to_token_stream(),
+    };
+
+    let mut param_types: Vec<Type> = variant
+        .parameters
+        .iter()
+        .map(|x| match x {
+            FnArg::Receiver(receiver) => None,
+            FnArg::Typed(pat_type) => Some(pat_type),
+        })
+        .filter(|x| x.is_some())
+        .map(|x| x.unwrap())
+        .map(|x| *x.ty.clone())
+        .collect::<Vec<_>>();
+
+    let param_types = param_types.iter();
+
+    let mut param_names: Vec<Ident> = variant
+        .parameters
+        .iter()
+        .map(|x| match x {
+            FnArg::Receiver(receiver) => None,
+            FnArg::Typed(pat_type) => Some(pat_type),
+        })
+        .filter(|x| x.is_some())
+        .map(|x| x.unwrap())
+        .map(|x| *x.pat.clone())
+        .map(|x| match x {
+            syn::Pat::Ident(pat_ident) => pat_ident,
+            _ => panic!("all patterns must be identifiers"),
+        })
+        .map(|x| x.ident)
+        .collect::<Vec<_>>();
+
+    let enum_type = variant.enum_name.clone();
+    let enum_variant = variant.name.clone();
+
+    let r = quote! {
+        #enum_type::#enum_variant(#(#param_names,)* tx) => {
+            tx.send(self.#name(#(#param_names,)*).await).unwrap()
         }
     };
     r
