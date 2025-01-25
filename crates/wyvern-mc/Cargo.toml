@@ -4,5 +4,7 @@ version = "0.0.0"
 edition = "2024"
 
 [dependencies]
-voxidian-protocol = { workspace = true } 
+voxidian-protocol = { workspace = true }
 tokio = { workspace = true }
+wyvern-actors = { workspace = true }
+wyvern-actors-macros = { workspace = true }
