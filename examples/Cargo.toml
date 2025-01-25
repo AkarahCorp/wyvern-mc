@@ -11,3 +11,7 @@ voxidian-protocol = { workspace = true }
 [[example]]
 name = "simple"
 path = "./simple.rs"
+
+[[example]]
+name = "actor"
+path = "./actor.rs"
