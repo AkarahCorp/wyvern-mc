@@ -1,109 +1,161 @@
-use std::sync::Arc;
+use std::{
+    net::{Ipv4Addr, SocketAddrV4},
+    sync::Arc,
+    time::{Duration, Instant},
+};
 
-use message::ServerMessage;
+use dimensions::DimensionContainer;
+use registries::RegistryContainer;
+use wyvern_actors::Actor;
+use wyvern_actors_macros::{actor, message};
 
-use crate::{dimension::Dimension, player::Player, systems::typemap::TypeMap, values::Key};
+use crate::{
+    dimension::{Dimension, DimensionData},
+    player::{ConnectionData, ConnectionWithSignal, Player},
+    systems::{
+        events::ServerTickEvent,
+        parameters::{Event, Param},
+        system::System,
+        typemap::TypeMap,
+    },
+    values::Key,
+};
+
+use crate as wyvern_mc;
 
 mod builder;
 pub use builder::*;
-pub mod data;
 pub mod dimensions;
-pub mod message;
 pub mod registries;
 
-use tokio::sync::{
-    mpsc::Sender,
-    oneshot::{self, Receiver},
-};
-use voxidian_protocol::{
-    registry::Registry,
-    value::{Biome, DamageType, DimType, PaintingVariant, WolfVariant},
+use tokio::{
+    net::TcpListener,
+    sync::{mpsc::Sender, oneshot::Receiver},
 };
 
-#[derive(Clone, Debug)]
-pub struct Server {
-    #[allow(dead_code)]
+#[actor(Server, ServerMessage)]
+pub struct ServerData {
+    pub(crate) connections: Vec<ConnectionWithSignal>,
+    pub(crate) systems: Vec<Box<dyn System + Send + Sync + 'static>>,
+    pub(crate) registries: Arc<RegistryContainer>,
+    pub(crate) dimensions: DimensionContainer,
+    pub(crate) last_tick: Instant,
     pub(crate) sender: Sender<ServerMessage>,
 }
 
-impl Server {
-    pub async fn fire_systems(&self, parameters: TypeMap) {
-        self.sender
-            .send(ServerMessage::FireSystems(parameters))
-            .await
-            .unwrap();
+#[message(Server, ServerMessage)]
+impl ServerData {
+    #[FireSystems]
+    pub async fn fire_systems(&mut self, mut parameters: TypeMap) {
+        for system in &mut self.systems {
+            let server = Server {
+                sender: self.sender.clone(),
+            };
+            if let Some(s) = system.run(&mut parameters, server) {
+                s.await;
+            }
+        }
     }
 
-    pub async fn damage_types(&self) -> Arc<Registry<DamageType>> {
-        let (tx, mut rx) = oneshot::channel();
-        self.sender
-            .send(ServerMessage::DamageTypeRegistry(tx))
-            .await
-            .unwrap();
-        poll_receiver(&mut rx).await
+    #[SpawnConnectionInternal]
+    pub async fn spawn_connection_internal(&mut self, conn: ConnectionWithSignal) {
+        self.connections.push(conn);
     }
 
-    pub async fn biomes(&self) -> Arc<Registry<Biome>> {
-        let (tx, mut rx) = oneshot::channel();
-        self.sender
-            .send(ServerMessage::BiomeRegistry(tx))
-            .await
-            .unwrap();
-        poll_receiver(&mut rx).await
+    #[GetRegistries]
+    pub async fn registries(&self) -> Arc<RegistryContainer> {
+        self.registries.clone()
     }
 
-    pub async fn wolf_variants(&self) -> Arc<Registry<WolfVariant>> {
-        let (tx, mut rx) = oneshot::channel();
-        self.sender
-            .send(ServerMessage::WolfRegistry(tx))
-            .await
-            .unwrap();
-        poll_receiver(&mut rx).await
+    #[GetDimension]
+    pub async fn dimension(&self, key: Key<Dimension>) -> Option<Dimension> {
+        self.dimensions.get(&key).cloned()
     }
 
-    pub async fn dimension_types(&self) -> Arc<Registry<DimType>> {
-        let (tx, mut rx) = oneshot::channel();
-        self.sender
-            .send(ServerMessage::DimTypeRegistry(tx))
-            .await
-            .unwrap();
-        poll_receiver(&mut rx).await
-    }
-
-    pub async fn painting_variants(&self) -> Arc<Registry<PaintingVariant>> {
-        let (tx, mut rx) = oneshot::channel();
-        self.sender
-            .send(ServerMessage::PaintingRegistry(tx))
-            .await
-            .unwrap();
-        poll_receiver(&mut rx).await
-    }
-
-    pub async fn dimension(&self, name: Key<Dimension>) -> Option<Dimension> {
-        let (tx, mut rx) = oneshot::channel();
-        self.sender
-            .send(ServerMessage::GetDimension(name, tx))
-            .await
-            .unwrap();
-        poll_receiver(&mut rx).await
-    }
-
+    #[GetConnections]
     pub async fn connections(&self) -> Vec<Player> {
-        let (tx, mut rx) = oneshot::channel();
-        self.sender
-            .send(ServerMessage::GetConnections(tx))
-            .await
-            .unwrap();
-        poll_receiver(&mut rx).await
+        self.connections.iter().map(|x| x.lower()).collect()
     }
 }
 
-pub(crate) async fn poll_receiver<T>(rx: &mut Receiver<T>) -> T {
-    loop {
-        match rx.try_recv() {
-            Ok(v) => return v,
-            Err(_e) => {
-                tokio::task::yield_now().await;
+impl ServerData {
+    pub async fn start(mut self) {
+        let root_dim = DimensionData::new(
+            Key::new("wyvern", "root"),
+            Server {
+                sender: self.sender.clone(),
+            },
+            Key::new("minecraft", "overworld"),
+        );
+
+        self.dimensions
+            .insert(Key::new("wyvern", "root"), Dimension {
+                tx: root_dim.tx.clone(),
+                server: Server {
+                    sender: self.sender.clone().clone(),
+                },
+            });
+
+        let snd = self.sender.clone();
+        tokio::spawn(root_dim.handle_messages());
+        tokio::spawn(self.handle_loops(snd.clone()));
+        tokio::spawn(Self::networking_loop(snd));
+    }
+
+    pub async fn handle_loops(mut self, tx: Sender<ServerMessage>) {
+        loop {
+            self.connections
+                .retain_mut(|connection| connection._signal.try_recv().is_err());
+
+            for system in &mut self.systems {
+                let mut map = TypeMap::new();
+                let server = Server { sender: tx.clone() };
+                if let Some(fut) = system.run(&mut map, server) {
+                    tokio::spawn(fut);
+                }
+            }
+
+            self.handle_messages().await;
+
+            let dur = Instant::now().duration_since(self.last_tick);
+            if dur > Duration::from_millis(50) {
+                println!("Tick! {:?}", dur);
+                self.last_tick = Instant::now();
+
+                let server = Server { sender: tx.clone() };
+                let server_2 = server.clone();
+                tokio::spawn(async move {
+                    server
+                        .fire_systems({
+                            let mut map = TypeMap::new();
+                            map.insert(Event::<ServerTickEvent>::new());
+                            map.insert(Param::new(server_2));
+                            map
+                        })
+                        .await;
+                });
+            }
+        }
+    }
+
+    pub async fn networking_loop(tx: Sender<ServerMessage>) {
+        let listener = TcpListener::bind(SocketAddrV4::new(Ipv4Addr::new(127, 0, 0, 1), 25565))
+            .await
+            .unwrap();
+
+        println!("Server now listening on 127.0.0.1:25565");
+        loop {
+            let new_client = listener.accept().await;
+            match new_client {
+                Ok((stream, addr)) => {
+                    println!("Accepted new client: {:?}", addr);
+
+                    let server = Server { sender: tx.clone() };
+                    let signal =
+                        ConnectionData::connection_channel(stream, addr.ip(), server.clone());
+                    server.spawn_connection_internal(signal).await;
+                }
+                Err(_err) => {}
             }
         }
     }

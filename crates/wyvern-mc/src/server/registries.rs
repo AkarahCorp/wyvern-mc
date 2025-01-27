@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{fmt::Write, sync::Arc};
 
 use voxidian_protocol::{
     registry::Registry,
@@ -15,11 +15,17 @@ use crate::values::{
 
 #[allow(dead_code)]
 pub struct RegistryContainer {
-    pub(crate) damage_types: Arc<Registry<DamageType>>,
-    pub(crate) biomes: Arc<Registry<Biome>>,
-    pub(crate) wolf_variants: Arc<Registry<PtcWolfVariant>>,
-    pub(crate) painting_variants: Arc<Registry<PtcPaintingVariant>>,
-    pub(crate) dimension_types: Arc<Registry<DimType>>,
+    pub(crate) damage_types: Registry<DamageType>,
+    pub(crate) biomes: Registry<Biome>,
+    pub(crate) wolf_variants: Registry<PtcWolfVariant>,
+    pub(crate) painting_variants: Registry<PtcPaintingVariant>,
+    pub(crate) dimension_types: Registry<DimType>,
+}
+
+impl std::fmt::Debug for RegistryContainer {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("RegistryContainer { <fields hidden> }")
+    }
 }
 
 pub struct RegistryContainerBuilder {
@@ -33,11 +39,11 @@ pub struct RegistryContainerBuilder {
 impl From<RegistryContainerBuilder> for RegistryContainer {
     fn from(value: RegistryContainerBuilder) -> Self {
         Self {
-            damage_types: Arc::new(value.damage_types),
-            biomes: Arc::new(value.biomes),
-            wolf_variants: Arc::new(value.wolf_variants),
-            painting_variants: Arc::new(value.painting_variants),
-            dimension_types: Arc::new(value.dimension_types),
+            damage_types: value.damage_types,
+            biomes: value.biomes,
+            wolf_variants: value.wolf_variants,
+            painting_variants: value.painting_variants,
+            dimension_types: value.dimension_types,
         }
     }
 }

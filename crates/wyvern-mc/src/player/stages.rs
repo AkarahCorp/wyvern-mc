@@ -174,36 +174,41 @@ impl ConnectionData {
                 C2SConfigPackets::SelectKnownPacks(_packet) => {
                     this.write_packet(
                         this.connected_server
-                            .biomes()
+                            .registries()
                             .await
+                            .biomes
                             .to_registry_data_packet(),
                     )
                     .await;
                     this.write_packet(
                         this.connected_server
-                            .damage_types()
+                            .registries()
                             .await
+                            .damage_types
                             .to_registry_data_packet(),
                     )
                     .await;
                     this.write_packet(
                         this.connected_server
-                            .wolf_variants()
+                            .registries()
                             .await
+                            .wolf_variants
                             .to_registry_data_packet(),
                     )
                     .await;
                     this.write_packet(
                         this.connected_server
-                            .painting_variants()
+                            .registries()
                             .await
+                            .painting_variants
                             .to_registry_data_packet(),
                     )
                     .await;
                     this.write_packet(
                         this.connected_server
-                            .dimension_types()
+                            .registries()
                             .await
+                            .dimension_types
                             .to_registry_data_packet(),
                     )
                     .await;

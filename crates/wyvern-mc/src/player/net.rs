@@ -74,7 +74,7 @@ impl ConnectionData {
         conn.event_loop().await;
     }
 
-    pub async fn event_loop(&mut self) {
+    pub async fn event_loop(mut self) {
         loop {
             let result = self.handle_incoming_bytes().await;
             if result.is_err() {

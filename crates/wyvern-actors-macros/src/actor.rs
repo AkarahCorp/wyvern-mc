@@ -47,6 +47,5 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
             pub(crate) receiver: tokio::sync::mpsc::Receiver<#attr_message_type>
         }
     };
-    eprintln!("{}", o.to_string());
     o
 }

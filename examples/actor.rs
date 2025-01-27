@@ -39,9 +39,7 @@ async fn main() {
     });
 
     let p = Person { sender };
-    eprintln!("{:?}", p.name().await);
     p.set_age(17).await;
-    eprintln!("{:?}", p.age().await);
 
     loop {}
 }

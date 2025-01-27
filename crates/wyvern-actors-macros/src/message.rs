@@ -99,8 +99,6 @@ pub fn message(attr: TokenStream, item: TokenStream) -> TokenStream {
         .map(|x| create_match_arm_from_variant(x))
         .collect::<Vec<_>>();
 
-    eprintln!("enum types: {:#?}", enum_types);
-
     let attr_actor_type = attr.actor_type;
     let attr_message_type = attr.message_type;
 
@@ -134,7 +132,7 @@ pub fn message(attr: TokenStream, item: TokenStream) -> TokenStream {
             #(#mapped_fns)*
         }
     };
-    eprintln!("\n\n{}\n\n", o.to_string());
+
     o
 }
 
@@ -144,7 +142,6 @@ fn create_enum_types_from_variant(variant: &MessageVariant) -> TokenStream {
         ReturnType::Default => quote! { () },
         ReturnType::Type(rarrow, ty) => ty.to_token_stream(),
     };
-    eprintln!("rt: {:?}", rt);
 
     let mut param_types: Vec<Type> = variant
         .parameters
@@ -166,7 +163,6 @@ fn create_enum_types_from_variant(variant: &MessageVariant) -> TokenStream {
     let o = quote! {
         #variant_name ( #(#param_types,)* ),
     };
-    eprintln!("returnign enum variant: {:?}", o.to_string());
     o
 }
 
@@ -213,7 +209,7 @@ fn create_fn_from_variant(variant: &MessageVariant) -> TokenStream {
 
     let r = quote! {
         pub async fn #name(&self, #(#param_names: #param_types),*) -> #rt {
-            let (tx, rx) = tokio::sync::oneshot::channel();
+            let (tx, mut rx) = tokio::sync::oneshot::channel();
             self.sender.send(#enum_type::#enum_variant(#(#param_names,)* tx)).await;
             rx.await.unwrap()
         }

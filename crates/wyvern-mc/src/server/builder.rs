@@ -1,4 +1,4 @@
-use std::{collections::HashMap, time::Instant};
+use std::{collections::HashMap, sync::Arc, time::Instant};
 
 use voxidian_protocol::{
     registry::Registry,
@@ -7,9 +7,7 @@ use voxidian_protocol::{
 
 use crate::systems::{intos::IntoSystem, parameters::SystemParameter, system::System};
 
-use super::{
-    data::ServerData, dimensions::DimensionContainer, registries::RegistryContainerBuilder,
-};
+use super::{ServerData, dimensions::DimensionContainer, registries::RegistryContainerBuilder};
 
 pub struct ServerBuilder {
     systems: Vec<Box<dyn System + Send + Sync + 'static>>,
@@ -53,12 +51,16 @@ impl ServerBuilder {
     }
 
     pub async fn start(self) {
+        let chan = tokio::sync::mpsc::channel(128);
         let server = ServerData {
             connections: Vec::new(),
             systems: self.systems,
-            registries: self.registries.into(),
+            registries: Arc::new(self.registries.into()),
             dimensions: self.dimensions,
             last_tick: Instant::now(),
+
+            sender: chan.0,
+            receiver: chan.1,
         };
 
         server.start().await;
