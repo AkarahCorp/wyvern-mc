@@ -1,8 +1,7 @@
-use std::fmt::Debug;
 
 use voxidian_protocol::{
     packet::{
-        PacketBuf, PacketEncode, PrefixedPacketEncode, Stage,
+        Stage,
         c2s::{
             config::C2SConfigPackets, login::C2SLoginPackets, play::C2SPlayPackets,
             status::C2SStatusPackets,

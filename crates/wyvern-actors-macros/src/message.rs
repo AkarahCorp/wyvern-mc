@@ -1,7 +1,7 @@
 use core::panic;
-use std::{env::var, fmt::Debug, path::Display};
+use std::fmt::Debug;
 
-use proc_macro2::{Span, TokenStream};
+use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
 use syn::{FnArg, Ident, ImplItem, ImplItemFn, ItemImpl, Meta, ReturnType, Type};
 
@@ -173,7 +173,7 @@ fn create_fn_from_variant(variant: &MessageVariant) -> TokenStream {
         ReturnType::Type(rarrow, ty) => ty.to_token_stream(),
     };
 
-    let mut param_types: Vec<Type> = variant
+    let param_types: Vec<Type> = variant
         .parameters
         .iter()
         .map(|x| match x {
@@ -187,7 +187,7 @@ fn create_fn_from_variant(variant: &MessageVariant) -> TokenStream {
 
     let param_types = param_types.iter();
 
-    let mut param_names: Vec<Ident> = variant
+    let param_names: Vec<Ident> = variant
         .parameters
         .iter()
         .map(|x| match x {
@@ -224,7 +224,7 @@ fn create_match_arm_from_variant(variant: &MessageVariant) -> TokenStream {
         ReturnType::Type(rarrow, ty) => ty.to_token_stream(),
     };
 
-    let mut param_types: Vec<Type> = variant
+    let param_types: Vec<Type> = variant
         .parameters
         .iter()
         .map(|x| match x {
@@ -238,7 +238,7 @@ fn create_match_arm_from_variant(variant: &MessageVariant) -> TokenStream {
 
     let param_types = param_types.iter();
 
-    let mut param_names: Vec<Ident> = variant
+    let param_names: Vec<Ident> = variant
         .parameters
         .iter()
         .map(|x| match x {

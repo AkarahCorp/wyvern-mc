@@ -1,5 +1,3 @@
-use std::{fmt::Write, sync::Arc};
-
 use voxidian_protocol::{
     registry::Registry,
     value::{

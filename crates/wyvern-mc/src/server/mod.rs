@@ -30,7 +30,7 @@ pub mod registries;
 
 use tokio::{
     net::TcpListener,
-    sync::{mpsc::Sender, oneshot::Receiver},
+    sync::mpsc::Sender,
 };
 
 #[actor(Server, ServerMessage)]

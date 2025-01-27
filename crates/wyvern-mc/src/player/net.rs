@@ -2,7 +2,7 @@ use std::{collections::VecDeque, fmt::Debug, io::ErrorKind, net::IpAddr};
 
 use tokio::{io::AsyncWriteExt, net::TcpStream, sync::*};
 use voxidian_protocol::packet::{
-    DecodeError, PacketBuf, PrefixedPacketDecode, Stage,
+    DecodeError, PrefixedPacketDecode, Stage,
     c2s::handshake::C2SHandshakePackets,
     processing::{CompressionMode, PacketProcessing, SecretCipher},
 };
@@ -54,7 +54,7 @@ impl ConnectionData {
         signal: mpsc::Sender<ConnectionStoppedSignal>,
         server: Server,
     ) {
-        let mut conn = ConnectionData {
+        let conn = ConnectionData {
             stream,
             addr,
             received_bytes: VecDeque::new(),
