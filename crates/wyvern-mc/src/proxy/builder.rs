@@ -1,3 +1,5 @@
+use tokio::signal;
+
 use crate::server::ServerBuilder;
 
 pub struct ProxyBuilder {
@@ -27,7 +29,16 @@ impl ProxyBuilder {
         }
 
         loop {
-            tokio::task::yield_now().await;
+            match signal::ctrl_c().await {
+                Ok(()) => {
+                    tokio::task::yield_now().await;
+                    break;
+                }
+                Err(err) => {
+                    eprintln!("Unable to listen for shutdown signal: {}", err);
+                    break;
+                }
+            }
         }
     }
 }

@@ -76,8 +76,10 @@ impl ConnectionData {
 
     pub async fn event_loop(mut self) {
         loop {
+            tokio::task::yield_now().await;
             let result = self.handle_incoming_bytes().await;
             if result.is_err() {
+                println!("Breaking!");
                 let _ = self.signal.send(ConnectionStoppedSignal).await;
                 break;
             }
@@ -149,6 +151,7 @@ impl ConnectionData {
 
     pub async fn write_outgoing_packets(&mut self) {
         loop {
+            tokio::task::yield_now().await;
             if self.bytes_to_send.is_empty() {
                 break;
             }

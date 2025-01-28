@@ -3,6 +3,7 @@ use std::fmt::Debug;
 
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
+use rust_format::{Formatter, RustFmt};
 use syn::{FnArg, Ident, ImplItem, ImplItemFn, ItemImpl, Meta, ReturnType, Type};
 
 use crate::actor::ActorInput;
@@ -110,6 +111,7 @@ pub fn message(attr: TokenStream, item: TokenStream) -> TokenStream {
         impl wyvern_actors::Actor for #target_type {
             async fn handle_messages(&mut self) {
                 loop {
+                    tokio::task::yield_now().await;
                     match self.receiver.try_recv() {
                         Ok(v) => {
                             match v {
@@ -133,7 +135,10 @@ pub fn message(attr: TokenStream, item: TokenStream) -> TokenStream {
         }
     };
 
-    eprintln!("o:\n{}", o.to_string());
+    eprintln!(
+        "\n{}",
+        RustFmt::default().format_str(o.to_string()).unwrap()
+    );
     o
 }
 
@@ -242,7 +247,8 @@ fn create_match_arm_from_variant(variant: &MessageVariant) -> TokenStream {
 
     let r = quote! {
         #enum_type::#enum_variant(#(#param_names,)* tx) => {
-            tx.send(self.#name(#(#param_names,)*).await).unwrap()
+            let r = self.#name(#(#param_names,)*).await;
+            tx.send(r).unwrap();
         }
     };
     r

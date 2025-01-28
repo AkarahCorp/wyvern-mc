@@ -1,9 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{
-    dimension::{Dimension, DimensionData},
-    values::Key,
-};
+use crate::{dimension::Dimension, values::Key};
 
 pub(crate) struct DimensionContainer {
     pub(crate) dimensions: HashMap<Key<Dimension>, Dimension>,

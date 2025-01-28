@@ -67,13 +67,9 @@ async fn on_move(
     player: Param<Player>,
     pos: Param<Position<f64, f64>>,
 ) {
-    println!("asking dim");
     let dim = player.get_dimension().await;
-    println!("dim {:?}", dim);
 
-    dim.set_block(
-        pos.map_angled(|x| *x as i32 * 2, |_| ()),
-        BlockState::from_protocol_id((*pos.x() as usize + *pos.y() as usize) as i32),
-    )
-    .await;
+    let state = BlockState::from_protocol_id((*pos.x() as usize + *pos.y() as usize) as i32);
+    dim.set_block(pos.map_angled(|x| *x as i32 + 2, |_| ()), state)
+        .await;
 }

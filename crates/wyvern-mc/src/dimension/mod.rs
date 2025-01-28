@@ -59,14 +59,12 @@ impl DimensionData {
 
         let pos = chunk_pos.map(|x| x * 16) + pos_in_chunk.map(|x| *x as i32);
         for conn in self.server.clone().unwrap().connections().await {
-            println!("do c");
             conn.write_packet(BlockUpdateS2CPlayPacket {
                 pos: BlockPos::new(*pos.x(), *pos.y(), *pos.z()),
                 block: unsafe { RegEntry::new_unchecked(block_state.protocol_id() as usize) },
             })
             .await;
         }
-        println!("do d");
     }
 
     #[GetBlock]

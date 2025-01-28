@@ -87,7 +87,6 @@ impl ServerData {
 
     #[GetConnections]
     pub async fn connections(&self) -> Vec<Player> {
-        println!("im fwd :)");
         self.connections.iter().map(|x| x.lower()).collect()
     }
 }

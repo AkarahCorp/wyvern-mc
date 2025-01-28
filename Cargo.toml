@@ -13,3 +13,4 @@ wyvern-actors-macros = { path = "./crates/wyvern-actors-macros"}
 proc-macro2 = { version = "*" }
 syn = { version = "*", features = ["full"] }
 quote = { version = "*" }
+rust-format = { version = "*" }
