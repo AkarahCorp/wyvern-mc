@@ -39,10 +39,19 @@ pub struct ServerData {
     pub(crate) maps: Vec<TypeMap>,
 }
 
+impl Server {
+    pub async fn fire_systems(&self, parameters: TypeMap) {
+        let clone = self.clone();
+        tokio::spawn(async move {
+            clone.fire_systems_sync(parameters).await;
+        });
+    }
+}
+
 #[message(Server, ServerMessage)]
 impl ServerData {
-    #[FireSystems]
-    pub async fn fire_systems(&mut self, parameters: TypeMap) {
+    #[FireSystemsSync]
+    pub async fn fire_systems_sync(&mut self, parameters: TypeMap) {
         self.maps.push(parameters);
     }
 

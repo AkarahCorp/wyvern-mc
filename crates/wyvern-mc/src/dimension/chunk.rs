@@ -26,11 +26,6 @@ impl ChunkSection {
                 })
             }),
         };
-        for x in 0..16 {
-            for z in 0..16 {
-                section.set_block_at(Position::new(x, 0, z), BlockState::from_protocol_id(1));
-            }
-        }
 
         section
     }

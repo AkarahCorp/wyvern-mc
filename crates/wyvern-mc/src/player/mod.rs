@@ -45,6 +45,11 @@ impl ConnectionData {
         self.stage.clone()
     }
 
+    #[IsLoaded]
+    pub async fn is_loaded_in_world(&self) -> bool {
+        self.associated_data.is_loaded
+    }
+
     #[SendPacketBuf]
     pub async fn send_packet_buf(&mut self, buf: PacketBuf) {
         self.bytes_to_send.extend(buf.iter());
@@ -86,8 +91,8 @@ impl ConnectionData {
             .encode(&mut len_buf)
             .unwrap();
 
-        self.send_packet_buf(len_buf).await;
-        self.send_packet_buf(buf).await;
+        self.bytes_to_send.extend(len_buf);
+        self.bytes_to_send.extend(buf);
     }
 }
 

@@ -3,12 +3,12 @@ use voxidian_protocol::{
     value::{DimEffects, DimMonsterSpawnLightLevel, DimType},
 };
 use wyvern_mc::{
-    dimension::blocks::BlockState,
+    dimension::{Dimension, blocks::BlockState},
     player::Player,
     proxy::ProxyBuilder,
     server::ServerBuilder,
     systems::{
-        events::PlayerMoveEvent,
+        events::{ChunkLoadEvent, PlayerMoveEvent},
         parameters::{Event, Param},
     },
     values::{
@@ -23,6 +23,7 @@ async fn main() {
     proxy.with_server({
         let mut b = ServerBuilder::new();
         b.add_system(on_move);
+        b.add_system(chunk_load);
         b.modify_registries(|registries| {
             registries.wolf_variant(Key::new("minecraft", "pale"), WolfVariant {
                 angry_texture: Key::empty(),
@@ -67,9 +68,22 @@ async fn on_move(
     player: Param<Player>,
     pos: Param<Position<f64, f64>>,
 ) {
-    let dim = player.get_dimension().await;
+}
 
-    let state = BlockState::from_protocol_id((*pos.x() as usize + *pos.y() as usize) as i32);
-    dim.set_block(pos.map_angled(|x| *x as i32 + 2, |_| ()), state)
-        .await;
+async fn chunk_load(
+    _event: Event<ChunkLoadEvent>,
+    dim: Param<Dimension>,
+    pos: Param<Position<i32>>,
+) {
+    let multiplied = pos.map(|x| x * 16);
+    for x in 0..16 {
+        for z in 0..16 {
+            let new_pos = multiplied + Position::new(x, 0, z);
+            dim.set_block(
+                new_pos,
+                BlockState::from_protocol_id(0.max(new_pos.x() + new_pos.z())),
+            )
+            .await;
+        }
+    }
 }

@@ -14,6 +14,7 @@ pub struct PlayerData {
     pub(crate) render_distance: i32,
 
     pub(crate) input_flags: InputFlags,
+    pub(crate) is_loaded: bool,
 }
 
 impl Default for PlayerData {
@@ -38,6 +39,7 @@ impl Default for PlayerData {
                 sneak: false,
                 sprint: false,
             },
+            is_loaded: false,
         }
     }
 }

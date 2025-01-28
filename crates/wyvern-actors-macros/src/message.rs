@@ -216,7 +216,12 @@ fn create_fn_from_variant(variant: &MessageVariant) -> TokenStream {
         pub async fn #name(&self, #(#param_names: #param_types),*) -> #rt {
             let (tx, mut rx) = tokio::sync::oneshot::channel();
             self.sender.send(#enum_type::#enum_variant(#(#param_names,)* tx)).await.unwrap();
-            rx.await.unwrap()
+            loop {
+                match rx.try_recv() {
+                    Ok(v) => return v,
+                    Err(e) => tokio::task::yield_now().await
+                };
+            };
         }
     };
     r

@@ -1,4 +1,3 @@
-
 use voxidian_protocol::{
     packet::{
         Stage,
@@ -219,8 +218,12 @@ impl ConnectionData {
     }
 
     pub async fn play_phase(&mut self) {
-        self.read_packets(
-            async |packet: C2SPlayPackets, this: &mut Self| match packet {
+        self.read_packets(async |packet: C2SPlayPackets, this: &mut Self| {
+            println!("{:?}", packet);
+            match packet {
+                C2SPlayPackets::PlayerLoaded(packet) => {
+                    this.associated_data.is_loaded = true;
+                }
                 C2SPlayPackets::AcceptTeleportation(packet) => {
                     if packet.teleport_id.as_i32() == 0 {
                         this.associated_data.dimension = this
@@ -312,8 +315,8 @@ impl ConnectionData {
                 packet => {
                     println!("Received unknown play packet: {:?}", packet);
                 }
-            },
-        )
+            }
+        })
         .await;
     }
 }
