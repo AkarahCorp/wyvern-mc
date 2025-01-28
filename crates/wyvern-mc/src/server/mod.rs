@@ -69,6 +69,28 @@ impl ServerData {
         })
     }
 
+    #[CreateDimension]
+    pub async fn create_dimension(&mut self, name: Key<Dimension>) -> Dimension {
+        let mut root_dim = DimensionData::new(
+            unsafe { name.clone().retype() },
+            Server {
+                sender: self.sender.clone(),
+            },
+            Key::new("minecraft", "overworld"),
+        );
+
+        let dim = Dimension {
+            sender: root_dim.sender.clone(),
+        };
+        self.dimensions.insert(name, dim.clone());
+        tokio::spawn(async move {
+            loop {
+                root_dim.handle_messages().await;
+            }
+        });
+        dim
+    }
+
     #[GetConnections]
     pub async fn connections(&self) -> Vec<Player> {
         self.connections.iter().map(|x| x.lower()).collect()
@@ -77,16 +99,7 @@ impl ServerData {
 
 impl ServerData {
     pub async fn start(mut self) {
-        let root_dim = DimensionData::new(
-            Key::new("wyvern", "root"),
-            Server {
-                sender: self.sender.clone(),
-            },
-            Key::new("minecraft", "overworld"),
-        );
-
-        self.dimensions.insert(Key::new("wyvern", "root"), root_dim);
-
+        self.create_dimension(Key::new("wyvern", "root")).await;
         let snd = self.sender.clone();
         tokio::spawn(self.handle_loops(snd.clone()));
         tokio::spawn(Self::networking_loop(snd));
@@ -106,10 +119,6 @@ impl ServerData {
             }
 
             self.handle_messages().await;
-
-            for dim in self.dimensions.dimensions_mut() {
-                dim.handle_messages().await;
-            }
 
             let dur = Instant::now().duration_since(self.last_tick);
             if dur > Duration::from_millis(50) {

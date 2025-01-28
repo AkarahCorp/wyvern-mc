@@ -24,6 +24,14 @@ impl<T> Key<T> {
         }
     }
 
+    pub unsafe fn retype<U>(self) -> Key<U> {
+        Key {
+            namespace: self.namespace,
+            path: self.path,
+            _phantom: PhantomData,
+        }
+    }
+
     pub fn namespace(&self) -> &str {
         &self.namespace
     }

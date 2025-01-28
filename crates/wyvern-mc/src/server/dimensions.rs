@@ -6,24 +6,24 @@ use crate::{
 };
 
 pub(crate) struct DimensionContainer {
-    pub(crate) dimensions: HashMap<Key<Dimension>, DimensionData>,
+    pub(crate) dimensions: HashMap<Key<Dimension>, Dimension>,
 }
 
 #[allow(unused)]
 impl DimensionContainer {
-    pub(crate) fn get(&self, key: &Key<Dimension>) -> Option<&DimensionData> {
+    pub(crate) fn get(&self, key: &Key<Dimension>) -> Option<&Dimension> {
         self.dimensions.get(key)
     }
 
-    pub(crate) fn insert(&mut self, key: Key<Dimension>, dim: DimensionData) {
+    pub(crate) fn insert(&mut self, key: Key<Dimension>, dim: Dimension) {
         self.dimensions.insert(key, dim);
     }
 
-    pub(crate) fn dimensions(&self) -> impl Iterator<Item = &DimensionData> {
+    pub(crate) fn dimensions(&self) -> impl Iterator<Item = &Dimension> {
         self.dimensions.values()
     }
 
-    pub(crate) fn dimensions_mut(&mut self) -> impl Iterator<Item = &mut DimensionData> {
+    pub(crate) fn dimensions_mut(&mut self) -> impl Iterator<Item = &mut Dimension> {
         self.dimensions.values_mut()
     }
 
