@@ -61,6 +61,8 @@ impl ServerBuilder {
 
             sender: chan.0,
             receiver: chan.1,
+
+            maps: Vec::new(),
         };
 
         server.start().await;

@@ -36,20 +36,14 @@ pub struct ServerData {
     pub(crate) dimensions: DimensionContainer,
     pub(crate) last_tick: Instant,
     pub(crate) sender: Sender<ServerMessage>,
+    pub(crate) maps: Vec<TypeMap>,
 }
 
 #[message(Server, ServerMessage)]
 impl ServerData {
     #[FireSystems]
-    pub async fn fire_systems(&mut self, mut parameters: TypeMap) {
-        for system in &mut self.systems {
-            let server = Server {
-                sender: self.sender.clone(),
-            };
-            if let Some(s) = system.run(&mut parameters, server) {
-                s.await;
-            }
-        }
+    pub async fn fire_systems(&mut self, parameters: TypeMap) {
+        self.maps.push(parameters);
     }
 
     #[SpawnConnectionInternal]
@@ -93,6 +87,7 @@ impl ServerData {
 
     #[GetConnections]
     pub async fn connections(&self) -> Vec<Player> {
+        println!("im fwd :)");
         self.connections.iter().map(|x| x.lower()).collect()
     }
 }
@@ -100,39 +95,42 @@ impl ServerData {
 impl ServerData {
     pub async fn start(mut self) {
         self.create_dimension(Key::new("wyvern", "root")).await;
-        let snd = self.sender.clone();
+        let snd = Server {
+            sender: self.sender.clone(),
+        };
         tokio::spawn(self.handle_loops(snd.clone()));
         tokio::spawn(Self::networking_loop(snd));
     }
 
-    pub async fn handle_loops(mut self, tx: Sender<ServerMessage>) {
+    pub async fn handle_loops(mut self, server: Server) {
         loop {
             self.connections
                 .retain_mut(|connection| connection._signal.try_recv().is_err());
 
-            for system in &mut self.systems {
-                let mut map = TypeMap::new();
-                let server = Server { sender: tx.clone() };
-                if let Some(fut) = system.run(&mut map, server) {
-                    tokio::spawn(fut);
+            for map in &mut self.maps {
+                for system in &mut self.systems {
+                    let server = server.clone();
+                    if let Some(fut) = system.run(map, server) {
+                        tokio::spawn(fut);
+                    }
                 }
             }
+            self.maps.clear();
 
             self.handle_messages().await;
 
             let dur = Instant::now().duration_since(self.last_tick);
             if dur > Duration::from_millis(50) {
-                println!("Tick! {:?}", dur);
                 self.last_tick = Instant::now();
 
-                let server = Server { sender: tx.clone() };
-                let server_2 = server.clone();
+                let server = server.clone();
                 tokio::spawn(async move {
                     server
+                        .clone()
                         .fire_systems({
                             let mut map = TypeMap::new();
                             map.insert(Event::<ServerTickEvent>::new());
-                            map.insert(Param::new(server_2));
+                            map.insert(Param::new(server));
                             map
                         })
                         .await;
@@ -141,7 +139,7 @@ impl ServerData {
         }
     }
 
-    pub async fn networking_loop(tx: Sender<ServerMessage>) {
+    pub async fn networking_loop(server: Server) {
         let listener = TcpListener::bind(SocketAddrV4::new(Ipv4Addr::new(127, 0, 0, 1), 25565))
             .await
             .unwrap();
@@ -152,8 +150,6 @@ impl ServerData {
             match new_client {
                 Ok((stream, addr)) => {
                     println!("Accepted new client: {:?}", addr);
-
-                    let server = Server { sender: tx.clone() };
                     let signal =
                         ConnectionData::connection_channel(stream, addr.ip(), server.clone());
                     server.spawn_connection_internal(signal).await;

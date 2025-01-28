@@ -1,5 +1,9 @@
-use voxidian_protocol::value::{DimEffects, DimMonsterSpawnLightLevel, DimType};
+use voxidian_protocol::{
+    packet::s2c::play::AwardStatsS2CPlayPacket,
+    value::{DimEffects, DimMonsterSpawnLightLevel, DimType},
+};
 use wyvern_mc::{
+    dimension::blocks::BlockState,
     player::Player,
     proxy::ProxyBuilder,
     server::ServerBuilder,
@@ -60,7 +64,16 @@ async fn main() {
 
 async fn on_move(
     _event: Event<PlayerMoveEvent>,
-    _player: Param<Player>,
-    _pos: Param<Position<f64, f64>>,
+    player: Param<Player>,
+    pos: Param<Position<f64, f64>>,
 ) {
+    println!("asking dim");
+    let dim = player.get_dimension().await;
+    println!("dim {:?}", dim);
+
+    dim.set_block(
+        pos.map_angled(|x| *x as i32 * 2, |_| ()),
+        BlockState::from_protocol_id((*pos.x() as usize + *pos.y() as usize) as i32),
+    )
+    .await;
 }

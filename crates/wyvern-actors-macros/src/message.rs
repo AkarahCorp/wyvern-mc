@@ -133,6 +133,7 @@ pub fn message(attr: TokenStream, item: TokenStream) -> TokenStream {
         }
     };
 
+    eprintln!("o:\n{}", o.to_string());
     o
 }
 
