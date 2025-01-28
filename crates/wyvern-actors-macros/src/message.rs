@@ -137,10 +137,9 @@ pub fn message(attr: TokenStream, item: TokenStream) -> TokenStream {
 }
 
 fn create_enum_types_from_variant(variant: &MessageVariant) -> TokenStream {
-    let name = &variant.base_function.sig.ident;
     let rt = match &variant.returns {
         ReturnType::Default => quote! { () },
-        ReturnType::Type(rarrow, ty) => ty.to_token_stream(),
+        ReturnType::Type(_rarrow, ty) => ty.to_token_stream(),
     };
 
     let mut param_types: Vec<Type> = variant
@@ -170,14 +169,14 @@ fn create_fn_from_variant(variant: &MessageVariant) -> TokenStream {
     let name = &variant.base_function.sig.ident;
     let rt = match &variant.returns {
         ReturnType::Default => quote! { () },
-        ReturnType::Type(rarrow, ty) => ty.to_token_stream(),
+        ReturnType::Type(_rarrow, ty) => ty.to_token_stream(),
     };
 
     let param_types: Vec<Type> = variant
         .parameters
         .iter()
         .map(|x| match x {
-            FnArg::Receiver(receiver) => None,
+            FnArg::Receiver(_receiver) => None,
             FnArg::Typed(pat_type) => Some(pat_type),
         })
         .filter(|x| x.is_some())
@@ -191,7 +190,7 @@ fn create_fn_from_variant(variant: &MessageVariant) -> TokenStream {
         .parameters
         .iter()
         .map(|x| match x {
-            FnArg::Receiver(receiver) => None,
+            FnArg::Receiver(_receiver) => None,
             FnArg::Typed(pat_type) => Some(pat_type),
         })
         .filter(|x| x.is_some())
@@ -210,7 +209,7 @@ fn create_fn_from_variant(variant: &MessageVariant) -> TokenStream {
     let r = quote! {
         pub async fn #name(&self, #(#param_names: #param_types),*) -> #rt {
             let (tx, mut rx) = tokio::sync::oneshot::channel();
-            self.sender.send(#enum_type::#enum_variant(#(#param_names,)* tx)).await;
+            self.sender.send(#enum_type::#enum_variant(#(#param_names,)* tx)).await.unwrap();
             rx.await.unwrap()
         }
     };
@@ -219,30 +218,12 @@ fn create_fn_from_variant(variant: &MessageVariant) -> TokenStream {
 
 fn create_match_arm_from_variant(variant: &MessageVariant) -> TokenStream {
     let name = &variant.base_function.sig.ident;
-    let rt = match &variant.returns {
-        ReturnType::Default => quote! { () },
-        ReturnType::Type(rarrow, ty) => ty.to_token_stream(),
-    };
-
-    let param_types: Vec<Type> = variant
-        .parameters
-        .iter()
-        .map(|x| match x {
-            FnArg::Receiver(receiver) => None,
-            FnArg::Typed(pat_type) => Some(pat_type),
-        })
-        .filter(|x| x.is_some())
-        .map(|x| x.unwrap())
-        .map(|x| *x.ty.clone())
-        .collect::<Vec<_>>();
-
-    let param_types = param_types.iter();
 
     let param_names: Vec<Ident> = variant
         .parameters
         .iter()
         .map(|x| match x {
-            FnArg::Receiver(receiver) => None,
+            FnArg::Receiver(_receiver) => None,
             FnArg::Typed(pat_type) => Some(pat_type),
         })
         .filter(|x| x.is_some())

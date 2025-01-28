@@ -20,6 +20,7 @@ pub mod chunk;
 #[allow(dead_code)]
 #[crate::actor(Dimension, DimensionMessage)]
 pub struct DimensionData {
+    #[allow(unused)]
     pub(crate) name: Key<DimensionData>,
     pub(crate) chunks: HashMap<Position<i32>, ChunkSection>,
     pub(crate) server: Option<Server>,
@@ -99,12 +100,6 @@ impl DimensionData {
             receiver: chan.1,
             sender: chan.0,
             dim_type,
-        }
-    }
-
-    pub async fn default_chunk(&mut self, pos: &Position<i32>) {
-        if !self.chunks.contains_key(pos) {
-            self.chunks.insert(*pos, ChunkSection::empty());
         }
     }
 }
