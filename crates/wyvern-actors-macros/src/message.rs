@@ -107,7 +107,7 @@ pub fn message(attr: TokenStream, item: TokenStream) -> TokenStream {
         pub(crate) enum #attr_message_type {
             #(#enum_types)*
         }
-        impl wyvern_mc::actors::Actor for #target_type {
+        impl wyvern_actors::Actor for #target_type {
             async fn handle_messages(&mut self) {
                 loop {
                     match self.receiver.try_recv() {

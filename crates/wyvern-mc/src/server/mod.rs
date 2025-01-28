@@ -21,17 +21,12 @@ use crate::{
     values::Key,
 };
 
-use crate as wyvern_mc;
-
 mod builder;
 pub use builder::*;
 pub mod dimensions;
 pub mod registries;
 
-use tokio::{
-    net::TcpListener,
-    sync::mpsc::Sender,
-};
+use tokio::{net::TcpListener, sync::mpsc::Sender};
 
 #[actor(Server, ServerMessage)]
 pub struct ServerData {
@@ -69,7 +64,9 @@ impl ServerData {
 
     #[GetDimension]
     pub async fn dimension(&self, key: Key<Dimension>) -> Option<Dimension> {
-        self.dimensions.get(&key).cloned()
+        self.dimensions.get(&key).map(|dim| Dimension {
+            sender: dim.sender.clone(),
+        })
     }
 
     #[GetConnections]
@@ -88,16 +85,9 @@ impl ServerData {
             Key::new("minecraft", "overworld"),
         );
 
-        self.dimensions
-            .insert(Key::new("wyvern", "root"), Dimension {
-                tx: root_dim.tx.clone(),
-                server: Server {
-                    sender: self.sender.clone().clone(),
-                },
-            });
+        self.dimensions.insert(Key::new("wyvern", "root"), root_dim);
 
         let snd = self.sender.clone();
-        tokio::spawn(root_dim.handle_messages());
         tokio::spawn(self.handle_loops(snd.clone()));
         tokio::spawn(Self::networking_loop(snd));
     }
@@ -116,6 +106,10 @@ impl ServerData {
             }
 
             self.handle_messages().await;
+
+            for dim in self.dimensions.dimensions_mut() {
+                dim.handle_messages().await;
+            }
 
             let dur = Instant::now().duration_since(self.last_tick);
             if dur > Duration::from_millis(50) {

@@ -60,7 +60,7 @@ impl ConnectionData {
                     let mut sections = Vec::new();
                     for y in (dim_type.min_y..dim_type.max_y).step_by(16) {
                         let pos = Position::new(chunk_x, y, chunk_z);
-                        let chunk = dimension.get_chunk_at(pos).await;
+                        let chunk = dimension.get_chunk_section(pos).await;
                         sections.push(chunk.into_protocol_section());
                     }
 

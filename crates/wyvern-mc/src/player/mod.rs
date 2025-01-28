@@ -18,8 +18,6 @@ pub mod data;
 pub mod net;
 pub mod stages;
 
-use crate as wyvern_mc;
-
 #[crate::actor(Player, PlayerMessage)]
 pub struct ConnectionData {
     pub(crate) stream: TcpStream,
