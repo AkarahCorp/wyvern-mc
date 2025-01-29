@@ -76,8 +76,10 @@ impl Player {
             .encode(&mut len_buf)
             .unwrap();
 
-        self.send_packet_buf(len_buf).await;
-        self.send_packet_buf(buf).await;
+        let mut new_buf = PacketBuf::new();
+        new_buf.write_u8s(&len_buf.as_slice());
+        new_buf.write_u8s(&buf.as_slice());
+        self.send_packet_buf(new_buf).await;
     }
 }
 

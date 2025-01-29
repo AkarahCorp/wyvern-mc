@@ -76,24 +76,17 @@ impl ConnectionData {
 
     pub async fn event_loop(mut self) {
         loop {
-            println!("123");
             tokio::task::yield_now().await;
-            println!("456");
             let result = self.handle_incoming_bytes().await;
             if result.is_err() {
-                println!("Breaking!");
+                println!("Breaking! A player has disconnected!");
                 let _ = self.signal.send(ConnectionStoppedSignal).await;
                 break;
             }
-            println!("abc");
             self.handle_messages().await;
-            println!("def");
             self.read_incoming_packets().await;
-            println!("ghi");
             self.write_outgoing_packets().await;
-            println!("jkl");
             self.handle_messages().await;
-            println!("mno");
         }
     }
 
@@ -117,16 +110,13 @@ impl ConnectionData {
                 Ok(())
             }
             Err(e) if e.kind() == ErrorKind::WouldBlock => Ok(()),
-            Err(e) => {
-                panic!("{:?}", e);
-            }
+            Err(e) => return Err(()),
         }
     }
 
     pub async fn read_incoming_packets(&mut self) {
         match self.stage {
             Stage::Handshake => {
-                println!("handshake!");
                 self.read_packets(async |packet: C2SHandshakePackets, this: &mut Self| {
                     let C2SHandshakePackets::Intention(packet) = packet;
                     this.stage = packet.intended_stage.into_stage();
@@ -139,19 +129,15 @@ impl ConnectionData {
                 .await;
             }
             Stage::Status => {
-                println!("status!");
                 self.status_stage().await;
             }
             Stage::Login => {
-                println!("login!");
                 self.login_stage().await;
             }
             Stage::Config => {
-                println!("config!");
                 self.configuration_stage().await;
             }
             Stage::Play => {
-                println!("play!");
                 self.play_phase().await;
             }
             Stage::Transfer => todo!("doesn't exist, this needs to be removed D:"),

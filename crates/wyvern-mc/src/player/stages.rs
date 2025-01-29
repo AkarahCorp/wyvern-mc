@@ -115,8 +115,8 @@ impl ConnectionData {
                         // fake dimensions so we can control client w/o extra storage
                         dims: vec![Identifier::new("wyvern", "fake")].into(),
                         max_players: VarInt::from(100),
-                        view_dist: VarInt::from(2),
-                        sim_dist: VarInt::from(2),
+                        view_dist: VarInt::from(16),
+                        sim_dist: VarInt::from(16),
                         reduced_debug: false,
                         respawn_screen: true,
                         limited_crafting: false,
@@ -218,9 +218,8 @@ impl ConnectionData {
     }
 
     pub async fn play_phase(&mut self) {
-        self.read_packets(async |packet: C2SPlayPackets, this: &mut Self| {
-            println!("{:?}", packet);
-            match packet {
+        self.read_packets(
+            async |packet: C2SPlayPackets, this: &mut Self| match packet {
                 C2SPlayPackets::PlayerLoaded(packet) => {
                     this.associated_data.is_loaded = true;
                 }
@@ -315,8 +314,8 @@ impl ConnectionData {
                 packet => {
                     println!("Received unknown play packet: {:?}", packet);
                 }
-            }
-        })
+            },
+        )
         .await;
     }
 }

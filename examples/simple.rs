@@ -1,3 +1,9 @@
+use std::{hash::DefaultHasher, sync::LazyLock};
+
+use noise::{
+    NoiseFn, Simplex, Vector2, core::open_simplex::open_simplex_2d,
+    permutationtable::PermutationTable,
+};
 use voxidian_protocol::{
     packet::s2c::play::AwardStatsS2CPlayPacket,
     value::{DimEffects, DimMonsterSpawnLightLevel, DimType},
@@ -70,20 +76,31 @@ async fn on_move(
 ) {
 }
 
+static SIMPLEX: LazyLock<Simplex> = LazyLock::new(|| Simplex::new(0));
+
 async fn chunk_load(
     _event: Event<ChunkLoadEvent>,
     dim: Param<Dimension>,
     pos: Param<Position<i32>>,
 ) {
+    if *pos.x() <= 0 {
+        return;
+    }
+    if *pos.z() <= 0 {
+        return;
+    }
+    println!("CALLED! {:?}", pos);
     let multiplied = pos.map(|x| x * 16);
     for x in 0..16 {
         for z in 0..16 {
-            let new_pos = multiplied + Position::new(x, 0, z);
-            dim.set_block(
-                new_pos,
-                BlockState::from_protocol_id(0.max(new_pos.x() + new_pos.z())),
-            )
-            .await;
+            let y = SIMPLEX.get([
+                (*multiplied.x() + x) as f64 / 50.0,
+                (*multiplied.z() + z) as f64 / 50.0,
+            ]);
+
+            let new_pos = multiplied + Position::new(x, (y * 12.0) as i32, z);
+            dim.set_block(new_pos, BlockState::from_protocol_id(1))
+                .await;
         }
     }
 }

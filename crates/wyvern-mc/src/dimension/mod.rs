@@ -118,6 +118,7 @@ impl DimensionData {
 
     pub(crate) async fn try_initialize_chunk(&mut self, pos: &Position<i32>) {
         if !self.chunks.contains_key(&pos) {
+            println!("Initializing: {:?}", pos);
             self.chunks.insert(pos.clone(), ChunkSection::empty());
 
             self.server
