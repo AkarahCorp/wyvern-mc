@@ -20,4 +20,5 @@ make_events! {
     ServerTickEvent
     PlayerMoveEvent
     ChunkLoadEvent
+    DimensionCreateEvent
 }

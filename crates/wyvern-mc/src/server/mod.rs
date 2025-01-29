@@ -13,7 +13,7 @@ use crate::{
     dimension::{Dimension, DimensionData},
     player::{ConnectionData, ConnectionWithSignal, Player},
     systems::{
-        events::ServerTickEvent,
+        events::{DimensionCreateEvent, ServerTickEvent},
         parameters::{Event, Param},
         system::System,
         typemap::TypeMap,
@@ -91,6 +91,26 @@ impl ServerData {
                 root_dim.handle_messages().await;
             }
         });
+
+        let dim_clone = dim.clone();
+        let server_clone = Server {
+            sender: self.sender.clone(),
+        };
+        tokio::spawn(async move {
+            server_clone
+                .clone()
+                .fire_systems({
+                    let mut map = TypeMap::new();
+                    map.insert(Event::<DimensionCreateEvent>::new());
+                    map.insert(Param::new(server_clone));
+                    map.insert(Param::new(dim_clone));
+                    map
+                })
+                .await;
+        });
+        tokio::task::yield_now().await;
+        tokio::task::yield_now().await;
+        tokio::task::yield_now().await;
         dim
     }
 

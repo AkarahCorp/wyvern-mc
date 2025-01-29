@@ -9,12 +9,12 @@ use voxidian_protocol::{
     value::{DimEffects, DimMonsterSpawnLightLevel, DimType},
 };
 use wyvern_mc::{
-    dimension::{Dimension, blocks::BlockState},
+    dimension::{Dimension, blocks::BlockState, chunk::ChunkSection},
     player::Player,
     proxy::ProxyBuilder,
     server::ServerBuilder,
     systems::{
-        events::{ChunkLoadEvent, PlayerMoveEvent},
+        events::{ChunkLoadEvent, DimensionCreateEvent, PlayerMoveEvent},
         parameters::{Event, Param},
     },
     values::{
@@ -29,7 +29,7 @@ async fn main() {
     proxy.with_server({
         let mut b = ServerBuilder::new();
         b.add_system(on_move);
-        b.add_system(chunk_load);
+        b.add_system(dim_init);
         b.modify_registries(|registries| {
             registries.wolf_variant(Key::new("minecraft", "pale"), WolfVariant {
                 angry_texture: Key::empty(),
@@ -78,29 +78,22 @@ async fn on_move(
 
 static SIMPLEX: LazyLock<Simplex> = LazyLock::new(|| Simplex::new(0));
 
-async fn chunk_load(
-    _event: Event<ChunkLoadEvent>,
-    dim: Param<Dimension>,
-    pos: Param<Position<i32>>,
-) {
-    if *pos.x() <= 0 {
-        return;
-    }
-    if *pos.z() <= 0 {
-        return;
-    }
-    println!("CALLED! {:?}", pos);
-    let multiplied = pos.map(|x| x * 16);
-    for x in 0..16 {
-        for z in 0..16 {
-            let y = SIMPLEX.get([
-                (*multiplied.x() + x) as f64 / 50.0,
-                (*multiplied.z() + z) as f64 / 50.0,
-            ]);
-
-            let new_pos = multiplied + Position::new(x, (y * 12.0) as i32, z);
-            dim.set_block(new_pos, BlockState::from_protocol_id(1))
-                .await;
+async fn dim_init(_event: Event<DimensionCreateEvent>, dim: Param<Dimension>) {
+    dim.set_chunk_generator(|chunk: &mut ChunkSection, x, z| {
+        if x < 0 {
+            return;
         }
-    }
+        if z < 0 {
+            return;
+        }
+        for x2 in 0..16 {
+            for z2 in 0..16 {
+                let y = SIMPLEX.get([(x2 + (x * 16)) as f64 / 50.0, (z2 + (z * 16)) as f64 / 50.0]);
+
+                let new_pos = Position::new(x2 as usize, (y * 16.0) as usize, z2 as usize);
+                chunk.set_block_at(new_pos, BlockState::from_protocol_id(1));
+            }
+        }
+    })
+    .await;
 }

@@ -31,6 +31,7 @@ pub struct DimensionData {
     pub(crate) server: Option<Server>,
     pub(crate) sender: Sender<DimensionMessage>,
     pub(crate) dim_type: Key<DimType>,
+    pub(crate) chunk_generator: fn(&mut ChunkSection, i32, i32),
 }
 
 #[crate::message(Dimension, DimensionMessage)]
@@ -97,6 +98,11 @@ impl DimensionData {
     pub async fn get_dimension_type(&mut self) -> Key<DimType> {
         self.dim_type.clone()
     }
+
+    #[SetChunkGenerator]
+    pub async fn set_chunk_generator(&mut self, function: fn(&mut ChunkSection, i32, i32)) {
+        self.chunk_generator = function;
+    }
 }
 
 impl DimensionData {
@@ -113,13 +119,17 @@ impl DimensionData {
             receiver: chan.1,
             sender: chan.0,
             dim_type,
+            chunk_generator: |_, _, _| {},
         }
     }
 
     pub(crate) async fn try_initialize_chunk(&mut self, pos: &Position<i32>) {
         if !self.chunks.contains_key(&pos) {
             println!("Initializing: {:?}", pos);
-            self.chunks.insert(pos.clone(), ChunkSection::empty());
+
+            let mut chunk = ChunkSection::empty();
+            (self.chunk_generator)(&mut chunk, *pos.x(), *pos.z());
+            self.chunks.insert(pos.clone(), chunk);
 
             self.server
                 .clone()
