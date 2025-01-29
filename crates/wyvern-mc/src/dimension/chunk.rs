@@ -12,39 +12,49 @@ use super::blocks::BlockState;
 
 #[derive(Clone, Debug)]
 pub struct Chunk {
+    min_sections: i32,
+    _max_sections: i32,
     sections: Vec<ChunkSection>,
 }
 
 impl Chunk {
-    pub fn new(sections: usize) -> Chunk {
-        let mut vec = Vec::with_capacity(sections);
-        for _ in 0..sections {
+    pub fn new(min_sections: i32, max_sections: i32) -> Chunk {
+        let total_sections = max_sections + (min_sections * -1);
+        let mut vec = Vec::with_capacity(total_sections as usize);
+        for _ in 0..total_sections {
             vec.push(ChunkSection::empty());
         }
-        Chunk { sections: vec }
+        Chunk {
+            min_sections,
+            _max_sections: max_sections,
+            sections: vec,
+        }
     }
 
-    pub fn section_at_mut(&mut self, section: usize) -> Option<&mut ChunkSection> {
-        self.sections.get_mut(section)
+    pub fn section_at_mut(&mut self, section: i32) -> Option<&mut ChunkSection> {
+        self.sections
+            .get_mut((section + (self.min_sections * -1)) as usize)
     }
 
     pub fn set_block_at(&mut self, pos: Vec3<i32>, block: BlockState) {
-        let section_y = pos.y() as usize / 16;
+        let section_y = pos.y().div_euclid(16);
+        let local_y = pos.y().rem_euclid(16);
         if let Some(section) = self.section_at_mut(section_y) {
-            println!("setting {:?}", (pos.x(), pos.y(), pos.z()));
             section.set_block_at(
-                Vec3::new(pos.x() as usize, pos.y() as usize % 16, pos.z() as usize),
+                Vec3::new(pos.x() as usize, local_y as usize, pos.z() as usize),
                 block,
             );
         }
     }
 
     pub fn get_block_at(&mut self, pos: Vec3<i32>) -> BlockState {
-        let section_y = pos.y() as usize / 16;
+        let section_y = pos.y().div_euclid(16); // Use Euclidean division
+        let local_y = pos.y().rem_euclid(16); // Always positive in [0, 15]
+
         if let Some(section) = self.section_at_mut(section_y) {
             return section.get_block_at(Vec3::new(
                 pos.x() as usize,
-                pos.y() as usize % 16,
+                local_y as usize,
                 pos.z() as usize,
             ));
         } else {

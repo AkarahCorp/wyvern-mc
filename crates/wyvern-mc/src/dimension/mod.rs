@@ -48,8 +48,7 @@ impl DimensionData {
 
         let chunk = self.chunks.get_mut(&chunk_pos).unwrap();
         let chunk_y = position.y() / 16;
-        println!("Chunk y: {:?} {:?}", chunk_y, chunk_y as usize);
-        chunk.section_at_mut(chunk_y as usize).unwrap().clone()
+        chunk.section_at_mut(chunk_y).unwrap().clone()
     }
 
     #[SetBlock]
@@ -127,12 +126,16 @@ impl DimensionData {
 
             let server = self.server.clone().unwrap();
             let registries = server.registries().await;
+
             let dim_type = registries
                 .dimension_types
                 .get(&self.dim_type.clone().into())
                 .unwrap();
 
-            let mut chunk = Chunk::new(dim_type.height as usize / 16);
+            let min_sections = dim_type.min_y / 16;
+            let max_sections = dim_type.max_y / 16;
+
+            let mut chunk = Chunk::new(min_sections, max_sections);
             (self.chunk_generator)(&mut chunk, pos.x(), pos.y());
             self.chunks.insert(pos.clone(), chunk);
 

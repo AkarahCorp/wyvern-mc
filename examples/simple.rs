@@ -3,11 +3,7 @@ use std::sync::LazyLock;
 use noise::{NoiseFn, Simplex};
 use voxidian_protocol::value::{DimEffects, DimMonsterSpawnLightLevel, DimType};
 use wyvern_mc::{
-    dimension::{
-        Dimension,
-        blocks::BlockState,
-        chunk::{Chunk, ChunkSection},
-    },
+    dimension::{Dimension, blocks::BlockState, chunk::Chunk},
     player::Player,
     proxy::ProxyBuilder,
     server::ServerBuilder,
@@ -49,10 +45,10 @@ async fn main() {
                 coordinate_scale: 1.0,
                 bed_works: true,
                 respawn_anchor_works: true,
-                min_y: 0,
-                max_y: 128,
-                logical_height: 128,
-                height: 128,
+                min_y: -32,
+                max_y: 32,
+                logical_height: 64,
+                height: 64,
                 infiniburn: "#minecraft:overworld_infiniburn".to_string(),
                 effects: DimEffects::Overworld,
                 ambient_light: 15.0,
@@ -67,7 +63,7 @@ async fn main() {
     proxy.start_all().await;
 }
 
-async fn on_move(_event: Event<PlayerMoveEvent>, player: Param<Player>, _pos: Param<Vec3<f64>>) {}
+async fn on_move(_event: Event<PlayerMoveEvent>, _player: Param<Player>, _pos: Param<Vec3<f64>>) {}
 
 static SIMPLEX: LazyLock<Simplex> = LazyLock::new(|| Simplex::new(0));
 
@@ -86,8 +82,7 @@ async fn dim_init(_event: Event<DimensionCreateEvent>, dim: Param<Dimension>) {
                     (z2 + (z * 16)) as f64 / 100.0,
                 ]) + 1.0;
 
-                println!("y: {:?}", y);
-                let new_pos = Vec3::new(x2, f64::floor(y * 48.0) as i32, z2);
+                let new_pos = Vec3::new(x2, f64::floor(y * -16.0 + 8.0) as i32, z2);
                 chunk.set_block_at(new_pos, BlockState::from_protocol_id(1));
             }
         }

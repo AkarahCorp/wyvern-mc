@@ -153,7 +153,7 @@ impl ConnectionData {
             if self.bytes_to_send.len() < 100 {
                 println!("Bytes actually sent: {:?}", self.bytes_to_send);
             } else {
-                println!("Sent big byte vector");
+                println!("Sent big byte vector: {:?}", self.bytes_to_send.len());
             }
 
             self.stream.write_all(&self.bytes_to_send).await.unwrap();

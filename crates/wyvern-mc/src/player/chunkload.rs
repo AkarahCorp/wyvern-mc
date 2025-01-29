@@ -57,7 +57,6 @@ impl ConnectionData {
             for chunk_z in (cz - render_distance)..(cz + render_distance) {
                 let pos = Vec2::new(chunk_x, chunk_z);
                 if !self.associated_data.loaded_chunks.contains(&pos) {
-                    println!("Loading @ {:?}", pos);
                     let mut sections = Vec::new();
                     for y in (dim_type.min_y..dim_type.max_y).step_by(16) {
                         let pos = Vec3::new(chunk_x, y, chunk_z);
