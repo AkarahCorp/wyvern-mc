@@ -139,10 +139,10 @@ impl ConnectionData {
                     this.write_packet(PlayerPositionS2CPlayPacket {
                         teleport_id: VarInt::from(0),
                         x: 1.0,
-                        y: 5.0,
+                        y: 128.0,
                         z: 2.0,
                         vx: 0.0,
-                        vy: 0.5,
+                        vy: 5.0,
                         vz: 0.0,
                         adyaw_deg: 0.0,
                         adpitch_deg: 0.0,

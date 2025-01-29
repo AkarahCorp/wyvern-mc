@@ -3,7 +3,11 @@ use std::sync::LazyLock;
 use noise::{NoiseFn, Simplex};
 use voxidian_protocol::value::{DimEffects, DimMonsterSpawnLightLevel, DimType};
 use wyvern_mc::{
-    dimension::{Dimension, blocks::BlockState, chunk::ChunkSection},
+    dimension::{
+        Dimension,
+        blocks::BlockState,
+        chunk::{Chunk, ChunkSection},
+    },
     player::Player,
     proxy::ProxyBuilder,
     server::ServerBuilder,
@@ -46,9 +50,9 @@ async fn main() {
                 bed_works: true,
                 respawn_anchor_works: true,
                 min_y: 0,
-                max_y: 32,
-                logical_height: 32,
-                height: 32,
+                max_y: 128,
+                logical_height: 128,
+                height: 128,
                 infiniburn: "#minecraft:overworld_infiniburn".to_string(),
                 effects: DimEffects::Overworld,
                 ambient_light: 15.0,
@@ -63,12 +67,12 @@ async fn main() {
     proxy.start_all().await;
 }
 
-async fn on_move(_event: Event<PlayerMoveEvent>, _player: Param<Player>, _pos: Param<Vec3<f64>>) {}
+async fn on_move(_event: Event<PlayerMoveEvent>, player: Param<Player>, _pos: Param<Vec3<f64>>) {}
 
 static SIMPLEX: LazyLock<Simplex> = LazyLock::new(|| Simplex::new(0));
 
 async fn dim_init(_event: Event<DimensionCreateEvent>, dim: Param<Dimension>) {
-    dim.set_chunk_generator(|chunk: &mut ChunkSection, x, z| {
+    dim.set_chunk_generator(|chunk: &mut Chunk, x, z| {
         if x < 0 {
             return;
         }
@@ -77,9 +81,13 @@ async fn dim_init(_event: Event<DimensionCreateEvent>, dim: Param<Dimension>) {
         }
         for x2 in 0..16 {
             for z2 in 0..16 {
-                let y = SIMPLEX.get([(x2 + (x * 16)) as f64 / 50.0, (z2 + (z * 16)) as f64 / 50.0]);
+                let y = SIMPLEX.get([
+                    (x2 + (x * 16)) as f64 / 100.0,
+                    (z2 + (z * 16)) as f64 / 100.0,
+                ]) + 1.0;
 
-                let new_pos = Vec3::new(x2 as usize, (y * 16.0) as usize, z2 as usize);
+                println!("y: {:?}", y);
+                let new_pos = Vec3::new(x2, f64::floor(y * 48.0) as i32, z2);
                 chunk.set_block_at(new_pos, BlockState::from_protocol_id(1));
             }
         }

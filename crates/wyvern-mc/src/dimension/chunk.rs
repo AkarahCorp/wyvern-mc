@@ -31,6 +31,7 @@ impl Chunk {
     pub fn set_block_at(&mut self, pos: Vec3<i32>, block: BlockState) {
         let section_y = pos.y() as usize / 16;
         if let Some(section) = self.section_at_mut(section_y) {
+            println!("setting {:?}", (pos.x(), pos.y(), pos.z()));
             section.set_block_at(
                 Vec3::new(pos.x() as usize, pos.y() as usize % 16, pos.z() as usize),
                 block,
