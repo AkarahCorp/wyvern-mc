@@ -6,7 +6,7 @@ use voxidian_protocol::{
     value::{ChunkSectionData, Nbt, NbtCompound, VarInt},
 };
 
-use crate::values::Position;
+use crate::values::{Vec2, Vec3};
 
 use super::ConnectionData;
 
@@ -16,13 +16,13 @@ impl ConnectionData {
             return;
         };
 
-        let chunk_center = self
-            .associated_data
-            .last_position
-            .map_into_coords(|x| f64::floor(x / 16.0) as i32);
+        let chunk_center = Vec2::new(
+            f64::floor(self.associated_data.last_position.x() / 16.0) as i32,
+            f64::floor(self.associated_data.last_position.z() / 16.0) as i32,
+        );
 
         if self.associated_data.last_chunk_position == chunk_center
-            && *self.associated_data.last_chunk_position.y() == 0
+            && self.associated_data.last_chunk_position.y() == 0
         {
             return;
         }
@@ -30,7 +30,7 @@ impl ConnectionData {
         self.associated_data.last_chunk_position = chunk_center.clone();
 
         let cx = chunk_center.x().clone();
-        let cz = chunk_center.z().clone();
+        let cz = chunk_center.y().clone();
 
         let render_distance = (self.associated_data.render_distance / 2) + 2;
 
@@ -39,10 +39,10 @@ impl ConnectionData {
             .loaded_chunks
             .iter()
             .filter(|position| {
-                *position.x() > cx - render_distance
-                    && *position.x() < cx + render_distance
-                    && *position.z() > cz - render_distance
-                    && *position.z() < cz + render_distance
+                position.x() > cx - render_distance
+                    && position.x() < cx + render_distance
+                    && position.y() > cz - render_distance
+                    && position.y() < cz + render_distance
             })
             .map(|x| *x)
             .collect::<Vec<_>>();
@@ -55,11 +55,11 @@ impl ConnectionData {
         let mut packets = Vec::new();
         for chunk_x in (cx - render_distance)..(cx + render_distance) {
             for chunk_z in (cz - render_distance)..(cz + render_distance) {
-                let pos = Position::new(chunk_x, 0, chunk_z);
+                let pos = Vec2::new(chunk_x, chunk_z);
                 if !self.associated_data.loaded_chunks.contains(&pos) {
                     let mut sections = Vec::new();
                     for y in (dim_type.min_y..dim_type.max_y).step_by(16) {
-                        let pos = Position::new(chunk_x, y, chunk_z);
+                        let pos = Vec3::new(chunk_x, y, chunk_z);
                         // TODO: DEADLOCKS HERE
                         let chunk = dimension.get_chunk_section(pos).await;
                         sections.push(chunk.into_protocol_section());
@@ -89,7 +89,7 @@ impl ConnectionData {
 
         self.write_packet(SetChunkCacheCenterS2CPlayPacket {
             chunk_x: chunk_center.x().clone().into(),
-            chunk_z: chunk_center.z().clone().into(),
+            chunk_z: chunk_center.y().clone().into(),
         })
         .await;
         self.write_packet(ChunkBatchStartS2CPlayPacket {}).await;

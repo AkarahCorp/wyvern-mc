@@ -1,7 +1,7 @@
 mod key;
 
 pub use key::*;
-mod position;
-pub use position::*;
+mod vecs;
+pub use vecs::*;
 pub mod regval;
 pub mod resource;

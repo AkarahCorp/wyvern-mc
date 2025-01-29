@@ -6,7 +6,7 @@ use voxidian_protocol::{
     },
 };
 
-use crate::values::Position;
+use crate::values::Vec3;
 
 use super::blocks::BlockState;
 
@@ -28,24 +28,24 @@ impl Chunk {
         self.sections.get_mut(section)
     }
 
-    pub fn set_block_at(&mut self, pos: Position<i32>, block: BlockState) {
-        let section_y = *pos.y() as usize / 16;
+    pub fn set_block_at(&mut self, pos: Vec3<i32>, block: BlockState) {
+        let section_y = pos.y() as usize / 16;
         if let Some(section) = self.section_at_mut(section_y) {
             section.set_block_at(
-                pos.map_coords(|x| *x as usize)
-                    .with_y(*pos.y() as usize % 16usize),
+                Vec3::new(pos.x() as usize, pos.y() as usize % 16, pos.z() as usize),
                 block,
             );
         }
     }
 
-    pub fn get_block_at(&mut self, pos: Position<i32>) -> BlockState {
-        let section_y = *pos.y() as usize / 16;
+    pub fn get_block_at(&mut self, pos: Vec3<i32>) -> BlockState {
+        let section_y = pos.y() as usize / 16;
         if let Some(section) = self.section_at_mut(section_y) {
-            return section.get_block_at(
-                pos.map_coords(|x| *x as usize)
-                    .with_y(*pos.y() as usize % 16usize),
-            );
+            return section.get_block_at(Vec3::new(
+                pos.x() as usize,
+                pos.y() as usize % 16,
+                pos.z() as usize,
+            ));
         } else {
             return BlockState::from_protocol_id(0);
         }
@@ -72,8 +72,8 @@ impl ChunkSection {
         section
     }
 
-    pub fn set_block_at(&mut self, pos: Position<usize>, block: BlockState) {
-        let old_block = self.blocks[*pos.x()][*pos.y()][*pos.z()].clone();
+    pub fn set_block_at(&mut self, pos: Vec3<usize>, block: BlockState) {
+        let old_block = self.blocks[pos.x()][pos.y()][pos.z()].clone();
         let new_block: RegEntry<BlockState> =
             unsafe { RegEntry::new_unchecked(block.clone().protocol_id() as usize) };
 
@@ -82,12 +82,12 @@ impl ChunkSection {
         } else if old_block.id() != 0 && new_block.id() == 0 {
             self.block_count -= 1;
         }
-        self.blocks[*pos.x()][*pos.y()][*pos.z()] =
+        self.blocks[pos.x()][pos.y()][pos.z()] =
             unsafe { RegEntry::new_unchecked(block.protocol_id().try_into().unwrap()) };
     }
 
-    pub fn get_block_at(&mut self, pos: Position<usize>) -> BlockState {
-        let ptc = self.blocks[*pos.x()][*pos.y()][*pos.z()];
+    pub fn get_block_at(&mut self, pos: Vec3<usize>) -> BlockState {
+        let ptc = self.blocks[pos.x()][pos.y()][pos.z()];
         BlockState::from_protocol_id(ptc.id() as i32)
     }
 

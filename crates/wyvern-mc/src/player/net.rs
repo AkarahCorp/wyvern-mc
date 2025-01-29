@@ -110,7 +110,7 @@ impl ConnectionData {
                 Ok(())
             }
             Err(e) if e.kind() == ErrorKind::WouldBlock => Ok(()),
-            Err(e) => return Err(()),
+            Err(_e) => return Err(()),
         }
     }
 

@@ -16,7 +16,7 @@ use crate::{
         parameters::{Event, Param},
         typemap::TypeMap,
     },
-    values::{Key, Position},
+    values::{Key, Vec3},
 };
 
 pub mod blocks;
@@ -27,7 +27,7 @@ pub mod chunk;
 pub struct DimensionData {
     #[allow(unused)]
     pub(crate) name: Key<DimensionData>,
-    pub(crate) chunks: HashMap<Position<i32>, ChunkSection>,
+    pub(crate) chunks: HashMap<Vec3<i32>, ChunkSection>,
     pub(crate) server: Option<Server>,
     pub(crate) sender: Sender<DimensionMessage>,
     pub(crate) dim_type: Key<DimType>,
@@ -42,7 +42,7 @@ impl DimensionData {
     }
 
     #[GetChunkSection]
-    pub async fn get_chunk_section(&mut self, position: Position<i32>) -> ChunkSection {
+    pub async fn get_chunk_section(&mut self, position: Vec3<i32>) -> ChunkSection {
         self.try_initialize_chunk(&position).await;
 
         let chunk = self.chunks.get(&position).unwrap();
@@ -50,19 +50,24 @@ impl DimensionData {
     }
 
     #[SetBlock]
-    pub async fn set_block(&mut self, position: Position<i32>, block_state: BlockState) {
-        let chunk_pos = position.map_into_coords(|x| x / 16);
-        let pos_in_chunk = position.map_into_coords(|x| {
-            let x = x.abs() % 16;
-            x as usize
-        });
+    pub async fn set_block(&mut self, position: Vec3<i32>, block_state: BlockState) {
+        let chunk_pos = Vec3::new(position.x() / 16, position.y() / 16, position.z() / 16);
+        let pos_in_chunk = Vec3::new(
+            position.x() as usize % 16,
+            position.y() as usize % 16,
+            position.z() as usize % 16,
+        );
 
         self.try_initialize_chunk(&chunk_pos).await;
 
         let chunk = self.chunks.get_mut(&chunk_pos).unwrap();
         chunk.set_block_at(pos_in_chunk, block_state.clone());
 
-        let pos = chunk_pos.clone().map(|x| x * 16) + pos_in_chunk.clone().map(|x| *x as i32);
+        let pos = Vec3::new(
+            (chunk_pos.x() * 16) + pos_in_chunk.x() as i32,
+            (chunk_pos.y() * 16) + pos_in_chunk.y() as i32,
+            (chunk_pos.z() * 16) + pos_in_chunk.z() as i32,
+        );
 
         for conn in self.server.clone().unwrap().connections().await {
             let block_state = block_state.clone();
@@ -72,7 +77,7 @@ impl DimensionData {
             tokio::spawn(async move {
                 if conn.is_loaded_in_world().await {
                     conn.write_packet(BlockUpdateS2CPlayPacket {
-                        pos: BlockPos::new(*pos.x(), *pos.y(), *pos.z()),
+                        pos: BlockPos::new(pos.x(), pos.y(), pos.z()),
                         block: unsafe {
                             RegEntry::new_unchecked(block_state.protocol_id() as usize)
                         },
@@ -84,9 +89,13 @@ impl DimensionData {
     }
 
     #[GetBlock]
-    pub async fn get_block_at(&mut self, position: Position<i32>) -> BlockState {
-        let chunk = position.map_into_coords(|x| x / 16);
-        let pos_in_chunk = position.map_into_coords(|x| (x % 16) as usize);
+    pub async fn get_block_at(&mut self, position: Vec3<i32>) -> BlockState {
+        let chunk = Vec3::new(position.x() / 16, position.y() / 16, position.z() / 16);
+        let pos_in_chunk = Vec3::new(
+            position.x() as usize % 16,
+            position.y() as usize % 16,
+            position.z() as usize % 16,
+        );
 
         self.try_initialize_chunk(&chunk).await;
 
@@ -123,12 +132,12 @@ impl DimensionData {
         }
     }
 
-    pub(crate) async fn try_initialize_chunk(&mut self, pos: &Position<i32>) {
+    pub(crate) async fn try_initialize_chunk(&mut self, pos: &Vec3<i32>) {
         if !self.chunks.contains_key(&pos) {
             println!("Initializing: {:?}", pos);
 
             let mut chunk = ChunkSection::empty();
-            (self.chunk_generator)(&mut chunk, *pos.x(), *pos.z());
+            (self.chunk_generator)(&mut chunk, pos.x(), pos.z());
             self.chunks.insert(pos.clone(), chunk);
 
             self.server

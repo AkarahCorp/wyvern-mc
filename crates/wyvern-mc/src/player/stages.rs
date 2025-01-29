@@ -220,7 +220,7 @@ impl ConnectionData {
     pub async fn play_phase(&mut self) {
         self.read_packets(
             async |packet: C2SPlayPackets, this: &mut Self| match packet {
-                C2SPlayPackets::PlayerLoaded(packet) => {
+                C2SPlayPackets::PlayerLoaded(_packet) => {
                     this.associated_data.is_loaded = true;
                 }
                 C2SPlayPackets::AcceptTeleportation(packet) => {
@@ -267,9 +267,13 @@ impl ConnectionData {
                         .last_position
                         .with_x(packet.x)
                         .with_y(packet.y)
-                        .with_z(packet.z)
-                        .with_pitch(packet.pitch as f64)
-                        .with_yaw(packet.yaw as f64);
+                        .with_z(packet.z);
+
+                    this.associated_data.last_direction = this
+                        .associated_data
+                        .last_direction
+                        .with_x(packet.pitch)
+                        .with_y(packet.yaw);
 
                     this.send_chunks().await;
 
@@ -286,11 +290,11 @@ impl ConnectionData {
                         .await;
                 }
                 C2SPlayPackets::MovePlayerRot(packet) => {
-                    this.associated_data.last_position = this
+                    this.associated_data.last_direction = this
                         .associated_data
-                        .last_position
-                        .with_pitch(packet.pitch as f64)
-                        .with_yaw(packet.yaw as f64);
+                        .last_direction
+                        .with_x(packet.pitch)
+                        .with_y(packet.yaw);
 
                     this.connected_server
                         .fire_systems({

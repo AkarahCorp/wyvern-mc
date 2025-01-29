@@ -12,7 +12,7 @@ use wyvern_mc::{
         parameters::{Event, Param},
     },
     values::{
-        Key, Position,
+        Key, Vec3,
         regval::{PaintingVariant, WolfVariant},
     },
 };
@@ -63,12 +63,7 @@ async fn main() {
     proxy.start_all().await;
 }
 
-async fn on_move(
-    _event: Event<PlayerMoveEvent>,
-    _player: Param<Player>,
-    _pos: Param<Position<f64, f64>>,
-) {
-}
+async fn on_move(_event: Event<PlayerMoveEvent>, _player: Param<Player>, _pos: Param<Vec3<f64>>) {}
 
 static SIMPLEX: LazyLock<Simplex> = LazyLock::new(|| Simplex::new(0));
 
@@ -84,7 +79,7 @@ async fn dim_init(_event: Event<DimensionCreateEvent>, dim: Param<Dimension>) {
             for z2 in 0..16 {
                 let y = SIMPLEX.get([(x2 + (x * 16)) as f64 / 50.0, (z2 + (z * 16)) as f64 / 50.0]);
 
-                let new_pos = Position::new(x2 as usize, (y * 16.0) as usize, z2 as usize);
+                let new_pos = Vec3::new(x2 as usize, (y * 16.0) as usize, z2 as usize);
                 chunk.set_block_at(new_pos, BlockState::from_protocol_id(1));
             }
         }
