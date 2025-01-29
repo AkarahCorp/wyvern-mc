@@ -159,8 +159,6 @@ impl ConnectionData {
                         },
                     })
                     .await;
-
-                    this.send_chunks().await;
                 }
                 C2SConfigPackets::ResourcePack(_packet) => todo!(),
                 C2SConfigPackets::CookieResponse(_packet) => todo!(),

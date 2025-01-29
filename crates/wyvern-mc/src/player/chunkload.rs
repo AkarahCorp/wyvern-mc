@@ -21,12 +21,6 @@ impl ConnectionData {
             f64::floor(self.associated_data.last_position.z() / 16.0) as i32,
         );
 
-        if self.associated_data.last_chunk_position == chunk_center
-            && self.associated_data.last_chunk_position.y() == 0
-        {
-            return;
-        }
-
         self.associated_data.last_chunk_position = chunk_center.clone();
 
         let cx = chunk_center.x().clone();
@@ -52,53 +46,63 @@ impl ConnectionData {
             .get(&dimension.get_dimension_type().await.into())
             .unwrap();
 
-        let mut packets = Vec::new();
+        let mut chunks = Vec::new();
         for chunk_x in (cx - render_distance)..(cx + render_distance) {
             for chunk_z in (cz - render_distance)..(cz + render_distance) {
                 let pos = Vec2::new(chunk_x, chunk_z);
                 if !self.associated_data.loaded_chunks.contains(&pos) {
-                    let mut sections = Vec::new();
-                    for y in (dim_type.min_y..dim_type.max_y).step_by(16) {
-                        let pos = Vec3::new(chunk_x, y, chunk_z);
-                        // TODO: DEADLOCKS HERE
-                        let chunk = dimension.get_chunk_section(pos).await;
-                        sections.push(chunk.into_protocol_section());
-                    }
-
-                    packets.push(LevelChunkWithLightS2CPlayPacket {
-                        chunk_x,
-                        chunk_z,
-                        heightmaps: Nbt {
-                            name: "".to_string(),
-                            root: NbtCompound::new(),
-                        },
-                        data: ChunkSectionData { sections },
-                        block_entities: vec![].into(),
-                        sky_light_mask: vec![0].into(),
-                        block_light_mask: vec![0].into(),
-                        empty_sky_light_mask: vec![0].into(),
-                        empty_block_light_mask: vec![0].into(),
-                        sky_light_array: vec![].into(),
-                        block_light_array: vec![].into(),
-                    });
-
-                    self.associated_data.loaded_chunks.push(pos);
+                    chunks.push(pos);
                 }
             }
         }
 
-        self.write_packet(SetChunkCacheCenterS2CPlayPacket {
-            chunk_x: chunk_center.x().clone().into(),
-            chunk_z: chunk_center.y().clone().into(),
-        })
-        .await;
-        self.write_packet(ChunkBatchStartS2CPlayPacket {}).await;
-        for packet in &packets {
+        chunks.sort_by(|lhs, rhs| {
+            let lhs_dist = i32::isqrt(i32::pow(lhs.x() - cx, 2) + i32::pow(lhs.y() - cz, 2));
+            let rhs_dist = i32::isqrt(i32::pow(rhs.x() - cx, 2) + i32::pow(rhs.y() - cz, 2));
+            lhs_dist.cmp(&rhs_dist)
+        });
+
+        if let Some(pos) = chunks.first() {
+            let chunk_x = pos.x();
+            let chunk_z = pos.y();
+
+            let mut sections = Vec::new();
+            for y in (dim_type.min_y..dim_type.max_y).step_by(16) {
+                let pos = Vec3::new(chunk_x, y, chunk_z);
+                let chunk = dimension.get_chunk_section(pos).await;
+                sections.push(chunk.into_protocol_section());
+            }
+
+            let packet = LevelChunkWithLightS2CPlayPacket {
+                chunk_x,
+                chunk_z,
+                heightmaps: Nbt {
+                    name: "".to_string(),
+                    root: NbtCompound::new(),
+                },
+                data: ChunkSectionData { sections },
+                block_entities: vec![].into(),
+                sky_light_mask: vec![0].into(),
+                block_light_mask: vec![0].into(),
+                empty_sky_light_mask: vec![0].into(),
+                empty_block_light_mask: vec![0].into(),
+                sky_light_array: vec![].into(),
+                block_light_array: vec![].into(),
+            };
+
+            self.associated_data.loaded_chunks.push(pos.clone());
+
+            self.write_packet(SetChunkCacheCenterS2CPlayPacket {
+                chunk_x: chunk_center.x().clone().into(),
+                chunk_z: chunk_center.y().clone().into(),
+            })
+            .await;
+            self.write_packet(ChunkBatchStartS2CPlayPacket {}).await;
             self.write_packet(packet).await;
+            self.write_packet(ChunkBatchFinishedS2CPlayPacket {
+                size: VarInt::from(1),
+            })
+            .await;
         }
-        self.write_packet(ChunkBatchFinishedS2CPlayPacket {
-            size: VarInt::from(packets.len() as i32),
-        })
-        .await;
     }
 }

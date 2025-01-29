@@ -65,7 +65,6 @@ impl DimensionData {
             let block_state = block_state.clone();
             let pos = position.clone();
             let conn = conn.clone();
-            // TODO: DEADLOCKS HERE (do CTRL+SHIFT+F for other point)
             tokio::spawn(async move {
                 if conn.is_loaded_in_world().await {
                     conn.write_packet(BlockUpdateS2CPlayPacket {

@@ -42,8 +42,6 @@ pub fn message(attr: TokenStream, item: TokenStream) -> TokenStream {
         Err(e) => return e.to_compile_error(),
     };
 
-    // TODO: autogenerate message enum
-
     let mut impl_block: ItemImpl = match syn::parse2(item.clone()) {
         Ok(impl_block) => impl_block,
         Err(e) => return e.to_compile_error(),
