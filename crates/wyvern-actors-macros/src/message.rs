@@ -3,7 +3,6 @@ use std::fmt::Debug;
 
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
-use rust_format::{Formatter, RustFmt};
 use syn::{FnArg, Ident, ImplItem, ImplItemFn, ItemImpl, Meta, ReturnType, Type};
 
 use crate::actor::ActorInput;
@@ -135,10 +134,10 @@ pub fn message(attr: TokenStream, item: TokenStream) -> TokenStream {
         }
     };
 
-    eprintln!(
-        "\n{}",
-        RustFmt::default().format_str(o.to_string()).unwrap()
-    );
+    // eprintln!(
+    //     "\n{}",
+    //     RustFmt::default().format_str(o.to_string()).unwrap()
+    // );
     o
 }
 

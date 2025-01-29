@@ -60,7 +60,7 @@ pub struct ChunkSection {
 
 impl ChunkSection {
     pub fn empty() -> ChunkSection {
-        let mut section = ChunkSection {
+        let section = ChunkSection {
             block_count: 0,
             blocks: std::array::from_fn(|_| {
                 std::array::from_fn(|_| {

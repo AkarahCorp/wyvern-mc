@@ -12,7 +12,3 @@ noise = "0.9.0"
 [[example]]
 name = "simple"
 path = "./simple.rs"
-
-[[example]]
-name = "actor"
-path = "./actor.rs"

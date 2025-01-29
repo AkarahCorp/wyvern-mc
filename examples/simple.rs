@@ -1,20 +1,14 @@
-use std::{hash::DefaultHasher, sync::LazyLock};
+use std::sync::LazyLock;
 
-use noise::{
-    NoiseFn, Simplex, Vector2, core::open_simplex::open_simplex_2d,
-    permutationtable::PermutationTable,
-};
-use voxidian_protocol::{
-    packet::s2c::play::AwardStatsS2CPlayPacket,
-    value::{DimEffects, DimMonsterSpawnLightLevel, DimType},
-};
+use noise::{NoiseFn, Simplex};
+use voxidian_protocol::value::{DimEffects, DimMonsterSpawnLightLevel, DimType};
 use wyvern_mc::{
     dimension::{Dimension, blocks::BlockState, chunk::ChunkSection},
     player::Player,
     proxy::ProxyBuilder,
     server::ServerBuilder,
     systems::{
-        events::{ChunkLoadEvent, DimensionCreateEvent, PlayerMoveEvent},
+        events::{DimensionCreateEvent, PlayerMoveEvent},
         parameters::{Event, Param},
     },
     values::{
@@ -52,9 +46,9 @@ async fn main() {
                 bed_works: true,
                 respawn_anchor_works: true,
                 min_y: 0,
-                max_y: 16,
-                logical_height: 16,
-                height: 16,
+                max_y: 32,
+                logical_height: 32,
+                height: 32,
                 infiniburn: "#minecraft:overworld_infiniburn".to_string(),
                 effects: DimEffects::Overworld,
                 ambient_light: 15.0,
@@ -71,8 +65,8 @@ async fn main() {
 
 async fn on_move(
     _event: Event<PlayerMoveEvent>,
-    player: Param<Player>,
-    pos: Param<Position<f64, f64>>,
+    _player: Param<Player>,
+    _pos: Param<Position<f64, f64>>,
 ) {
 }
 

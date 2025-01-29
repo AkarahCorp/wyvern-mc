@@ -4,7 +4,7 @@ use blocks::BlockState;
 use chunk::ChunkSection;
 use tokio::sync::mpsc::{Sender, channel};
 use voxidian_protocol::{
-    packet::{Stage, s2c::play::BlockUpdateS2CPlayPacket},
+    packet::s2c::play::BlockUpdateS2CPlayPacket,
     registry::RegEntry,
     value::{BlockPos, DimType},
 };
