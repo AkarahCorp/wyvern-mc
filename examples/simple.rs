@@ -1,10 +1,14 @@
+use std::sync::LazyLock;
+
+use noise::{NoiseFn, Simplex};
 use voxidian_protocol::value::{DimEffects, DimMonsterSpawnLightLevel, DimType};
 use wyvern_mc::{
-    events::PlayerMoveEvent,
+    dimension::{blocks::BlockState, chunk::Chunk},
+    events::DimensionCreateEvent,
     proxy::ProxyBuilder,
     server::ServerBuilder,
     values::{
-        Key,
+        Key, Vec3,
         regval::{PaintingVariant, WolfVariant},
     },
 };
@@ -14,7 +18,7 @@ async fn main() {
     let mut proxy = ProxyBuilder::new();
     proxy.with_server({
         let mut b = ServerBuilder::new();
-        b.on_event(on_move);
+        b.on_event(dim_init);
         b.modify_registries(|registries| {
             registries.wolf_variant(Key::new("minecraft", "pale"), WolfVariant {
                 angry_texture: Key::empty(),
@@ -54,31 +58,29 @@ async fn main() {
     proxy.start_all().await;
 }
 
-async fn on_move(event: PlayerMoveEvent) {
-    println!("Movement! {:?}", event);
+static SIMPLEX: LazyLock<Simplex> = LazyLock::new(|| Simplex::new(0));
+
+async fn dim_init(event: DimensionCreateEvent) {
+    event
+        .dimension
+        .set_chunk_generator(|chunk: &mut Chunk, x, z| {
+            if x < 0 {
+                return;
+            }
+            if z < 0 {
+                return;
+            }
+            for x2 in 0..16 {
+                for z2 in 0..16 {
+                    let y = SIMPLEX.get([
+                        (x2 + (x * 16)) as f64 / 100.0,
+                        (z2 + (z * 16)) as f64 / 100.0,
+                    ]) + 1.0;
+
+                    let new_pos = Vec3::new(x2, f64::floor(y * -16.0 + 8.0) as i32, z2);
+                    chunk.set_block_at(new_pos, BlockState::from_protocol_id(1));
+                }
+            }
+        })
+        .await;
 }
-
-// static SIMPLEX: LazyLock<Simplex> = LazyLock::new(|| Simplex::new(0));
-
-// async fn dim_init(_event: Event<DimensionCreateEvent>, dim: Param<Dimension>) {
-//     dim.set_chunk_generator(|chunk: &mut Chunk, x, z| {
-//         if x < 0 {
-//             return;
-//         }
-//         if z < 0 {
-//             return;
-//         }
-//         for x2 in 0..16 {
-//             for z2 in 0..16 {
-//                 let y = SIMPLEX.get([
-//                     (x2 + (x * 16)) as f64 / 100.0,
-//                     (z2 + (z * 16)) as f64 / 100.0,
-//                 ]) + 1.0;
-
-//                 let new_pos = Vec3::new(x2, f64::floor(y * -16.0 + 8.0) as i32, z2);
-//                 chunk.set_block_at(new_pos, BlockState::from_protocol_id(1));
-//             }
-//         }
-//     })
-//     .await;
-// }
