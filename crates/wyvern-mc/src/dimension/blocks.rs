@@ -12,6 +12,28 @@ pub struct BlockState {
 }
 
 impl BlockState {
+    pub fn new(id: Key<Block>) -> BlockState {
+        BlockState {
+            block: id,
+            state: Vec::new(),
+        }
+    }
+
+    pub fn with_property(mut self, key: &str, value: &str) -> Self {
+        if let Some(index) = self.state.iter().map(|x| &x.0).position(|x| x == &key) {
+            self.state.remove(index);
+        }
+        self.state.push((key.into(), value.into()));
+        self
+    }
+
+    pub fn insert_property(&mut self, key: &str, value: &str) {
+        if let Some(index) = self.state.iter().map(|x| &x.0).position(|x| x == &key) {
+            self.state.remove(index);
+        }
+        self.state.push((key.into(), value.into()));
+    }
+
     pub fn protocol_id(&self) -> i32 {
         *BLOCK_STATE_TO_ID.get(&self.into()).unwrap()
     }

@@ -78,7 +78,17 @@ async fn dim_init(event: DimensionCreateEvent) {
                     ]) + 1.0;
 
                     let new_pos = Vec3::new(x2, f64::floor(y * -16.0 + 8.0) as i32, z2);
-                    chunk.set_block_at(new_pos, BlockState::from_protocol_id(1));
+                    chunk.set_block_at(
+                        new_pos,
+                        BlockState::new(Key::new("minecraft", "grass_block")).with_property(
+                            "snowy",
+                            if (y * -16.0 + 8.0) > 0.0 {
+                                "true"
+                            } else {
+                                "false"
+                            },
+                        ),
+                    );
                 }
             }
         })
