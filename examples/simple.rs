@@ -1,18 +1,10 @@
-use std::sync::LazyLock;
-
-use noise::{NoiseFn, Simplex};
 use voxidian_protocol::value::{DimEffects, DimMonsterSpawnLightLevel, DimType};
 use wyvern_mc::{
-    dimension::{Dimension, blocks::BlockState, chunk::Chunk},
-    player::Player,
+    events::PlayerMoveEvent,
     proxy::ProxyBuilder,
     server::ServerBuilder,
-    systems::{
-        events::{DimensionCreateEvent, PlayerMoveEvent},
-        parameters::{Event, Param},
-    },
     values::{
-        Key, Vec3,
+        Key,
         regval::{PaintingVariant, WolfVariant},
     },
 };
@@ -22,8 +14,7 @@ async fn main() {
     let mut proxy = ProxyBuilder::new();
     proxy.with_server({
         let mut b = ServerBuilder::new();
-        b.add_system(on_move);
-        b.add_system(dim_init);
+        b.on_event(on_move);
         b.modify_registries(|registries| {
             registries.wolf_variant(Key::new("minecraft", "pale"), WolfVariant {
                 angry_texture: Key::empty(),
@@ -63,29 +54,31 @@ async fn main() {
     proxy.start_all().await;
 }
 
-async fn on_move(_event: Event<PlayerMoveEvent>, _player: Param<Player>, _pos: Param<Vec3<f64>>) {}
-
-static SIMPLEX: LazyLock<Simplex> = LazyLock::new(|| Simplex::new(0));
-
-async fn dim_init(_event: Event<DimensionCreateEvent>, dim: Param<Dimension>) {
-    dim.set_chunk_generator(|chunk: &mut Chunk, x, z| {
-        if x < 0 {
-            return;
-        }
-        if z < 0 {
-            return;
-        }
-        for x2 in 0..16 {
-            for z2 in 0..16 {
-                let y = SIMPLEX.get([
-                    (x2 + (x * 16)) as f64 / 100.0,
-                    (z2 + (z * 16)) as f64 / 100.0,
-                ]) + 1.0;
-
-                let new_pos = Vec3::new(x2, f64::floor(y * -16.0 + 8.0) as i32, z2);
-                chunk.set_block_at(new_pos, BlockState::from_protocol_id(1));
-            }
-        }
-    })
-    .await;
+async fn on_move(event: PlayerMoveEvent) {
+    println!("Movement! {:?}", event);
 }
+
+// static SIMPLEX: LazyLock<Simplex> = LazyLock::new(|| Simplex::new(0));
+
+// async fn dim_init(_event: Event<DimensionCreateEvent>, dim: Param<Dimension>) {
+//     dim.set_chunk_generator(|chunk: &mut Chunk, x, z| {
+//         if x < 0 {
+//             return;
+//         }
+//         if z < 0 {
+//             return;
+//         }
+//         for x2 in 0..16 {
+//             for z2 in 0..16 {
+//                 let y = SIMPLEX.get([
+//                     (x2 + (x * 16)) as f64 / 100.0,
+//                     (z2 + (z * 16)) as f64 / 100.0,
+//                 ]) + 1.0;
+
+//                 let new_pos = Vec3::new(x2, f64::floor(y * -16.0 + 8.0) as i32, z2);
+//                 chunk.set_block_at(new_pos, BlockState::from_protocol_id(1));
+//             }
+//         }
+//     })
+//     .await;
+// }

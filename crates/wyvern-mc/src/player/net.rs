@@ -8,15 +8,7 @@ use voxidian_protocol::packet::{
 };
 use wyvern_actors::Actor;
 
-use crate::{
-    player::PlayerMessage,
-    server::Server,
-    systems::{
-        events::ReceivePacketEvent,
-        parameters::{Event, Param},
-        typemap::TypeMap,
-    },
-};
+use crate::{player::PlayerMessage, server::Server};
 
 use super::{ConnectionData, ConnectionWithSignal, Player, data::PlayerData};
 
@@ -120,11 +112,6 @@ impl ConnectionData {
                 self.read_packets(async |packet: C2SHandshakePackets, this: &mut Self| {
                     let C2SHandshakePackets::Intention(packet) = packet;
                     this.stage = packet.intended_stage.into_stage();
-
-                    let mut map = TypeMap::new();
-                    map.insert(Event::<ReceivePacketEvent<C2SHandshakePackets>>::new());
-                    map.insert(Param::new(packet));
-                    this.connected_server.fire_systems(map).await;
                 })
                 .await;
             }

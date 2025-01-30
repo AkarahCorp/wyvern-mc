@@ -10,12 +10,8 @@ use voxidian_protocol::{
 };
 
 use crate::{
+    events::ChunkLoadEvent,
     server::Server,
-    systems::{
-        events::ChunkLoadEvent,
-        parameters::{Event, Param},
-        typemap::TypeMap,
-    },
     values::{Key, Vec2, Vec3},
 };
 
@@ -138,19 +134,12 @@ impl DimensionData {
             (self.chunk_generator)(&mut chunk, pos.x(), pos.y());
             self.chunks.insert(pos.clone(), chunk);
 
-            self.server
-                .clone()
-                .unwrap()
-                .fire_systems({
-                    let mut map = TypeMap::new();
-                    map.insert(Event::<ChunkLoadEvent>::new());
-                    map.insert(Param::new(pos.clone()));
-                    map.insert(Param::new(Dimension {
-                        sender: self.sender.clone(),
-                    }));
-                    map
-                })
-                .await;
+            server.spawn_event(ChunkLoadEvent {
+                dimension: Dimension {
+                    sender: self.sender.clone(),
+                },
+                pos: pos.clone(),
+            });
         }
     }
 }

@@ -11,13 +11,8 @@ use wyvern_actors_macros::{actor, message};
 
 use crate::{
     dimension::{Dimension, DimensionData},
+    events::{DimensionCreateEvent, Event, EventBus, ServerTickEvent},
     player::{ConnectionData, ConnectionWithSignal, Player},
-    systems::{
-        events::{DimensionCreateEvent, ServerTickEvent},
-        parameters::{Event, Param},
-        system::System,
-        typemap::TypeMap,
-    },
     values::Key,
 };
 
@@ -31,28 +26,27 @@ use tokio::{net::TcpListener, sync::mpsc::Sender};
 #[actor(Server, ServerMessage)]
 pub struct ServerData {
     pub(crate) connections: Vec<ConnectionWithSignal>,
-    pub(crate) systems: Vec<Box<dyn System + Send + Sync + 'static>>,
     pub(crate) registries: Arc<RegistryContainer>,
     pub(crate) dimensions: DimensionContainer,
     pub(crate) last_tick: Instant,
     pub(crate) sender: Sender<ServerMessage>,
-    pub(crate) maps: Vec<TypeMap>,
+    pub(crate) events: Arc<EventBus>,
 }
 
 impl Server {
-    pub async fn fire_systems(&self, parameters: TypeMap) {
-        let clone = self.clone();
+    pub fn spawn_event<E: Event + Send + 'static>(&self, event: E) {
+        let server = self.clone();
         tokio::spawn(async move {
-            clone.fire_systems_sync(parameters).await;
+            event.dispatch(server.event_bus().await);
         });
     }
 }
 
 #[message(Server, ServerMessage)]
 impl ServerData {
-    #[FireSystemsSync]
-    pub async fn fire_systems_sync(&mut self, parameters: TypeMap) {
-        self.maps.push(parameters);
+    #[GetEventBus]
+    pub async fn event_bus(&mut self) -> Arc<EventBus> {
+        self.events.clone()
     }
 
     #[SpawnConnectionInternal]
@@ -96,17 +90,9 @@ impl ServerData {
         let server_clone = Server {
             sender: self.sender.clone(),
         };
-        tokio::spawn(async move {
-            server_clone
-                .clone()
-                .fire_systems({
-                    let mut map = TypeMap::new();
-                    map.insert(Event::<DimensionCreateEvent>::new());
-                    map.insert(Param::new(server_clone));
-                    map.insert(Param::new(dim_clone));
-                    map
-                })
-                .await;
+        server_clone.spawn_event(DimensionCreateEvent {
+            dimension: dim_clone,
+            server: server_clone.clone(),
         });
         tokio::task::yield_now().await;
         tokio::task::yield_now().await;
@@ -135,33 +121,14 @@ impl ServerData {
             self.connections
                 .retain_mut(|connection| connection._signal.try_recv().is_err());
 
-            for map in &mut self.maps {
-                for system in &mut self.systems {
-                    let server = server.clone();
-                    if let Some(fut) = system.run(map, server) {
-                        tokio::spawn(fut);
-                    }
-                }
-            }
-            self.maps.clear();
-
             self.handle_messages().await;
 
             let dur = Instant::now().duration_since(self.last_tick);
             if dur > Duration::from_millis(50) {
                 self.last_tick = Instant::now();
 
-                let server = server.clone();
-                tokio::spawn(async move {
-                    server
-                        .clone()
-                        .fire_systems({
-                            let mut map = TypeMap::new();
-                            map.insert(Event::<ServerTickEvent>::new());
-                            map.insert(Param::new(server));
-                            map
-                        })
-                        .await;
+                server.spawn_event(ServerTickEvent {
+                    server: server.clone(),
                 });
             }
         }

@@ -24,14 +24,7 @@ use voxidian_protocol::{
     value::{Identifier, LengthPrefixHashMap, Text, VarInt},
 };
 
-use crate::{
-    systems::{
-        events::PlayerMoveEvent,
-        parameters::{Event, Param},
-        typemap::TypeMap,
-    },
-    values::Key,
-};
+use crate::{events::PlayerMoveEvent, values::Key};
 
 use super::{ConnectionData, Player};
 
@@ -247,17 +240,13 @@ impl ConnectionData {
 
                     this.send_chunks().await;
 
-                    this.connected_server
-                        .fire_systems({
-                            let mut map = TypeMap::new();
-                            map.insert(Event::<PlayerMoveEvent>::new());
-                            map.insert(Param::new(this.associated_data.last_position.clone()));
-                            map.insert(Param::new(Player {
-                                sender: this.sender.clone(),
-                            }));
-                            map
-                        })
-                        .await;
+                    this.connected_server.spawn_event(PlayerMoveEvent {
+                        player: Player {
+                            sender: this.sender.clone(),
+                        },
+                        new_position: this.associated_data.last_position.clone(),
+                        new_direction: this.associated_data.last_direction.clone(),
+                    });
                 }
                 C2SPlayPackets::MovePlayerPosRot(packet) => {
                     this.associated_data.last_position = this
@@ -275,17 +264,13 @@ impl ConnectionData {
 
                     this.send_chunks().await;
 
-                    this.connected_server
-                        .fire_systems({
-                            let mut map = TypeMap::new();
-                            map.insert(Event::<PlayerMoveEvent>::new());
-                            map.insert(Param::new(this.associated_data.last_position.clone()));
-                            map.insert(Param::new(Player {
-                                sender: this.sender.clone(),
-                            }));
-                            map
-                        })
-                        .await;
+                    this.connected_server.spawn_event(PlayerMoveEvent {
+                        player: Player {
+                            sender: this.sender.clone(),
+                        },
+                        new_position: this.associated_data.last_position.clone(),
+                        new_direction: this.associated_data.last_direction.clone(),
+                    });
                 }
                 C2SPlayPackets::MovePlayerRot(packet) => {
                     this.associated_data.last_direction = this
@@ -294,17 +279,13 @@ impl ConnectionData {
                         .with_x(packet.pitch)
                         .with_y(packet.yaw);
 
-                    this.connected_server
-                        .fire_systems({
-                            let mut map = TypeMap::new();
-                            map.insert(Event::<PlayerMoveEvent>::new());
-                            map.insert(Param::new(this.associated_data.last_position.clone()));
-                            map.insert(Param::new(Player {
-                                sender: this.sender.clone(),
-                            }));
-                            map
-                        })
-                        .await;
+                    this.connected_server.spawn_event(PlayerMoveEvent {
+                        player: Player {
+                            sender: this.sender.clone(),
+                        },
+                        new_position: this.associated_data.last_position.clone(),
+                        new_direction: this.associated_data.last_direction.clone(),
+                    });
                 }
                 C2SPlayPackets::ClientInformation(packet) => {
                     this.associated_data.render_distance = packet.info.view_distance as i32;

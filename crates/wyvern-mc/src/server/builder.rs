@@ -1,16 +1,16 @@
-use std::{collections::HashMap, sync::Arc, time::Instant};
+use std::{collections::HashMap, pin::Pin, sync::Arc, time::Instant};
 
 use voxidian_protocol::{
     registry::Registry,
     value::{Biome, DamageType},
 };
 
-use crate::systems::{intos::IntoSystem, parameters::SystemParameter, system::System};
+use crate::events::{Event, EventBus};
 
 use super::{ServerData, dimensions::DimensionContainer, registries::RegistryContainerBuilder};
 
 pub struct ServerBuilder {
-    systems: Vec<Box<dyn System + Send + Sync + 'static>>,
+    events: EventBus,
     registries: RegistryContainerBuilder,
     dimensions: DimensionContainer,
 }
@@ -24,7 +24,7 @@ impl Default for ServerBuilder {
 impl ServerBuilder {
     pub fn new() -> ServerBuilder {
         ServerBuilder {
-            systems: Vec::new(),
+            events: EventBus::default(),
             registries: RegistryContainerBuilder {
                 damage_types: DamageType::vanilla_registry(),
                 biomes: Biome::vanilla_registry(),
@@ -38,12 +38,15 @@ impl ServerBuilder {
         }
     }
 
-    pub fn add_system<I: SystemParameter, S>(&mut self, s: S)
+    pub fn on_event<E: Event + 'static, F>(&mut self, f: fn(E) -> F)
     where
-        S: IntoSystem<I>,
-        <S as IntoSystem<I>>::System: Send + Sync + 'static,
+        F: Future<Output = ()> + Send + 'static,
     {
-        self.systems.push(Box::new(s.into_system()));
+        let handler = Box::new(move |event: E| {
+            Box::pin(f(event)) as Pin<Box<dyn Future<Output = ()> + Send>>
+        })
+            as Box<dyn Fn(E) -> Pin<Box<dyn Future<Output = ()> + Send>> + Send + Sync>;
+        E::add_handler(&mut self.events, handler);
     }
 
     pub fn modify_registries<F: FnOnce(&mut RegistryContainerBuilder)>(&mut self, f: F) {
@@ -54,15 +57,13 @@ impl ServerBuilder {
         let chan = tokio::sync::mpsc::channel(128);
         let server = ServerData {
             connections: Vec::new(),
-            systems: self.systems,
             registries: Arc::new(self.registries.into()),
             dimensions: self.dimensions,
             last_tick: Instant::now(),
 
             sender: chan.0,
             receiver: chan.1,
-
-            maps: Vec::new(),
+            events: Arc::new(self.events),
         };
 
         server.start().await;
