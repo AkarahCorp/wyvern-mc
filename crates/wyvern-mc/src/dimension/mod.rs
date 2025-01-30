@@ -17,6 +17,7 @@ use crate::{
 
 pub mod blocks;
 pub mod chunk;
+pub mod properties;
 
 #[allow(dead_code)]
 #[crate::actor(Dimension, DimensionMessage)]
