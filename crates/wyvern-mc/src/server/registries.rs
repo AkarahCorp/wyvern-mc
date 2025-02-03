@@ -1,7 +1,7 @@
 use voxidian_protocol::{
     registry::Registry,
     value::{
-        Biome, DamageType, DimType, PaintingVariant as PtcPaintingVariant,
+        Biome, DamageType, DimType, EntityType, PaintingVariant as PtcPaintingVariant,
         WolfVariant as PtcWolfVariant,
     },
 };
@@ -18,6 +18,7 @@ pub struct RegistryContainer {
     pub(crate) wolf_variants: Registry<PtcWolfVariant>,
     pub(crate) painting_variants: Registry<PtcPaintingVariant>,
     pub(crate) dimension_types: Registry<DimType>,
+    pub(crate) entity_types: Registry<EntityType>,
 }
 
 impl std::fmt::Debug for RegistryContainer {
@@ -32,6 +33,7 @@ pub struct RegistryContainerBuilder {
     pub(crate) wolf_variants: Registry<PtcWolfVariant>,
     pub(crate) painting_variants: Registry<PtcPaintingVariant>,
     pub(crate) dimension_types: Registry<DimType>,
+    pub(crate) entity_types: Registry<EntityType>,
 }
 
 impl From<RegistryContainerBuilder> for RegistryContainer {
@@ -42,6 +44,7 @@ impl From<RegistryContainerBuilder> for RegistryContainer {
             wolf_variants: value.wolf_variants,
             painting_variants: value.painting_variants,
             dimension_types: value.dimension_types,
+            entity_types: value.entity_types,
         }
     }
 }

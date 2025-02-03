@@ -2,7 +2,7 @@ use std::{collections::HashMap, pin::Pin, sync::Arc, time::Instant};
 
 use voxidian_protocol::{
     registry::Registry,
-    value::{Biome, DamageType},
+    value::{Biome, DamageType, EntityType},
 };
 
 use crate::events::{Event, EventBus};
@@ -31,6 +31,7 @@ impl ServerBuilder {
                 wolf_variants: Registry::new(),
                 painting_variants: Registry::new(),
                 dimension_types: Registry::new(),
+                entity_types: EntityType::vanilla_registry(),
             },
             dimensions: DimensionContainer {
                 dimensions: HashMap::new(),
@@ -64,6 +65,8 @@ impl ServerBuilder {
             sender: chan.0,
             receiver: chan.1,
             events: Arc::new(self.events),
+
+            last_entity_id: 0,
         };
 
         server.start().await;

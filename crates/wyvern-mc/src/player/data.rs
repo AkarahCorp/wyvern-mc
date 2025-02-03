@@ -4,6 +4,7 @@ use crate::{
 };
 use voxidian_protocol::{packet::c2s::play::InputFlags, value::Uuid};
 
+#[derive(Debug, Clone)]
 pub struct PlayerData {
     pub(crate) uuid: Uuid,
     pub(crate) username: String,
@@ -19,6 +20,7 @@ pub struct PlayerData {
 
     pub(crate) input_flags: InputFlags,
     pub(crate) is_loaded: bool,
+    pub(crate) entity_id: i32,
 }
 
 impl Default for PlayerData {
@@ -45,6 +47,7 @@ impl Default for PlayerData {
                 sprint: false,
             },
             is_loaded: false,
+            entity_id: 0,
         }
     }
 }

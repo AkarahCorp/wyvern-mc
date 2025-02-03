@@ -31,6 +31,7 @@ pub struct ServerData {
     pub(crate) last_tick: Instant,
     pub(crate) sender: Sender<ServerMessage>,
     pub(crate) events: Arc<EventBus>,
+    pub(crate) last_entity_id: i32,
 }
 
 impl Server {
@@ -44,6 +45,12 @@ impl Server {
 
 #[message(Server, ServerMessage)]
 impl ServerData {
+    #[NewEntityId]
+    pub async fn get_entity_id(&mut self) -> i32 {
+        self.last_entity_id += 1;
+        self.last_entity_id
+    }
+
     #[GetEventBus]
     pub async fn event_bus(&mut self) -> Arc<EventBus> {
         self.events.clone()

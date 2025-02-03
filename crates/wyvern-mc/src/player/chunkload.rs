@@ -33,10 +33,10 @@ impl ConnectionData {
             .loaded_chunks
             .iter()
             .filter(|position| {
-                position.x() > cx - render_distance
-                    && position.x() < cx + render_distance
-                    && position.y() > cz - render_distance
-                    && position.y() < cz + render_distance
+                position.x() >= cx - render_distance
+                    && position.x() <= cx + render_distance
+                    && position.y() >= cz - render_distance
+                    && position.y() <= cz + render_distance
             })
             .map(|x| *x)
             .collect::<Vec<_>>();
