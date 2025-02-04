@@ -3,13 +3,12 @@ use std::sync::LazyLock;
 use noise::{NoiseFn, Simplex};
 use voxidian_protocol::value::{DimEffects, DimMonsterSpawnLightLevel, DimType};
 use wyvern_mc::{
-    dimension::{blocks::BlockState, chunk::Chunk},
+    dimension::{blocks::BlockState, chunk::Chunk, properties::{BlockProperty, Properties}},
     events::DimensionCreateEvent,
     proxy::ProxyBuilder,
     server::ServerBuilder,
     values::{
-        Key, Vec3,
-        regval::{PaintingVariant, WolfVariant},
+        regval::{PaintingVariant, WolfVariant}, Key, Vec3
     },
 };
 
@@ -80,15 +79,8 @@ async fn dim_init(event: DimensionCreateEvent) {
                     let new_pos = Vec3::new(x2, f64::floor(y * -16.0 + 8.0) as i32, z2);
                     chunk.set_block_at(
                         new_pos,
-                        BlockState::new(Key::new("minecraft", "grass_block")).with_property(
-                            "snowy",
-                            if (y * -16.0 + 8.0) > 0.0 {
-                                "true"
-                            } else {
-                                "false"
-                            },
-                        ),
-                    );
+                        BlockState::new(Key::new("minecraft", "grass_block"))
+                        .with_property(Properties::SNOWY, false));
                 }
             }
         })
