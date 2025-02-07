@@ -1,4 +1,7 @@
-use super::{BoxedFuture, ChunkLoadEvent, DimensionCreateEvent, PlayerMoveEvent, ServerTickEvent};
+use super::{
+    BoxedFuture, ChunkLoadEvent, DimensionCreateEvent, PlayerCommandEvent, PlayerMoveEvent,
+    ServerTickEvent,
+};
 use std::{fmt::Debug, sync::Arc};
 macro_rules! event_bus {
     ($($name:ident : $t:ty)*) => {
@@ -30,6 +33,7 @@ event_bus! {
     on_server_tick: ServerTickEvent
     on_player_move: PlayerMoveEvent
     on_chunk_load: ChunkLoadEvent
+    on_command: PlayerCommandEvent
 }
 
 impl Debug for EventBus {

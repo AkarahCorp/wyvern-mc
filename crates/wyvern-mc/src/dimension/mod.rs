@@ -58,22 +58,25 @@ impl DimensionData {
         let chunk = self.chunks.get_mut(&chunk_pos).unwrap();
         chunk.set_block_at(pos_in_chunk, block_state.clone());
 
-        for conn in self.server.clone().unwrap().connections().await {
-            let block_state = block_state.clone();
-            let pos = position.clone();
-            let conn = conn.clone();
-            tokio::spawn(async move {
-                if conn.is_loaded_in_world().await {
-                    conn.write_packet(BlockUpdateS2CPlayPacket {
-                        pos: BlockPos::new(pos.x(), pos.y(), pos.z()),
-                        block: unsafe {
-                            RegEntry::new_unchecked(block_state.protocol_id() as usize)
-                        },
-                    })
-                    .await;
-                }
-            });
-        }
+        let server = self.server.clone().unwrap();
+        tokio::spawn(async move {
+            for conn in server.connections().await {
+                let block_state = block_state.clone();
+                let pos = position.clone();
+                let conn = conn.clone();
+                tokio::spawn(async move {
+                    if conn.is_loaded_in_world().await {
+                        conn.write_packet(BlockUpdateS2CPlayPacket {
+                            pos: BlockPos::new(pos.x(), pos.y(), pos.z()),
+                            block: unsafe {
+                                RegEntry::new_unchecked(block_state.protocol_id() as usize)
+                            },
+                        })
+                        .await;
+                    }
+                });
+            }
+        });
     }
 
     #[GetBlock]
@@ -118,8 +121,6 @@ impl DimensionData {
 
     pub(crate) async fn try_initialize_chunk(&mut self, pos: &Vec2<i32>) {
         if !self.chunks.contains_key(&pos) {
-            println!("Initializing: {:?}", pos);
-
             let server = self.server.clone().unwrap();
             let registries = server.registries().await;
 

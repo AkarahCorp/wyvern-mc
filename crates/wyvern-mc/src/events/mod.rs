@@ -40,3 +40,42 @@ pub struct PlayerMoveEvent {
     pub new_position: Vec3<f64>,
     pub new_direction: Vec2<f32>,
 }
+
+#[derive(Debug, Clone)]
+pub struct PlayerCommandEvent {
+    pub player: Player,
+    pub command: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct StartBreakBlockEvent {
+    pub player: Player,
+    pub position: Vec3<i32>,
+}
+
+#[derive(Debug, Clone)]
+pub struct StopBreakBlockEvent {
+    pub player: Player,
+    pub position: Vec3<i32>,
+}
+
+#[derive(Debug, Clone)]
+pub struct BreakBlockEvent {
+    pub player: Player,
+    pub position: Vec3<i32>,
+}
+
+#[derive(Debug, Clone)]
+pub struct DropItemEvent {
+    pub player: Player,
+}
+
+#[derive(Debug, Clone)]
+pub struct DropItemStackEvent {
+    pub player: Player,
+}
+
+#[derive(Debug, Clone)]
+pub struct SwapHandsEvent {
+    pub player: Player,
+}

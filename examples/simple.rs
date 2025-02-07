@@ -1,14 +1,20 @@
-use std::sync::LazyLock;
+use std::{sync::LazyLock, time::Instant};
 
 use noise::{NoiseFn, Simplex};
+use rand::rngs::ThreadRng;
 use voxidian_protocol::value::{DimEffects, DimMonsterSpawnLightLevel, DimType};
 use wyvern_mc::{
-    dimension::{blocks::BlockState, chunk::Chunk, properties::{BlockProperty, Properties}},
-    events::DimensionCreateEvent,
+    dimension::{
+        blocks::BlockState,
+        chunk::Chunk,
+        properties::{BlockProperty, Properties},
+    },
+    events::{DimensionCreateEvent, PlayerCommandEvent},
     proxy::ProxyBuilder,
     server::ServerBuilder,
     values::{
-        regval::{PaintingVariant, WolfVariant}, Key, Vec3
+        Key, Vec3,
+        regval::{PaintingVariant, WolfVariant},
     },
 };
 
@@ -18,6 +24,7 @@ async fn main() {
     proxy.with_server({
         let mut b = ServerBuilder::new();
         b.on_event(dim_init);
+        b.on_event(on_command);
         b.modify_registries(|registries| {
             registries.wolf_variant(Key::new("minecraft", "pale"), WolfVariant {
                 angry_texture: Key::empty(),
@@ -59,6 +66,30 @@ async fn main() {
 
 static SIMPLEX: LazyLock<Simplex> = LazyLock::new(|| Simplex::new(0));
 
+async fn on_command(event: PlayerCommandEvent) {
+    if event.command.as_str() == "overload" {
+        let start = Instant::now();
+        for _ in 1..100000 {
+            let x = i32::abs(rand::random::<i32>() % 256);
+            let y = i32::abs(rand::random::<i32>() % 16);
+            let z = i32::abs(rand::random::<i32>() % 256);
+
+            event
+                .player
+                .get_dimension()
+                .await
+                .set_block(
+                    Vec3::new(x, y, z),
+                    BlockState::new(Key::new("minecraft", "grass_block"))
+                        .with_property(Properties::SNOWY, true),
+                )
+                .await;
+        }
+        let end = Instant::now();
+        println!("Time: {:?}", end - start);
+    }
+}
+
 async fn dim_init(event: DimensionCreateEvent) {
     event
         .dimension
@@ -80,7 +111,8 @@ async fn dim_init(event: DimensionCreateEvent) {
                     chunk.set_block_at(
                         new_pos,
                         BlockState::new(Key::new("minecraft", "grass_block"))
-                        .with_property(Properties::SNOWY, false));
+                            .with_property(Properties::SNOWY, false),
+                    );
                 }
             }
         })

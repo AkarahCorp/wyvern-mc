@@ -1,27 +1,36 @@
 use voxidian_protocol::{
     packet::{
+        Stage,
         c2s::{
-            config::C2SConfigPackets, login::C2SLoginPackets, play::C2SPlayPackets,
+            config::C2SConfigPackets,
+            login::C2SLoginPackets,
+            play::{C2SPlayPackets, PlayerStatus},
             status::C2SStatusPackets,
-        }, s2c::{
+        },
+        s2c::{
             config::{
                 FinishConfigurationS2CConfigPacket, KnownPack, SelectKnownPacksS2CConfigPacket,
             },
             login::LoginFinishedS2CLoginPacket,
             play::{
-                AddEntityS2CPlayPacket, EntityPositionSyncS2CPlayPacket, GameEvent, GameEventS2CPlayPacket, Gamemode, LoginS2CPlayPacket, PlayerPositionS2CPlayPacket, PongResponseS2CPlayPacket, TeleportFlags
+                AddEntityS2CPlayPacket, EntityPositionSyncS2CPlayPacket, GameEvent,
+                GameEventS2CPlayPacket, Gamemode, LoginS2CPlayPacket, PlayerPositionS2CPlayPacket,
+                PongResponseS2CPlayPacket, TeleportFlags,
             },
             status::{
                 PongResponseS2CStatusPacket, StatusResponse, StatusResponsePlayers,
                 StatusResponseVersion,
             },
-        }, Stage
+        },
     },
     registry::RegEntry,
     value::{Angle, Identifier, LengthPrefixHashMap, Text, Uuid, VarInt},
 };
 
-use crate::{events::PlayerMoveEvent, values::Key};
+use crate::{
+    events::{PlayerCommandEvent, PlayerMoveEvent},
+    values::Key,
+};
 
 use super::{ConnectionData, Player};
 
@@ -35,11 +44,11 @@ impl ConnectionData {
                             name: "1.21.4".to_string(),
                             protocol: 769,
                         },
-                        players: StatusResponsePlayers {
+                        players: Some(StatusResponsePlayers {
                             online: 0,
                             max: 100,
                             sample: vec![],
-                        },
+                        }),
                         desc: Text::new(),
                         favicon_png_b64: "".to_string(),
                         enforce_chat_reports: false,
@@ -207,11 +216,28 @@ impl ConnectionData {
     }
 
     pub async fn play_phase(&mut self) {
-        self.read_packets(
-            async |packet: C2SPlayPackets, this: &mut Self| match packet {
+        self.read_packets(async |packet: C2SPlayPackets, this: &mut Self| {
+            match packet {
                 C2SPlayPackets::PlayerLoaded(_packet) => {
                     this.associated_data.is_loaded = true;
                 }
+                C2SPlayPackets::ChatCommand(packet) => {
+                    this.connected_server.spawn_event(PlayerCommandEvent {
+                        player: Player {
+                            sender: this.sender.clone(),
+                        },
+                        command: packet.command,
+                    });
+                }
+                C2SPlayPackets::PlayerAction(packet) => match packet.status {
+                    PlayerStatus::StartedDigging => {}
+                    PlayerStatus::CancelledDigging => {}
+                    PlayerStatus::FinishedDigging => {}
+                    PlayerStatus::DropItemStack => {}
+                    PlayerStatus::DropItem => {}
+                    PlayerStatus::FinishUsingItem => {}
+                    PlayerStatus::SwapItems => {}
+                },
                 C2SPlayPackets::AcceptTeleportation(packet) => {
                     if packet.teleport_id.as_i32() == 0 {
                         this.associated_data.dimension = this
@@ -225,38 +251,37 @@ impl ConnectionData {
                         })
                         .await;
 
-                        this.write_packet(AddEntityS2CPlayPacket {
-                            id: (this.associated_data.entity_id + 5).into(),
-                            uuid: Uuid::new_v4(),
-                            kind: this.connected_server
-                                .registries()
-                                .await
-                                .entity_types
-                                .make_entry(&Identifier::new("minecraft", "villager"))
-                                .unwrap(),
-                            x: this.associated_data.last_position.x() + 1000.0,
-                            y: this.associated_data.last_position.y() + 1000.0,
-                            z: this.associated_data.last_position.z() + 1000.0,
-                            pitch: Angle::of_deg(this.associated_data.last_direction.x()),
-                            yaw: Angle::of_deg(this.associated_data.last_direction.y()),
-                            head_yaw: Angle::of_deg(this.associated_data.last_direction.y()),
-                            data: VarInt::from(0),
-                            vel_x: 0,
-                            vel_y: 0,
-                            vel_z: 0,
-                        })
-                        .await;
-
-
+                        // this.write_packet(AddEntityS2CPlayPacket {
+                        //     id: (this.associated_data.entity_id + 5).into(),
+                        //     uuid: Uuid::new_v4(),
+                        //     kind: this
+                        //         .connected_server
+                        //         .registries()
+                        //         .await
+                        //         .entity_types
+                        //         .make_entry(&Identifier::new("minecraft", "villager"))
+                        //         .unwrap(),
+                        //     x: this.associated_data.last_position.x() + 1000.0,
+                        //     y: this.associated_data.last_position.y() + 1000.0,
+                        //     z: this.associated_data.last_position.z() + 1000.0,
+                        //     pitch: Angle::of_deg(this.associated_data.last_direction.x()),
+                        //     yaw: Angle::of_deg(this.associated_data.last_direction.y()),
+                        //     head_yaw: Angle::of_deg(this.associated_data.last_direction.y()),
+                        //     data: VarInt::from(0),
+                        //     vel_x: 0,
+                        //     vel_y: 0,
+                        //     vel_z: 0,
+                        // })
+                        // .await;
 
                         for _conn in this.connected_server.connections().await.clone() {
                             let _data = this.associated_data.clone();
                             let _server = this.connected_server.clone();
-    
+
                             // TODO: figure out player spawning logic
                             // tokio::spawn(async move {
                             //     conn.write_packet(BundleDelimiterS2CPlayPacket).await;
-                                
+
                             //     conn.write_packet(SetEntityDataS2CPlayPacket {
                             //         entity: (data.entity_id + 10).into(),
                             //         data: EntityMetadata::new()
@@ -278,18 +303,19 @@ impl ConnectionData {
 
                     this.send_chunks().await;
 
-                    this.write_packet(EntityPositionSyncS2CPlayPacket {
-                        entity_id: (this.associated_data.entity_id + 5).into(),
-                        x: this.associated_data.last_position.x(),
-                        y: this.associated_data.last_position.y(),
-                        z: this.associated_data.last_position.z(),
-                        vx: 0.0,
-                        vy: 0.0,
-                        vz: 0.0,
-                        yaw: 15.0,
-                        pitch: 27.0,
-                        on_ground: false,
-                    }).await;
+                    // this.write_packet(EntityPositionSyncS2CPlayPacket {
+                    //     entity_id: (this.associated_data.entity_id + 5).into(),
+                    //     x: this.associated_data.last_position.x(),
+                    //     y: this.associated_data.last_position.y(),
+                    //     z: this.associated_data.last_position.z(),
+                    //     vx: 0.0,
+                    //     vy: 0.0,
+                    //     vz: 0.0,
+                    //     yaw: 15.0,
+                    //     pitch: 27.0,
+                    //     on_ground: false,
+                    // })
+                    // .await;
 
                     this.connected_server.spawn_event(PlayerMoveEvent {
                         player: Player {
@@ -346,14 +372,15 @@ impl ConnectionData {
                 }
                 C2SPlayPackets::ClientTickEnd(_) => {}
                 C2SPlayPackets::PingRequest(packet) => {
-                    this.write_packet(PongResponseS2CPlayPacket(packet.id as u64)).await;
+                    this.write_packet(PongResponseS2CPlayPacket(packet.id as u64))
+                        .await;
                 }
                 C2SPlayPackets::ChunkBatchReceived(_packet) => {}
                 packet => {
                     println!("Received unknown play packet: {:?}", packet);
                 }
-            },
-        )
+            }
+        })
         .await;
     }
 }
