@@ -41,6 +41,12 @@ impl Server {
             event.dispatch(server.event_bus().await);
         });
     }
+
+    pub async fn spawn_event_blocking<E: Event + Send + 'static>(&self, event: E) {
+        let server = self.clone();
+        let bus = server.event_bus().await;
+        event.dispatch(bus);
+    }
 }
 
 #[message(Server, ServerMessage)]

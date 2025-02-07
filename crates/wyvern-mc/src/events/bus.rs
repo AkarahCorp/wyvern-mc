@@ -1,8 +1,11 @@
+use futures::future::join_all;
+
 use super::{
     BoxedFuture, ChunkLoadEvent, DimensionCreateEvent, PlayerCommandEvent, PlayerMoveEvent,
     ServerTickEvent,
 };
 use std::{fmt::Debug, sync::Arc};
+
 macro_rules! event_bus {
     ($($name:ident : $t:ty)*) => {
         #[derive(Default)]
@@ -16,12 +19,18 @@ macro_rules! event_bus {
             }
 
             fn dispatch(self, bus: std::sync::Arc<EventBus>) {
-                for handler in bus.$name.clone() {
-                    let event = self.clone();
-                    tokio::spawn(async move {
-                        handler(event).await;
-                    });
-                }
+                tokio::spawn(async move {
+                    self.dispatch_sync(bus).await;
+                });
+            }
+
+            async fn dispatch_sync(self, bus: std::sync::Arc<EventBus>) {
+                let futures_to_poll = bus
+                        .$name
+                        .clone()
+                        .into_iter()
+                        .map(|x| x(self.clone()));
+                    join_all(futures_to_poll).await;
             }
         })*
 

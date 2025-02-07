@@ -1,16 +1,14 @@
 [workspace]
 resolver = "3"
-members = [
-    "examples",
-    "crates/*"
-]
+members = ["examples", "crates/*"]
 
 [workspace.dependencies]
 voxidian-protocol = { git = "https://github.com/LighthouseMC/VoxidianProtocol.git" }
 tokio = { version = "1.42.0", features = ["full"] }
 wyvern-actors = { path = "./crates/wyvern-actors" }
-wyvern-actors-macros = { path = "./crates/wyvern-actors-macros"}
+wyvern-actors-macros = { path = "./crates/wyvern-actors-macros" }
 proc-macro2 = { version = "*" }
 syn = { version = "*", features = ["full"] }
 quote = { version = "*" }
 rust-format = { version = "*" }
+futures = { version = "*" }
