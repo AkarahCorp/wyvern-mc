@@ -13,9 +13,8 @@ use voxidian_protocol::{
             },
             login::LoginFinishedS2CLoginPacket,
             play::{
-                AddEntityS2CPlayPacket, EntityPositionSyncS2CPlayPacket, GameEvent,
-                GameEventS2CPlayPacket, Gamemode, LoginS2CPlayPacket, PlayerPositionS2CPlayPacket,
-                PongResponseS2CPlayPacket, TeleportFlags,
+                GameEvent, GameEventS2CPlayPacket, Gamemode, LoginS2CPlayPacket,
+                PlayerPositionS2CPlayPacket, PongResponseS2CPlayPacket, TeleportFlags,
             },
             status::{
                 PongResponseS2CStatusPacket, StatusResponse, StatusResponsePlayers,
@@ -24,7 +23,7 @@ use voxidian_protocol::{
         },
     },
     registry::RegEntry,
-    value::{Angle, Identifier, LengthPrefixHashMap, Text, Uuid, VarInt},
+    value::{Identifier, LengthPrefixHashMap, Text, VarInt},
 };
 
 use crate::{

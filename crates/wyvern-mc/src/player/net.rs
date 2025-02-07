@@ -1,10 +1,17 @@
-use std::{collections::VecDeque, fmt::Debug, io::ErrorKind, net::IpAddr};
+use std::{
+    collections::VecDeque,
+    fmt::Debug,
+    io::ErrorKind,
+    net::IpAddr,
+    time::{Duration, Instant},
+};
 
 use tokio::{io::AsyncWriteExt, net::TcpStream, sync::*};
 use voxidian_protocol::packet::{
     DecodeError, PrefixedPacketDecode, Stage,
     c2s::handshake::C2SHandshakePackets,
     processing::{CompressionMode, PacketProcessing, SecretCipher},
+    s2c::play::KeepAliveS2CPlayPacket,
 };
 use wyvern_actors::Actor;
 
@@ -79,6 +86,12 @@ impl ConnectionData {
             self.read_incoming_packets().await;
             self.write_outgoing_packets().await;
             self.handle_messages().await;
+
+            let now = Instant::now();
+            if now > self.associated_data.last_sent_keep_alive + Duration::from_secs(5) {
+                self.write_packet(KeepAliveS2CPlayPacket(10)).await;
+                self.associated_data.last_sent_keep_alive = Instant::now();
+            }
         }
     }
 

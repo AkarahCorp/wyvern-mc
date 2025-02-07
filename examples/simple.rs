@@ -1,14 +1,10 @@
 use std::{sync::LazyLock, time::Instant};
 
 use noise::{NoiseFn, Simplex};
-use rand::rngs::ThreadRng;
+use rand::Rng;
 use voxidian_protocol::value::{DimEffects, DimMonsterSpawnLightLevel, DimType};
 use wyvern_mc::{
-    dimension::{
-        blocks::BlockState,
-        chunk::Chunk,
-        properties::{BlockProperty, Properties},
-    },
+    dimension::{blocks::BlockState, chunk::Chunk, properties::Properties},
     events::{DimensionCreateEvent, PlayerCommandEvent},
     proxy::ProxyBuilder,
     server::ServerBuilder,
@@ -69,21 +65,22 @@ static SIMPLEX: LazyLock<Simplex> = LazyLock::new(|| Simplex::new(0));
 async fn on_command(event: PlayerCommandEvent) {
     if event.command.as_str() == "overload" {
         let start = Instant::now();
-        for _ in 1..100000 {
-            let x = i32::abs(rand::random::<i32>() % 256);
-            let y = i32::abs(rand::random::<i32>() % 16);
-            let z = i32::abs(rand::random::<i32>() % 256);
-
-            event
-                .player
-                .get_dimension()
-                .await
-                .set_block(
-                    Vec3::new(x, y, z),
-                    BlockState::new(Key::new("minecraft", "grass_block"))
-                        .with_property(Properties::SNOWY, true),
-                )
-                .await;
+        for x in 1..100 {
+            for y in 1..10 {
+                for z in 1..100 {
+                    let value = rand::thread_rng().gen_bool(0.5);
+                    event
+                        .player
+                        .get_dimension()
+                        .await
+                        .set_block(
+                            Vec3::new(x, y, z),
+                            BlockState::new(Key::new("minecraft", "grass_block"))
+                                .with_property(Properties::SNOWY, value),
+                        )
+                        .await;
+                }
+            }
         }
         let end = Instant::now();
         println!("Time: {:?}", end - start);

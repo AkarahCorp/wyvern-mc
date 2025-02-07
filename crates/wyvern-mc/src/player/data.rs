@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use crate::{
     dimension::Dimension,
     values::{Vec2, Vec3},
@@ -21,6 +23,8 @@ pub struct PlayerData {
     pub(crate) input_flags: InputFlags,
     pub(crate) is_loaded: bool,
     pub(crate) entity_id: i32,
+
+    pub(crate) last_sent_keep_alive: Instant,
 }
 
 impl Default for PlayerData {
@@ -48,6 +52,7 @@ impl Default for PlayerData {
             },
             is_loaded: false,
             entity_id: 0,
+            last_sent_keep_alive: Instant::now(),
         }
     }
 }
