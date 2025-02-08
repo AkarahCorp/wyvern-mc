@@ -73,7 +73,6 @@ impl ConnectionData {
             async |packet: C2SLoginPackets, this: &mut Self| match packet {
                 C2SLoginPackets::CustomQueryAnswer(_packet) => todo!(),
                 C2SLoginPackets::LoginAcknowledged(_packet) => {
-                    println!("login got acknowledged");
                     this.stage = Stage::Config;
                     this.write_packet(SelectKnownPacksS2CConfigPacket {
                         known_packs: vec![KnownPack {
@@ -217,6 +216,11 @@ impl ConnectionData {
 
     pub async fn play_phase(&mut self) {
         self.read_packets(async |packet: C2SPlayPackets, this: &mut Self| {
+            log::debug!(
+                "Player {:?} has sent packet: {:?}",
+                this.associated_data.username,
+                packet
+            );
             match packet {
                 C2SPlayPackets::PlayerLoaded(_packet) => {
                     this.associated_data.is_loaded = true;
@@ -239,21 +243,17 @@ impl ConnectionData {
                     PlayerStatus::SwapItems => {}
                 },
                 C2SPlayPackets::AcceptTeleportation(packet) => {
-                    println!("p1");
                     if packet.teleport_id.as_i32() == 0 {
-                        println!("p2");
                         this.associated_data.dimension = this
                             .connected_server
                             .dimension(Key::new("wyvern", "root"))
                             .await;
-                        println!("p3");
 
                         this.write_packet(GameEventS2CPlayPacket {
                             event: GameEvent::WaitForChunks,
                             value: 0.0,
                         })
                         .await;
-                        println!("p4");
 
                         for entity in this
                             .associated_data
@@ -391,7 +391,10 @@ impl ConnectionData {
                 }
                 C2SPlayPackets::ChunkBatchReceived(_packet) => {}
                 packet => {
-                    println!("Received unknown play packet: {:?}", packet);
+                    log::warn!(
+                        "Received unknown play packet, this packet will be ignored. {:?}",
+                        packet
+                    );
                 }
             }
         })

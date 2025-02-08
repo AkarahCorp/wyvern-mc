@@ -131,11 +131,6 @@ pub fn message(attr: TokenStream, item: TokenStream) -> TokenStream {
             #(#mapped_fns)*
         }
     };
-
-    // eprintln!(
-    //     "\n{}",
-    //     RustFmt::default().format_str(o.to_string()).unwrap()
-    // );
     o
 }
 

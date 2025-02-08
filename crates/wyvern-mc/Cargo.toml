@@ -9,3 +9,4 @@ tokio = { workspace = true }
 wyvern-actors = { workspace = true }
 wyvern-actors-macros = { workspace = true }
 futures = { workspace = true }
+log = { workspace = true }

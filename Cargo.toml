@@ -12,3 +12,5 @@ syn = { version = "*", features = ["full"] }
 quote = { version = "*" }
 rust-format = { version = "*" }
 futures = { version = "*" }
+log = { version = "*" }
+env_logger = { version = "*" }

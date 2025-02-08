@@ -78,7 +78,7 @@ impl ConnectionData {
             tokio::task::yield_now().await;
             let result = self.handle_incoming_bytes().await;
             if result.is_err() {
-                println!("Breaking! A player has disconnected!");
+                log::info!("A player has disconnected. Stopping their connection data...");
                 let _ = self.signal.send(ConnectionStoppedSignal).await;
                 break;
             }
@@ -150,12 +150,6 @@ impl ConnectionData {
                 break;
             }
 
-            // if self.bytes_to_send.len() < 100 {
-            //     // println!("Bytes actually sent: {:?}", self.bytes_to_send);
-            // } else {
-            //     println!("Sent big byte vector: {:?}", self.bytes_to_send.len());
-            // }
-
             self.stream.write_all(&self.bytes_to_send).await.unwrap();
 
             self.bytes_to_send.clear();
@@ -188,20 +182,21 @@ impl ConnectionData {
                         f(packet, self).await;
                     }
                     Err(DecodeError::EndOfBuffer) => {
-                        println!("--- EOF FAILURE LOG");
-                        println!(
-                            "Buffer received: {:?}",
-                            buf_copy.iter().collect::<Vec<u8>>()
-                        );
-                        println!(
-                            "Buffer after receiving: {:?}",
-                            buf.iter().collect::<Vec<u8>>()
-                        );
-                        println!("Received bytes before consuming: {:?}", byte_cache);
-                        println!("Bytes left to receive: {:?}", self.received_bytes);
-                        println!("Bytes consumed: {:?}", rv);
+                        log::error!(
+                            "The server has encountered a packet decoding error!
 
-                        println!("--- END LOG ------------------");
+                        Buffer received: {:?}
+                        Buffer after receiving: {:?}
+                        Received bytes before consuming: {:?}
+                        Bytes left to receive: {:?}
+                        Bytes consumed: {:?}
+                        ",
+                            buf_copy.iter().collect::<Vec<u8>>(),
+                            buf.iter().collect::<Vec<u8>>(),
+                            byte_cache,
+                            self.received_bytes,
+                            rv
+                        );
                     }
                     Err(e) => {
                         panic!("{:?}", e);

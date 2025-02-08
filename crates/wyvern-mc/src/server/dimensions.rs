@@ -26,8 +26,11 @@ impl DimensionContainer {
 
     pub(crate) fn assert_root_dim_exists(&self) {
         if !self.dimensions.contains_key(&Key::new("wyvern", "root")) {
-            println!(
-                "\n\nServer Setup Error\n\nPlease define a root dimension with ServerBuilder::root_dimension\nThis is the dimension where players will spawn.\n\n"
+            log::error!(
+                "Server Setup Error
+                
+                Please define a root dimension with ServerBuilder::root_dimension
+                This is the dimension where players will spawn."
             );
             std::process::exit(0)
         }

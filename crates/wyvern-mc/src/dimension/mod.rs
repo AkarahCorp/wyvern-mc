@@ -162,8 +162,6 @@ impl DimensionData {
                         vel_z: 0,
                     })
                     .await;
-
-                    println!("Writing packet!");
                 }
             };
         }

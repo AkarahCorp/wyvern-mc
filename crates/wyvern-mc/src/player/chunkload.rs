@@ -64,6 +64,11 @@ impl ConnectionData {
         });
 
         if let Some(pos) = chunks.first() {
+            log::debug!(
+                "Player {:?} is loading chunk @ {:?}",
+                self.associated_data.username,
+                pos
+            );
             let chunk_x = pos.x();
             let chunk_z = pos.y();
 

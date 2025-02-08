@@ -16,6 +16,8 @@ use wyvern_mc::{
 
 #[tokio::main]
 async fn main() {
+    env_logger::init();
+
     let mut proxy = ProxyBuilder::new();
     proxy.with_server({
         let mut b = ServerBuilder::new();
@@ -86,7 +88,6 @@ async fn on_command(event: PlayerCommandEvent) {
             }
         }
         let end = Instant::now();
-        println!("Time: {:?}", end - start);
     }
 
     if event.command.as_str() == "spawnentity" {

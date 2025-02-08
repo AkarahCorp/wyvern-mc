@@ -35,7 +35,7 @@ impl ProxyBuilder {
                     break;
                 }
                 Err(err) => {
-                    eprintln!("Unable to listen for shutdown signal: {}", err);
+                    log::error!("Unable to listen for shutdown signal: {}", err);
                     break;
                 }
             }

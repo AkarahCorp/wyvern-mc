@@ -54,6 +54,7 @@ impl ServerData {
     #[NewEntityId]
     pub async fn get_entity_id(&mut self) -> i32 {
         self.last_entity_id += 1;
+        log::debug!("New entity id produced: {:?}", self.last_entity_id);
         self.last_entity_id
     }
 
@@ -86,6 +87,7 @@ impl ServerData {
 
     #[CreateDimension]
     pub async fn create_dimension(&mut self, name: Key<Dimension>) -> Dimension {
+        log::debug!("Creating new dimension: {:?}", name);
         let mut root_dim = DimensionData::new(
             unsafe { name.clone().retype() },
             Server {
@@ -126,6 +128,7 @@ impl ServerData {
 
 impl ServerData {
     pub async fn start(mut self) {
+        log::info!("A server is starting!");
         self.create_dimension(Key::new("wyvern", "root")).await;
         let snd = Server {
             sender: self.sender.clone(),
@@ -163,12 +166,12 @@ impl ServerData {
             .await
             .unwrap();
 
-        println!("Server now listening on 127.0.0.1:25565");
+        log::info!("A server is now listening on: 127.0.0.1:25565");
         loop {
             let new_client = listener.accept().await;
             match new_client {
                 Ok((stream, addr)) => {
-                    println!("Accepted new client: {:?}", addr);
+                    log::info!("Accepted new client: {:?}", addr);
                     let signal =
                         ConnectionData::connection_channel(stream, addr.ip(), server.clone());
                     server.spawn_connection_internal(signal).await;
