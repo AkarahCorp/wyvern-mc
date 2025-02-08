@@ -81,3 +81,8 @@ pub struct DropItemStackEvent {
 pub struct SwapHandsEvent {
     pub player: Player,
 }
+
+#[derive(Debug, Clone)]
+pub struct ServerStartEvent {
+    pub server: Server,
+}

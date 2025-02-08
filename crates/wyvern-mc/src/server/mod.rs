@@ -11,7 +11,7 @@ use wyvern_actors_macros::{actor, message};
 
 use crate::{
     dimension::{Dimension, DimensionData},
-    events::{DimensionCreateEvent, Event, EventBus, ServerTickEvent},
+    events::{DimensionCreateEvent, Event, EventBus, ServerStartEvent, ServerTickEvent},
     player::{ConnectionData, ConnectionWithSignal, Player},
     values::Key,
 };
@@ -125,6 +125,14 @@ impl ServerData {
         let snd = Server {
             sender: self.sender.clone(),
         };
+        let snd_clone = snd.clone();
+        tokio::spawn(async move {
+            snd_clone
+                .spawn_event_blocking(ServerStartEvent {
+                    server: snd_clone.clone(),
+                })
+                .await;
+        });
         tokio::spawn(self.handle_loops(snd.clone()));
         tokio::spawn(Self::networking_loop(snd));
     }

@@ -7,11 +7,23 @@ use tokio::{
     sync::mpsc::{self, Receiver, Sender},
 };
 use voxidian_protocol::{
-    packet::{PacketBuf, PacketEncode, PrefixedPacketEncode, Stage, processing::PacketProcessing},
+    packet::{
+        PacketBuf, PacketEncode, PrefixedPacketEncode, Stage,
+        processing::PacketProcessing,
+        s2c::play::{
+            ForgetLevelChunkS2CPlayPacket, GameEvent, GameEventS2CPlayPacket, Gamemode,
+            PlayerPositionS2CPlayPacket, PlayerRotationS2CPlayPacket, RespawnS2CPlayPacket,
+            TeleportFlags,
+        },
+    },
     value::VarInt,
 };
 
-use crate::{dimension::Dimension, server::Server};
+use crate::{
+    dimension::Dimension,
+    server::Server,
+    values::{Vec2, Vec3},
+};
 
 pub mod chunkload;
 pub mod data;
@@ -63,6 +75,76 @@ impl ConnectionData {
     #[GetDimension]
     pub async fn get_dimension(&self) -> Dimension {
         self.associated_data.dimension.clone().unwrap()
+    }
+
+    #[ChangeDimension]
+    pub async fn change_dimension(&mut self, dimension: Dimension) {
+        for chunk in self.associated_data.loaded_chunks.clone() {
+            self.write_packet(ForgetLevelChunkS2CPlayPacket {
+                chunk_z: chunk.y().into(),
+                chunk_x: chunk.x().into(),
+            })
+            .await;
+        }
+
+        self.associated_data.dimension = Some(dimension.clone());
+        self.associated_data.loaded_chunks.clear();
+        self.associated_data.last_position = Vec3::new(0.0, 0.0, 0.0);
+        self.associated_data.last_direction = Vec2::new(0.0, 0.0);
+
+        self.write_packet(RespawnS2CPlayPacket {
+            dim: self
+                .connected_server
+                .registries()
+                .await
+                .dimension_types
+                .make_entry(&dimension.get_dimension_type().await.into())
+                .unwrap(),
+            dim_name: dimension.get_name().await.into(),
+            seed: 0,
+            gamemode: Gamemode::Survival,
+            prev_gamemode: Gamemode::None,
+            is_debug: false,
+            is_flat: false,
+            death_loc: None,
+            portal_cooldown: VarInt::from(0),
+            sea_level: VarInt::from(0),
+            data_kept: 0,
+        })
+        .await;
+        self.write_packet(GameEventS2CPlayPacket {
+            event: GameEvent::WaitForChunks,
+            value: 0.0,
+        })
+        .await;
+        self.write_packet(PlayerPositionS2CPlayPacket {
+            teleport_id: VarInt::from(18383),
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+            vx: 0.0,
+            vy: 0.0,
+            vz: 0.0,
+            adyaw_deg: 0.0,
+            adpitch_deg: 0.0,
+            flags: TeleportFlags {
+                relative_x: false,
+                relative_y: false,
+                relative_z: false,
+                relative_pitch: true,
+                relative_yaw: true,
+                relative_vx: true,
+                relative_vy: true,
+                relative_vz: true,
+                rotate_velocity: false,
+            },
+        })
+        .await;
+        self.write_packet(PlayerRotationS2CPlayPacket {
+            yaw: 0.0,
+            pitch: 0.0,
+        })
+        .await;
     }
 }
 

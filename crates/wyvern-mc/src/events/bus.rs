@@ -2,7 +2,7 @@ use futures::future::join_all;
 
 use super::{
     BoxedFuture, ChunkLoadEvent, DimensionCreateEvent, PlayerCommandEvent, PlayerMoveEvent,
-    ServerTickEvent,
+    ServerStartEvent, ServerTickEvent,
 };
 use std::{fmt::Debug, sync::Arc};
 
@@ -43,6 +43,7 @@ event_bus! {
     on_player_move: PlayerMoveEvent
     on_chunk_load: ChunkLoadEvent
     on_command: PlayerCommandEvent
+    on_server_start: ServerStartEvent
 }
 
 impl Debug for EventBus {

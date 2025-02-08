@@ -5,7 +5,7 @@ use rand::Rng;
 use voxidian_protocol::value::{DimEffects, DimMonsterSpawnLightLevel, DimType};
 use wyvern_mc::{
     dimension::{blocks::BlockState, chunk::Chunk, properties::Properties},
-    events::{DimensionCreateEvent, PlayerCommandEvent},
+    events::{DimensionCreateEvent, PlayerCommandEvent, ServerStartEvent},
     proxy::ProxyBuilder,
     server::ServerBuilder,
     values::{
@@ -21,6 +21,7 @@ async fn main() {
         let mut b = ServerBuilder::new();
         b.on_event(dim_init);
         b.on_event(on_command);
+        b.on_event(on_server_start);
         b.modify_registries(|registries| {
             registries.wolf_variant(Key::new("minecraft", "pale"), WolfVariant {
                 angry_texture: Key::empty(),
@@ -68,7 +69,7 @@ async fn on_command(event: PlayerCommandEvent) {
         for x in 1..100 {
             for y in 1..10 {
                 for z in 1..100 {
-                    let value = rand::thread_rng().gen_bool(0.5);
+                    let value = rand::rng().random_bool(0.5);
                     event
                         .player
                         .get_dimension()
@@ -99,33 +100,91 @@ async fn on_command(event: PlayerCommandEvent) {
         }
         entity.teleport(Vec3::new(10.0, 4.0, 10.0)).await;
     }
+
+    if event.command == "rootdir" {
+        let dimension = event
+            .player
+            .get_server()
+            .await
+            .dimension(Key::new("wyvern", "root"))
+            .await
+            .unwrap();
+        event.player.change_dimension(dimension).await;
+    }
+
+    if event.command == "altdir" {
+        let dimension = event
+            .player
+            .get_server()
+            .await
+            .dimension(Key::new("example", "alternate"))
+            .await
+            .unwrap();
+        event.player.change_dimension(dimension).await;
+    }
 }
 
 async fn dim_init(event: DimensionCreateEvent) {
-    event
-        .dimension
-        .set_chunk_generator(|chunk: &mut Chunk, x, z| {
-            if x < 0 {
-                return;
-            }
-            if z < 0 {
-                return;
-            }
-            for x2 in 0..16 {
-                for z2 in 0..16 {
-                    let y = SIMPLEX.get([
-                        (x2 + (x * 16)) as f64 / 100.0,
-                        (z2 + (z * 16)) as f64 / 100.0,
-                    ]) + 1.0;
-
-                    let new_pos = Vec3::new(x2, f64::floor(y * -16.0 + 8.0) as i32, z2);
-                    chunk.set_block_at(
-                        new_pos,
-                        BlockState::new(Key::new("minecraft", "grass_block"))
-                            .with_property(Properties::SNOWY, false),
-                    );
+    if event.dimension.get_name().await == Key::new("wyvern", "root") {
+        event
+            .dimension
+            .set_chunk_generator(|chunk: &mut Chunk, x, z| {
+                if x < 0 {
+                    return;
                 }
-            }
-        })
+                if z < 0 {
+                    return;
+                }
+                for x2 in 0..16 {
+                    for z2 in 0..16 {
+                        let y = SIMPLEX.get([
+                            (x2 + (x * 16)) as f64 / 100.0,
+                            (z2 + (z * 16)) as f64 / 100.0,
+                        ]) + 1.0;
+
+                        let new_pos = Vec3::new(x2, f64::floor(y * -16.0 + 8.0) as i32, z2);
+                        chunk.set_block_at(
+                            new_pos,
+                            BlockState::new(Key::new("minecraft", "grass_block"))
+                                .with_property(Properties::SNOWY, false),
+                        );
+                    }
+                }
+            })
+            .await;
+    }
+    if event.dimension.get_name().await == Key::new("example", "alternate") {
+        event
+            .dimension
+            .set_chunk_generator(|chunk: &mut Chunk, x, z| {
+                if x < 0 {
+                    return;
+                }
+                if z < 0 {
+                    return;
+                }
+                for x2 in 0..16 {
+                    for z2 in 0..16 {
+                        let y = SIMPLEX.get([
+                            (x2 + (x * 16)) as f64 / 100.0,
+                            (z2 + (z * 16)) as f64 / 100.0,
+                        ]) + 1.0;
+
+                        let new_pos = Vec3::new(x2, f64::floor(y * -16.0 + 8.0) as i32, z2);
+                        chunk.set_block_at(
+                            new_pos,
+                            BlockState::new(Key::new("minecraft", "andesite")),
+                        );
+                    }
+                }
+            })
+            .await;
+    }
+}
+
+async fn on_server_start(event: ServerStartEvent) {
+    event
+        .server
+        .create_dimension(Key::new("example", "alternate"))
         .await;
 }

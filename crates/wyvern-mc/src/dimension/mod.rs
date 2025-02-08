@@ -110,6 +110,19 @@ impl DimensionData {
         self.chunk_generator = function;
     }
 
+    #[GetAllEntities]
+    pub async fn get_all_entities(&self) -> Vec<Entity> {
+        self.entities
+            .values()
+            .map(|x| Entity {
+                dimension: Dimension {
+                    sender: self.sender.clone(),
+                },
+                uuid: x.uuid,
+            })
+            .collect()
+    }
+
     #[SpawnEntity]
     pub async fn spawn_entity(&mut self, entity_type: Key<EntityType>) -> Entity {
         let mut uuid = Uuid::new_v4();
@@ -118,9 +131,7 @@ impl DimensionData {
             uuid = Uuid::new_v4();
         }
 
-        println!("a");
         let id = self.server.clone().unwrap().get_entity_id().await;
-        println!("b");
 
         self.entities.insert(uuid, EntityData {
             entity_type: entity_type.clone(),
@@ -130,12 +141,10 @@ impl DimensionData {
             heading: Vec2::new(0.0, 0.0),
             metadata: EntityMetadata::new(),
         });
-        println!("c");
 
         for conn in self.server.clone().unwrap().connections().await {
             let dim = conn.get_dimension().await;
             if dim.sender.same_channel(&self.sender) {
-                println!("g");
                 conn.write_packet(AddEntityS2CPlayPacket {
                     id: id.into(),
                     uuid,
@@ -155,7 +164,6 @@ impl DimensionData {
                 })
                 .await;
 
-                println!("h");
                 println!("Writing packet!");
             }
         }
@@ -206,9 +214,6 @@ impl DimensionData {
                     on_ground: false,
                 })
                 .await;
-
-                println!("h");
-                println!("Writing packet!");
             }
         }
     }
