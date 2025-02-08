@@ -2,11 +2,14 @@ use std::collections::HashMap;
 
 use blocks::BlockState;
 use chunk::{Chunk, ChunkSection};
+use entity::{Entity, EntityData, EntityType};
 use tokio::sync::mpsc::{Sender, channel};
 use voxidian_protocol::{
-    packet::s2c::play::BlockUpdateS2CPlayPacket,
+    packet::s2c::play::{
+        AddEntityS2CPlayPacket, BlockUpdateS2CPlayPacket, EntityPositionSyncS2CPlayPacket,
+    },
     registry::RegEntry,
-    value::{BlockPos, DimType},
+    value::{Angle, BlockPos, DimType, EntityMetadata, EntityType as PtcEntityType, Uuid, VarInt},
 };
 
 use crate::{
@@ -17,6 +20,7 @@ use crate::{
 
 pub mod blocks;
 pub mod chunk;
+pub mod entity;
 pub mod properties;
 
 #[allow(dead_code)]
@@ -25,6 +29,7 @@ pub struct DimensionData {
     #[allow(unused)]
     pub(crate) name: Key<DimensionData>,
     pub(crate) chunks: HashMap<Vec2<i32>, Chunk>,
+    pub(crate) entities: HashMap<Uuid, EntityData>,
     pub(crate) server: Option<Server>,
     pub(crate) sender: Sender<DimensionMessage>,
     pub(crate) dim_type: Key<DimType>,
@@ -33,6 +38,11 @@ pub struct DimensionData {
 
 #[crate::message(Dimension, DimensionMessage)]
 impl DimensionData {
+    #[GetName]
+    pub async fn get_name(&self) -> Key<Dimension> {
+        unsafe { self.name.clone().retype() }
+    }
+
     #[GetServer]
     pub async fn get_server(&self) -> Option<Server> {
         self.server.clone()
@@ -99,6 +109,109 @@ impl DimensionData {
     pub async fn set_chunk_generator(&mut self, function: fn(&mut Chunk, i32, i32)) {
         self.chunk_generator = function;
     }
+
+    #[SpawnEntity]
+    pub async fn spawn_entity(&mut self, entity_type: Key<EntityType>) -> Entity {
+        let mut uuid = Uuid::new_v4();
+        while self.entities.contains_key(&uuid) {
+            println!("iterating");
+            uuid = Uuid::new_v4();
+        }
+
+        println!("a");
+        let id = self.server.clone().unwrap().get_entity_id().await;
+        println!("b");
+
+        self.entities.insert(uuid, EntityData {
+            entity_type: entity_type.clone(),
+            uuid,
+            id,
+            position: Vec3::new(0.0, 0.0, 0.0),
+            heading: Vec2::new(0.0, 0.0),
+            metadata: EntityMetadata::new(),
+        });
+        println!("c");
+
+        for conn in self.server.clone().unwrap().connections().await {
+            let dim = conn.get_dimension().await;
+            if dim.sender.same_channel(&self.sender) {
+                println!("g");
+                conn.write_packet(AddEntityS2CPlayPacket {
+                    id: id.into(),
+                    uuid,
+                    kind: PtcEntityType::vanilla_registry()
+                        .make_entry(&entity_type.clone().into())
+                        .unwrap(),
+                    x: 0.0,
+                    y: 0.0,
+                    z: 0.0,
+                    pitch: Angle::of_deg(0.0),
+                    yaw: Angle::of_deg(0.0),
+                    head_yaw: Angle::of_deg(0.0),
+                    data: VarInt::from(0),
+                    vel_x: 0,
+                    vel_y: 0,
+                    vel_z: 0,
+                })
+                .await;
+
+                println!("h");
+                println!("Writing packet!");
+            }
+        }
+
+        Entity {
+            dimension: Dimension {
+                sender: self.sender.clone(),
+            },
+            uuid: uuid.clone(),
+        }
+    }
+
+    #[GetEntityPosition]
+    pub async fn get_entity_position(&self, uuid: Uuid) -> Option<(Vec3<f64>, Vec2<f32>)> {
+        self.entities
+            .get(&uuid)
+            .map(|x| (x.position.clone(), x.heading.clone()))
+    }
+
+    #[SetEntityPosition]
+    pub async fn set_entity_position(
+        &mut self,
+        uuid: Uuid,
+        position: Vec3<f64>,
+        heading: Vec2<f32>,
+    ) {
+        let Some(entity) = self.entities.get_mut(&uuid) else {
+            return;
+        };
+
+        entity.position = position;
+        entity.heading = heading;
+
+        for conn in self.server.clone().unwrap().connections().await {
+            let dim = conn.get_dimension().await;
+            if dim.sender.same_channel(&self.sender) {
+                println!("g");
+                conn.write_packet(EntityPositionSyncS2CPlayPacket {
+                    entity_id: entity.id.into(),
+                    x: entity.position.x(),
+                    y: entity.position.y(),
+                    z: entity.position.z(),
+                    vx: 0.0,
+                    vy: 0.0,
+                    vz: 0.0,
+                    yaw: entity.heading.y(),
+                    pitch: entity.heading.x(),
+                    on_ground: false,
+                })
+                .await;
+
+                println!("h");
+                println!("Writing packet!");
+            }
+        }
+    }
 }
 
 impl DimensionData {
@@ -111,6 +224,7 @@ impl DimensionData {
         DimensionData {
             name,
             chunks: HashMap::new(),
+            entities: HashMap::new(),
             server: Some(server),
             receiver: chan.1,
             sender: chan.0,

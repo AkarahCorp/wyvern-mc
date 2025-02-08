@@ -85,6 +85,20 @@ async fn on_command(event: PlayerCommandEvent) {
         let end = Instant::now();
         println!("Time: {:?}", end - start);
     }
+
+    if event.command.as_str() == "spawnentity" {
+        let dim = event.player.get_dimension().await;
+        let mut entity = dim.spawn_entity(Key::new("minecraft", "zombie")).await;
+        entity.teleport(Vec3::new(10.0, 1.0, 10.0)).await;
+        for _ in 1..500000 {
+            tokio::task::yield_now().await;
+        }
+        entity.teleport(Vec3::new(10.0, -3.0, 10.0)).await;
+        for _ in 1..500000 {
+            tokio::task::yield_now().await;
+        }
+        entity.teleport(Vec3::new(10.0, 4.0, 10.0)).await;
+    }
 }
 
 async fn dim_init(event: DimensionCreateEvent) {
