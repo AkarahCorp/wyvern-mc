@@ -11,12 +11,12 @@ use voxidian_protocol::{
         PacketBuf, PacketEncode, PrefixedPacketEncode, Stage,
         processing::PacketProcessing,
         s2c::play::{
-            ForgetLevelChunkS2CPlayPacket, GameEvent, GameEventS2CPlayPacket, Gamemode,
-            PlayerPositionS2CPlayPacket, PlayerRotationS2CPlayPacket, RespawnS2CPlayPacket,
-            TeleportFlags,
+            AddEntityS2CPlayPacket, ForgetLevelChunkS2CPlayPacket, GameEvent,
+            GameEventS2CPlayPacket, Gamemode, PlayerPositionS2CPlayPacket,
+            PlayerRotationS2CPlayPacket, RespawnS2CPlayPacket, TeleportFlags,
         },
     },
-    value::VarInt,
+    value::{Angle, VarInt},
 };
 
 use crate::{
@@ -73,8 +73,8 @@ impl ConnectionData {
     }
 
     #[GetDimension]
-    pub async fn get_dimension(&self) -> Dimension {
-        self.associated_data.dimension.clone().unwrap()
+    pub async fn get_dimension(&self) -> Option<Dimension> {
+        self.associated_data.dimension.clone()
     }
 
     #[ChangeDimension]
@@ -119,9 +119,9 @@ impl ConnectionData {
         .await;
         self.write_packet(PlayerPositionS2CPlayPacket {
             teleport_id: VarInt::from(18383),
-            x: 0.0,
-            y: 0.0,
-            z: 0.0,
+            x: 1.0,
+            y: 1.0,
+            z: 1.0,
             vx: 0.0,
             vy: 0.0,
             vz: 0.0,
@@ -145,6 +145,32 @@ impl ConnectionData {
             pitch: 0.0,
         })
         .await;
+
+        for entity in dimension.get_all_entities().await {
+            let position = entity.position().await;
+            self.write_packet(AddEntityS2CPlayPacket {
+                id: entity.entity_id().await.into(),
+                uuid: *entity.uuid(),
+                kind: self
+                    .connected_server
+                    .registries()
+                    .await
+                    .entity_types
+                    .make_entry(&entity.entity_type().await.into())
+                    .unwrap(),
+                x: position.0.x(),
+                y: position.0.x(),
+                z: position.0.x(),
+                pitch: Angle::of_deg(position.1.x()),
+                yaw: Angle::of_deg(position.1.y()),
+                head_yaw: Angle::of_deg(position.1.y()),
+                data: VarInt::from(0),
+                vel_x: 0,
+                vel_y: 0,
+                vel_z: 0,
+            })
+            .await;
+        }
     }
 }
 

@@ -13,8 +13,9 @@ use voxidian_protocol::{
             },
             login::LoginFinishedS2CLoginPacket,
             play::{
-                GameEvent, GameEventS2CPlayPacket, Gamemode, LoginS2CPlayPacket,
-                PlayerPositionS2CPlayPacket, PongResponseS2CPlayPacket, TeleportFlags,
+                AddEntityS2CPlayPacket, GameEvent, GameEventS2CPlayPacket, Gamemode,
+                LoginS2CPlayPacket, PlayerPositionS2CPlayPacket, PongResponseS2CPlayPacket,
+                TeleportFlags,
             },
             status::{
                 PongResponseS2CStatusPacket, StatusResponse, StatusResponsePlayers,
@@ -23,7 +24,7 @@ use voxidian_protocol::{
         },
     },
     registry::RegEntry,
-    value::{Identifier, LengthPrefixHashMap, Text, VarInt},
+    value::{Angle, Identifier, LengthPrefixHashMap, Text, VarInt},
 };
 
 use crate::{
@@ -238,56 +239,70 @@ impl ConnectionData {
                     PlayerStatus::SwapItems => {}
                 },
                 C2SPlayPackets::AcceptTeleportation(packet) => {
+                    println!("p1");
                     if packet.teleport_id.as_i32() == 0 {
+                        println!("p2");
                         this.associated_data.dimension = this
                             .connected_server
                             .dimension(Key::new("wyvern", "root"))
                             .await;
+                        println!("p3");
 
                         this.write_packet(GameEventS2CPlayPacket {
                             event: GameEvent::WaitForChunks,
                             value: 0.0,
                         })
                         .await;
+                        println!("p4");
 
-                        // this.write_packet(AddEntityS2CPlayPacket {
-                        //     id: (this.associated_data.entity_id + 5).into(),
-                        //     uuid: Uuid::new_v4(),
-                        //     kind: this
-                        //         .connected_server
-                        //         .registries()
-                        //         .await
-                        //         .entity_types
-                        //         .make_entry(&Identifier::new("minecraft", "villager"))
-                        //         .unwrap(),
-                        //     x: this.associated_data.last_position.x() + 1000.0,
-                        //     y: this.associated_data.last_position.y() + 1000.0,
-                        //     z: this.associated_data.last_position.z() + 1000.0,
-                        //     pitch: Angle::of_deg(this.associated_data.last_direction.x()),
-                        //     yaw: Angle::of_deg(this.associated_data.last_direction.y()),
-                        //     head_yaw: Angle::of_deg(this.associated_data.last_direction.y()),
-                        //     data: VarInt::from(0),
-                        //     vel_x: 0,
-                        //     vel_y: 0,
-                        //     vel_z: 0,
-                        // })
-                        // .await;
-
-                        for _conn in this.connected_server.connections().await.clone() {
-                            let _data = this.associated_data.clone();
-                            let _server = this.connected_server.clone();
-
-                            // TODO: figure out player spawning logic
-                            // tokio::spawn(async move {
-                            //     conn.write_packet(BundleDelimiterS2CPlayPacket).await;
-
-                            //     conn.write_packet(SetEntityDataS2CPlayPacket {
-                            //         entity: (data.entity_id + 10).into(),
-                            //         data: EntityMetadata::new()
-                            //     }).await;
-                            //     conn.write_packet(BundleDelimiterS2CPlayPacket).await;
-                            // });
+                        for entity in this
+                            .associated_data
+                            .dimension
+                            .as_mut()
+                            .unwrap()
+                            .get_all_entities()
+                            .await
+                        {
+                            let position = entity.position().await;
+                            this.write_packet(AddEntityS2CPlayPacket {
+                                id: entity.entity_id().await.into(),
+                                uuid: *entity.uuid(),
+                                kind: this
+                                    .connected_server
+                                    .registries()
+                                    .await
+                                    .entity_types
+                                    .make_entry(&entity.entity_type().await.into())
+                                    .unwrap(),
+                                x: position.0.x(),
+                                y: position.0.x(),
+                                z: position.0.x(),
+                                pitch: Angle::of_deg(position.1.x()),
+                                yaw: Angle::of_deg(position.1.y()),
+                                head_yaw: Angle::of_deg(position.1.y()),
+                                data: VarInt::from(0),
+                                vel_x: 0,
+                                vel_y: 0,
+                                vel_z: 0,
+                            })
+                            .await;
                         }
+
+                        // for _conn in this.connected_server.connections().await.clone() {
+                        //     let _data = this.associated_data.clone();
+                        //     let _server = this.connected_server.clone();
+
+                        //     // TODO: figure out player spawning logic
+                        //     // tokio::spawn(async move {
+                        //     //     conn.write_packet(BundleDelimiterS2CPlayPacket).await;
+
+                        //     //     conn.write_packet(SetEntityDataS2CPlayPacket {
+                        //     //         entity: (data.entity_id + 10).into(),
+                        //     //         data: EntityMetadata::new()
+                        //     //     }).await;
+                        //     //     conn.write_packet(BundleDelimiterS2CPlayPacket).await;
+                        //     // });
+                        // }
                     }
 
                     this.send_chunks().await;

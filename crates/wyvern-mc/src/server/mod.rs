@@ -79,6 +79,11 @@ impl ServerData {
         })
     }
 
+    #[GetAllDimensions]
+    pub async fn get_all_dimensions(&self) -> Vec<Dimension> {
+        self.dimensions.dimensions().cloned().collect()
+    }
+
     #[CreateDimension]
     pub async fn create_dimension(&mut self, name: Key<Dimension>) -> Dimension {
         let mut root_dim = DimensionData::new(
@@ -127,11 +132,9 @@ impl ServerData {
         };
         let snd_clone = snd.clone();
         tokio::spawn(async move {
-            snd_clone
-                .spawn_event_blocking(ServerStartEvent {
-                    server: snd_clone.clone(),
-                })
-                .await;
+            snd_clone.spawn_event(ServerStartEvent {
+                server: snd_clone.clone(),
+            });
         });
         tokio::spawn(self.handle_loops(snd.clone()));
         tokio::spawn(Self::networking_loop(snd));

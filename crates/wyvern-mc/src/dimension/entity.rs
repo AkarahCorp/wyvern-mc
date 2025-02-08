@@ -19,6 +19,18 @@ impl Entity {
         &self.dimension
     }
 
+    pub async fn entity_id(&self) -> i32 {
+        self.dimension.get_entity_id(self.uuid).await.unwrap()
+    }
+
+    pub async fn entity_type(&self) -> Key<EntityType> {
+        self.dimension.get_entity_type(self.uuid).await.unwrap()
+    }
+
+    pub async fn position(&self) -> (Vec3<f64>, Vec2<f32>) {
+        self.dimension.get_entity_position(self.uuid).await.unwrap()
+    }
+
     pub async fn teleport(&mut self, position: Vec3<f64>) {
         self.dimension
             .set_entity_position(
@@ -37,6 +49,7 @@ impl Entity {
 pub struct EntityType;
 
 #[allow(unused)]
+#[derive(Debug, Clone)]
 pub struct EntityData {
     pub(crate) entity_type: Key<EntityType>,
     pub(crate) uuid: Uuid,

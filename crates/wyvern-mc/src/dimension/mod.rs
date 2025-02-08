@@ -118,7 +118,7 @@ impl DimensionData {
                 dimension: Dimension {
                     sender: self.sender.clone(),
                 },
-                uuid: x.uuid,
+                uuid: x.uuid.clone(),
             })
             .collect()
     }
@@ -127,7 +127,6 @@ impl DimensionData {
     pub async fn spawn_entity(&mut self, entity_type: Key<EntityType>) -> Entity {
         let mut uuid = Uuid::new_v4();
         while self.entities.contains_key(&uuid) {
-            println!("iterating");
             uuid = Uuid::new_v4();
         }
 
@@ -143,29 +142,30 @@ impl DimensionData {
         });
 
         for conn in self.server.clone().unwrap().connections().await {
-            let dim = conn.get_dimension().await;
-            if dim.sender.same_channel(&self.sender) {
-                conn.write_packet(AddEntityS2CPlayPacket {
-                    id: id.into(),
-                    uuid,
-                    kind: PtcEntityType::vanilla_registry()
-                        .make_entry(&entity_type.clone().into())
-                        .unwrap(),
-                    x: 0.0,
-                    y: 0.0,
-                    z: 0.0,
-                    pitch: Angle::of_deg(0.0),
-                    yaw: Angle::of_deg(0.0),
-                    head_yaw: Angle::of_deg(0.0),
-                    data: VarInt::from(0),
-                    vel_x: 0,
-                    vel_y: 0,
-                    vel_z: 0,
-                })
-                .await;
+            if let Some(dim) = conn.get_dimension().await {
+                if dim.sender.same_channel(&self.sender) {
+                    conn.write_packet(AddEntityS2CPlayPacket {
+                        id: id.into(),
+                        uuid,
+                        kind: PtcEntityType::vanilla_registry()
+                            .make_entry(&entity_type.clone().into())
+                            .unwrap(),
+                        x: 0.0,
+                        y: 0.0,
+                        z: 0.0,
+                        pitch: Angle::of_deg(0.0),
+                        yaw: Angle::of_deg(0.0),
+                        head_yaw: Angle::of_deg(0.0),
+                        data: VarInt::from(0),
+                        vel_x: 0,
+                        vel_y: 0,
+                        vel_z: 0,
+                    })
+                    .await;
 
-                println!("Writing packet!");
-            }
+                    println!("Writing packet!");
+                }
+            };
         }
 
         Entity {
@@ -174,6 +174,16 @@ impl DimensionData {
             },
             uuid: uuid.clone(),
         }
+    }
+
+    #[GetEntityId]
+    pub async fn get_entity_id(&self, uuid: Uuid) -> Option<i32> {
+        self.entities.get(&uuid).map(|x| x.id)
+    }
+
+    #[GetEntityType]
+    pub async fn get_entity_type(&self, uuid: Uuid) -> Option<Key<EntityType>> {
+        self.entities.get(&uuid).map(|x| x.entity_type.clone())
     }
 
     #[GetEntityPosition]
@@ -197,24 +207,28 @@ impl DimensionData {
         entity.position = position;
         entity.heading = heading;
 
-        for conn in self.server.clone().unwrap().connections().await {
-            let dim = conn.get_dimension().await;
-            if dim.sender.same_channel(&self.sender) {
-                println!("g");
-                conn.write_packet(EntityPositionSyncS2CPlayPacket {
-                    entity_id: entity.id.into(),
-                    x: entity.position.x(),
-                    y: entity.position.y(),
-                    z: entity.position.z(),
-                    vx: 0.0,
-                    vy: 0.0,
-                    vz: 0.0,
-                    yaw: entity.heading.y(),
-                    pitch: entity.heading.x(),
-                    on_ground: false,
-                })
-                .await;
-            }
+        let entity = entity.clone();
+        for conn in self.server.clone().unwrap().connections().await.clone() {
+            let sender = self.sender.clone();
+            tokio::spawn(async move {
+                if let Some(dim) = conn.get_dimension().await {
+                    if dim.sender.clone().same_channel(&sender) {
+                        conn.write_packet(EntityPositionSyncS2CPlayPacket {
+                            entity_id: entity.id.into(),
+                            x: entity.position.x(),
+                            y: entity.position.y(),
+                            z: entity.position.z(),
+                            vx: 0.0,
+                            vy: 0.0,
+                            vz: 0.0,
+                            yaw: entity.heading.y(),
+                            pitch: entity.heading.x(),
+                            on_ground: false,
+                        })
+                        .await;
+                    }
+                }
+            });
         }
     }
 }

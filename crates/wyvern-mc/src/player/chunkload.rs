@@ -42,6 +42,7 @@ impl ConnectionData {
             .collect::<Vec<_>>();
 
         let dim_reg = &self.connected_server.registries().await.dimension_types;
+
         let dim_type = dim_reg
             .get(&dimension.get_dimension_type().await.into())
             .unwrap();
