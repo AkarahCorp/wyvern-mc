@@ -24,7 +24,7 @@ impl<T> Key<T> {
         }
     }
 
-    pub unsafe fn retype<U>(self) -> Key<U> {
+    pub fn retype<U>(self) -> Key<U> {
         Key {
             namespace: self.namespace,
             path: self.path,

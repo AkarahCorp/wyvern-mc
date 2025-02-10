@@ -21,14 +21,14 @@ impl ConnectionData {
             f64::floor(self.associated_data.last_position.z() / 16.0) as i32,
         );
 
-        self.associated_data.last_chunk_position = chunk_center.clone();
+        self.associated_data.last_chunk_position = chunk_center;
 
-        let cx = chunk_center.x().clone();
-        let cz = chunk_center.y().clone();
+        let cx = chunk_center.x();
+        let cz = chunk_center.y();
 
         let render_distance = (self.associated_data.render_distance / 2) + 2;
 
-        *&mut self.associated_data.loaded_chunks = self
+        self.associated_data.loaded_chunks = self
             .associated_data
             .loaded_chunks
             .iter()
@@ -38,7 +38,7 @@ impl ConnectionData {
                     && position.y() >= cz - render_distance
                     && position.y() <= cz + render_distance
             })
-            .map(|x| *x)
+            .copied()
             .collect::<Vec<_>>();
 
         let dim_reg = &self.connected_server.registries().await.dimension_types;
@@ -96,11 +96,11 @@ impl ConnectionData {
                 block_light_array: vec![].into(),
             };
 
-            self.associated_data.loaded_chunks.push(pos.clone());
+            self.associated_data.loaded_chunks.push(*pos);
 
             self.write_packet(SetChunkCacheCenterS2CPlayPacket {
-                chunk_x: chunk_center.x().clone().into(),
-                chunk_z: chunk_center.y().clone().into(),
+                chunk_x: chunk_center.x().into(),
+                chunk_z: chunk_center.y().into(),
             })
             .await;
             self.write_packet(ChunkBatchStartS2CPlayPacket {}).await;

@@ -32,7 +32,6 @@ impl ProxyBuilder {
             match signal::ctrl_c().await {
                 Ok(()) => {
                     tokio::task::yield_now().await;
-                    break;
                 }
                 Err(err) => {
                     log::error!("Unable to listen for shutdown signal: {}", err);

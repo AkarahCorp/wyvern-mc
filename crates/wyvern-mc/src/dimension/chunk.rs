@@ -19,7 +19,7 @@ pub struct Chunk {
 
 impl Chunk {
     pub fn new(min_sections: i32, max_sections: i32) -> Chunk {
-        let total_sections = max_sections + (min_sections * -1);
+        let total_sections = max_sections + -min_sections;
         let mut vec = Vec::with_capacity(total_sections as usize);
         for _ in 0..total_sections {
             vec.push(ChunkSection::empty());
@@ -33,7 +33,7 @@ impl Chunk {
 
     pub fn section_at_mut(&mut self, section: i32) -> Option<&mut ChunkSection> {
         self.sections
-            .get_mut((section + (self.min_sections * -1)) as usize)
+            .get_mut((section + -self.min_sections) as usize)
     }
 
     pub fn set_block_at(&mut self, pos: Vec3<i32>, block: BlockState) {
@@ -52,13 +52,13 @@ impl Chunk {
         let local_y = pos.y().rem_euclid(16); // Always positive in [0, 15]
 
         if let Some(section) = self.section_at_mut(section_y) {
-            return section.get_block_at(Vec3::new(
+            section.get_block_at(Vec3::new(
                 pos.x() as usize,
                 local_y as usize,
                 pos.z() as usize,
-            ));
+            ))
         } else {
-            return BlockState::from_protocol_id(0);
+            BlockState::from_protocol_id(0)
         }
     }
 }
@@ -71,20 +71,18 @@ pub struct ChunkSection {
 
 impl ChunkSection {
     pub fn empty() -> ChunkSection {
-        let section = ChunkSection {
+        ChunkSection {
             block_count: 0,
             blocks: std::array::from_fn(|_| {
                 std::array::from_fn(|_| {
                     std::array::from_fn(|_| unsafe { RegEntry::new_unchecked(0) })
                 })
             }),
-        };
-
-        section
+        }
     }
 
     pub fn set_block_at(&mut self, pos: Vec3<usize>, block: BlockState) {
-        let old_block = self.blocks[pos.x()][pos.y()][pos.z()].clone();
+        let old_block = self.blocks[pos.x()][pos.y()][pos.z()];
         let new_block: RegEntry<BlockState> =
             unsafe { RegEntry::new_unchecked(block.clone().protocol_id() as usize) };
 

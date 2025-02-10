@@ -1,4 +1,4 @@
-use std::{sync::LazyLock, time::Instant};
+use std::sync::LazyLock;
 
 use noise::{NoiseFn, Simplex};
 use rand::Rng;
@@ -68,7 +68,6 @@ static SIMPLEX: LazyLock<Simplex> = LazyLock::new(|| Simplex::new(0));
 
 async fn on_command(event: PlayerCommandEvent) {
     if event.command.as_str() == "overload" {
-        let start = Instant::now();
         for x in 1..100 {
             for y in 1..10 {
                 for z in 1..100 {
@@ -87,7 +86,6 @@ async fn on_command(event: PlayerCommandEvent) {
                 }
             }
         }
-        let end = Instant::now();
     }
 
     if event.command.as_str() == "spawnentity" {

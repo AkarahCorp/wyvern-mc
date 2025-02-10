@@ -24,8 +24,6 @@ impl<T: FromStr + ToString> BlockProperty<T> {
             _phantom: PhantomData,
         }
     }
-
-    
 }
 
 pub struct Properties;
@@ -34,13 +32,15 @@ impl Properties {
     pub const AGE: BlockProperty<u8> = BlockProperty::new_restrict("age", |x| *x <= 15);
     pub const SNOWY: BlockProperty<bool> = BlockProperty::new("snowy");
     pub const FACING: BlockProperty<BlockDirection> = BlockProperty::new("facing");
-    pub const BANNER_ROTATION: BlockProperty<u8> = BlockProperty::new_restrict("rotation", |x| *x <= 15);
+    pub const BANNER_ROTATION: BlockProperty<u8> =
+        BlockProperty::new_restrict("rotation", |x| *x <= 15);
     pub const OPEN: BlockProperty<bool> = BlockProperty::new("open");
     pub const WATERLOGGED: BlockProperty<bool> = BlockProperty::new("waterlogged");
     pub const AXIS: BlockProperty<Axis> = BlockProperty::new("axis");
     pub const BED_OCCUPIED: BlockProperty<bool> = BlockProperty::new("occupied");
     pub const BED_PART: BlockProperty<BedPart> = BlockProperty::new("part");
-    pub const BEEHIVE_HONEY_LEVEL: BlockProperty<u8> = BlockProperty::new_restrict("honey_level", |x| *x <= 5);
+    pub const BEEHIVE_HONEY_LEVEL: BlockProperty<u8> =
+        BlockProperty::new_restrict("honey_level", |x| *x <= 5);
     pub const POWERED: BlockProperty<bool> = BlockProperty::new("powered");
     pub const FURNACE_LIT: BlockProperty<bool> = BlockProperty::new("bool");
 }
@@ -67,6 +67,7 @@ macro_rules! make_enum {
             }
         }
 
+        #[allow(clippy::to_string_trait_impl)]
         impl ToString for $name {
             fn to_string(&self) -> String {
                 (match self {

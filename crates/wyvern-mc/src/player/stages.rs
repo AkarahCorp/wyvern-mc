@@ -335,8 +335,8 @@ impl ConnectionData {
                         player: Player {
                             sender: this.sender.clone(),
                         },
-                        new_position: this.associated_data.last_position.clone(),
-                        new_direction: this.associated_data.last_direction.clone(),
+                        new_position: this.associated_data.last_position,
+                        new_direction: this.associated_data.last_direction,
                     });
                 }
                 C2SPlayPackets::MovePlayerPosRot(packet) => {
@@ -359,8 +359,8 @@ impl ConnectionData {
                         player: Player {
                             sender: this.sender.clone(),
                         },
-                        new_position: this.associated_data.last_position.clone(),
-                        new_direction: this.associated_data.last_direction.clone(),
+                        new_position: this.associated_data.last_position,
+                        new_direction: this.associated_data.last_direction,
                     });
                 }
                 C2SPlayPackets::MovePlayerRot(packet) => {
@@ -374,8 +374,8 @@ impl ConnectionData {
                         player: Player {
                             sender: this.sender.clone(),
                         },
-                        new_position: this.associated_data.last_position.clone(),
-                        new_direction: this.associated_data.last_direction.clone(),
+                        new_position: this.associated_data.last_position,
+                        new_direction: this.associated_data.last_direction,
                     });
                 }
                 C2SPlayPackets::ClientInformation(packet) => {

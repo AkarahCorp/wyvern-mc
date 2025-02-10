@@ -24,11 +24,11 @@ impl BlockState {
     }
 
     pub fn with_property<T: FromStr + ToString>(self, key: BlockProperty<T>, value: T) -> Self {
-        self.with_raw_property(&key.name, &value.to_string())
+        self.with_raw_property(key.name, &value.to_string())
     }
 
     pub fn with_raw_property(mut self, key: &str, value: &str) -> Self {
-        if let Some(index) = self.state.iter().map(|x| &x.0).position(|x| x == &key) {
+        if let Some(index) = self.state.iter().map(|x| &x.0).position(|x| x == key) {
             self.state.remove(index);
         }
         self.state.push((key.into(), value.into()));
@@ -36,7 +36,7 @@ impl BlockState {
     }
 
     pub fn insert_raw_property(&mut self, key: &str, value: &str) {
-        if let Some(index) = self.state.iter().map(|x| &x.0).position(|x| x == &key) {
+        if let Some(index) = self.state.iter().map(|x| &x.0).position(|x| x == key) {
             self.state.remove(index);
         }
         self.state.push((key.into(), value.into()));

@@ -23,7 +23,7 @@ impl<T: Copy> Vec1<T> {
     }
 
     pub fn with_x(&self, value: T) -> Self {
-        let mut new = self.clone();
+        let mut new = *self;
         unsafe { *new.inner.get_unchecked_mut(0) = value }
         new
     }
@@ -39,7 +39,7 @@ impl<T: Copy> Vec2<T> {
     }
 
     pub fn with_x(&self, value: T) -> Self {
-        let mut new = self.clone();
+        let mut new = *self;
         unsafe { *new.inner.get_unchecked_mut(0) = value }
         new
     }
@@ -49,7 +49,7 @@ impl<T: Copy> Vec2<T> {
     }
 
     pub fn with_y(&self, value: T) -> Self {
-        let mut new = self.clone();
+        let mut new = *self;
         unsafe { *new.inner.get_unchecked_mut(1) = value }
         new
     }
@@ -65,7 +65,7 @@ impl<T: Copy> Vec3<T> {
     }
 
     pub fn with_x(&self, value: T) -> Self {
-        let mut new = self.clone();
+        let mut new = *self;
         unsafe { *new.inner.get_unchecked_mut(0) = value }
         new
     }
@@ -75,7 +75,7 @@ impl<T: Copy> Vec3<T> {
     }
 
     pub fn with_y(&self, value: T) -> Self {
-        let mut new = self.clone();
+        let mut new = *self;
         unsafe { *new.inner.get_unchecked_mut(1) = value }
         new
     }
@@ -85,7 +85,7 @@ impl<T: Copy> Vec3<T> {
     }
 
     pub fn with_z(&self, value: T) -> Self {
-        let mut new = self.clone();
+        let mut new = *self;
         unsafe { *new.inner.get_unchecked_mut(2) = value }
         new
     }

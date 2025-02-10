@@ -89,7 +89,7 @@ impl ServerData {
     pub async fn create_dimension(&mut self, name: Key<Dimension>) -> Dimension {
         log::debug!("Creating new dimension: {:?}", name);
         let mut root_dim = DimensionData::new(
-            unsafe { name.clone().retype() },
+            name.clone().retype(),
             Server {
                 sender: self.sender.clone(),
             },

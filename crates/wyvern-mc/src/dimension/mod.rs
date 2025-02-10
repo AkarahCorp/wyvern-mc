@@ -40,7 +40,7 @@ pub struct DimensionData {
 impl DimensionData {
     #[GetName]
     pub async fn get_name(&self) -> Key<Dimension> {
-        unsafe { self.name.clone().retype() }
+        self.name.clone().retype()
     }
 
     #[GetServer]
@@ -72,7 +72,7 @@ impl DimensionData {
         tokio::spawn(async move {
             for conn in server.connections().await {
                 let block_state = block_state.clone();
-                let pos = position.clone();
+                let pos = position;
                 let conn = conn.clone();
                 tokio::spawn(async move {
                     if conn.is_loaded_in_world().await {
@@ -118,7 +118,7 @@ impl DimensionData {
                 dimension: Dimension {
                     sender: self.sender.clone(),
                 },
-                uuid: x.uuid.clone(),
+                uuid: x.uuid,
             })
             .collect()
     }
@@ -170,7 +170,7 @@ impl DimensionData {
             dimension: Dimension {
                 sender: self.sender.clone(),
             },
-            uuid: uuid.clone(),
+            uuid,
         }
     }
 
@@ -186,9 +186,7 @@ impl DimensionData {
 
     #[GetEntityPosition]
     pub async fn get_entity_position(&self, uuid: Uuid) -> Option<(Vec3<f64>, Vec2<f32>)> {
-        self.entities
-            .get(&uuid)
-            .map(|x| (x.position.clone(), x.heading.clone()))
+        self.entities.get(&uuid).map(|x| (x.position, x.heading))
     }
 
     #[SetEntityPosition]
@@ -251,7 +249,7 @@ impl DimensionData {
     }
 
     pub(crate) async fn try_initialize_chunk(&mut self, pos: &Vec2<i32>) {
-        if !self.chunks.contains_key(&pos) {
+        if !self.chunks.contains_key(pos) {
             let server = self.server.clone().unwrap();
             let registries = server.registries().await;
 
@@ -265,13 +263,13 @@ impl DimensionData {
 
             let mut chunk = Chunk::new(min_sections, max_sections);
             (self.chunk_generator)(&mut chunk, pos.x(), pos.y());
-            self.chunks.insert(pos.clone(), chunk);
+            self.chunks.insert(*pos, chunk);
 
             server.spawn_event(ChunkLoadEvent {
                 dimension: Dimension {
                     sender: self.sender.clone(),
                 },
-                pos: pos.clone(),
+                pos: *pos,
             });
         }
     }

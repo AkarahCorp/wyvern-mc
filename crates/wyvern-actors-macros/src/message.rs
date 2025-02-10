@@ -55,7 +55,7 @@ pub fn message(attr: TokenStream, item: TokenStream) -> TokenStream {
             return quote! { compile_error!("Expected only function items in `impl` block"); };
         };
 
-        let Some(variant_attr) = function.attrs.get(0) else {
+        let Some(variant_attr) = function.attrs.first() else {
             return quote! { compile_error!("All function items must have a #[Variant] attribute"); };
         };
         let Meta::Path(path) = &variant_attr.meta else {
@@ -66,12 +66,7 @@ pub fn message(attr: TokenStream, item: TokenStream) -> TokenStream {
         }
         let name = path.segments.get(0).unwrap().ident.clone();
 
-        let parameters = function
-            .sig
-            .inputs
-            .iter()
-            .map(|x| x.clone())
-            .collect::<Vec<_>>();
+        let parameters = function.sig.inputs.iter().cloned().collect::<Vec<_>>();
         let returns = function.sig.output.clone();
 
         function.attrs.clear();
@@ -85,16 +80,15 @@ pub fn message(attr: TokenStream, item: TokenStream) -> TokenStream {
     }
 
     let assoc_fns = message_variants.iter().map(|v| &v.base_function);
-    let mapped_fns = message_variants.iter().map(|x| create_fn_from_variant(x));
+    let mapped_fns = message_variants.iter().map(create_fn_from_variant);
     let enum_types = message_variants
         .iter()
-        .map(|x| create_enum_types_from_variant(x))
-        .flatten()
+        .flat_map(create_enum_types_from_variant)
         .collect::<Vec<_>>();
 
     let enum_arms = message_variants
         .iter()
-        .map(|x| create_match_arm_from_variant(x))
+        .map(create_match_arm_from_variant)
         .collect::<Vec<_>>();
 
     let attr_actor_type = attr.actor_type;
@@ -143,12 +137,10 @@ fn create_enum_types_from_variant(variant: &MessageVariant) -> TokenStream {
     let mut param_types: Vec<Type> = variant
         .parameters
         .iter()
-        .map(|x| match x {
+        .filter_map(|x| match x {
             FnArg::Receiver(_) => None,
             FnArg::Typed(pat_type) => Some(pat_type),
         })
-        .filter(|x| x.is_some())
-        .map(|x| x.unwrap())
         .map(|x| *x.ty.clone())
         .collect::<Vec<_>>();
 
@@ -173,12 +165,10 @@ fn create_fn_from_variant(variant: &MessageVariant) -> TokenStream {
     let param_types: Vec<Type> = variant
         .parameters
         .iter()
-        .map(|x| match x {
+        .filter_map(|x| match x {
             FnArg::Receiver(_receiver) => None,
             FnArg::Typed(pat_type) => Some(pat_type),
         })
-        .filter(|x| x.is_some())
-        .map(|x| x.unwrap())
         .map(|x| *x.ty.clone())
         .collect::<Vec<_>>();
 
@@ -187,12 +177,10 @@ fn create_fn_from_variant(variant: &MessageVariant) -> TokenStream {
     let param_names: Vec<Ident> = variant
         .parameters
         .iter()
-        .map(|x| match x {
+        .filter_map(|x| match x {
             FnArg::Receiver(_receiver) => None,
             FnArg::Typed(pat_type) => Some(pat_type),
         })
-        .filter(|x| x.is_some())
-        .map(|x| x.unwrap())
         .map(|x| *x.pat.clone())
         .map(|x| match x {
             syn::Pat::Ident(pat_ident) => pat_ident,
@@ -225,12 +213,10 @@ fn create_match_arm_from_variant(variant: &MessageVariant) -> TokenStream {
     let param_names: Vec<Ident> = variant
         .parameters
         .iter()
-        .map(|x| match x {
+        .filter_map(|x| match x {
             FnArg::Receiver(_receiver) => None,
             FnArg::Typed(pat_type) => Some(pat_type),
         })
-        .filter(|x| x.is_some())
-        .map(|x| x.unwrap())
         .map(|x| *x.pat.clone())
         .map(|x| match x {
             syn::Pat::Ident(pat_ident) => pat_ident,

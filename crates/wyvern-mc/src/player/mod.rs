@@ -54,7 +54,7 @@ impl ConnectionData {
 
     #[GetStage]
     pub async fn get_stage(&mut self) -> Stage {
-        self.stage.clone()
+        self.stage
     }
 
     #[IsLoaded]
@@ -81,8 +81,8 @@ impl ConnectionData {
     pub async fn change_dimension(&mut self, dimension: Dimension) {
         for chunk in self.associated_data.loaded_chunks.clone() {
             self.write_packet(ForgetLevelChunkS2CPlayPacket {
-                chunk_z: chunk.y().into(),
-                chunk_x: chunk.x().into(),
+                chunk_z: chunk.y(),
+                chunk_x: chunk.x(),
             })
             .await;
         }
@@ -185,8 +185,8 @@ impl Player {
             .unwrap();
 
         let mut new_buf = PacketBuf::new();
-        new_buf.write_u8s(&len_buf.as_slice());
-        new_buf.write_u8s(&buf.as_slice());
+        new_buf.write_u8s(len_buf.as_slice());
+        new_buf.write_u8s(buf.as_slice());
         self.send_packet_buf(new_buf).await;
     }
 }
