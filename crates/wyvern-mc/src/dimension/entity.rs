@@ -1,4 +1,12 @@
-use voxidian_protocol::value::{EntityMetadata, Uuid};
+use std::sync::{
+    Arc, Mutex,
+    atomic::{AtomicI32, Ordering},
+};
+
+use voxidian_protocol::{
+    packet::s2c::play::EntityPositionSyncS2CPlayPacket,
+    value::{EntityMetadata, Uuid},
+};
 
 use crate::values::{Key, Vec2, Vec3};
 
@@ -20,27 +28,86 @@ impl Entity {
     }
 
     pub async fn entity_id(&self) -> i32 {
-        self.dimension.get_entity_id(self.uuid).await.unwrap()
+        let id = Arc::new(AtomicI32::new(0));
+        let id_clone = id.clone();
+        self.dimension
+            .read_entity(
+                self.uuid,
+                Box::new(move |entity| {
+                    id_clone.store(entity.id, Ordering::Relaxed);
+                }),
+            )
+            .await;
+        id.load(Ordering::Relaxed)
     }
 
     pub async fn entity_type(&self) -> Key<EntityType> {
-        self.dimension.get_entity_type(self.uuid).await.unwrap()
+        let value = Arc::new(Mutex::new(Key::new("?", "?")));
+        let value_clone = value.clone();
+        self.dimension
+            .read_entity(
+                *self.uuid(),
+                Box::new(move |entity| {
+                    *value_clone.lock().unwrap() = entity.entity_type.clone();
+                }),
+            )
+            .await;
+        value.lock().unwrap().clone()
     }
 
     pub async fn position(&self) -> (Vec3<f64>, Vec2<f32>) {
-        self.dimension.get_entity_position(self.uuid).await.unwrap()
+        let value = Arc::new(Mutex::new((Vec3::new(0.0, 0.0, 0.0), Vec2::new(0.0, 0.0))));
+        let value_clone = value.clone();
+        self.dimension
+            .read_entity(
+                *self.uuid(),
+                Box::new(move |entity| {
+                    *value_clone.lock().unwrap() = (entity.position, entity.heading);
+                }),
+            )
+            .await;
+        *value.lock().unwrap()
     }
 
     pub async fn teleport(&mut self, position: Vec3<f64>) {
+        let dimension = self.dimension.clone();
+        let server = self.dimension.get_server().await.unwrap();
+
         self.dimension
-            .set_entity_position(
+            .manipulate_entity(
                 self.uuid,
-                position,
-                self.dimension
-                    .get_entity_position(self.uuid)
-                    .await
-                    .unwrap()
-                    .1,
+                Box::new(move |entity: &mut EntityData| {
+                    entity.position = position;
+
+                    let entity = Arc::new(entity.clone());
+
+                    let server = server.clone();
+                    let dimension = dimension.clone();
+                    tokio::spawn(async move {
+                        let dimension = dimension.clone();
+                        for conn in server.connections().await {
+                            let Some(dim) = conn.get_dimension().await else {
+                                continue;
+                            };
+                            if !dim.sender.same_channel(&dimension.sender) {
+                                continue;
+                            }
+                            conn.write_packet(EntityPositionSyncS2CPlayPacket {
+                                entity_id: entity.id.into(),
+                                x: entity.position.x(),
+                                y: entity.position.y(),
+                                z: entity.position.z(),
+                                vx: 0.0,
+                                vy: 0.0,
+                                vz: 0.0,
+                                yaw: entity.heading.x(),
+                                pitch: entity.heading.y(),
+                                on_ground: false,
+                            })
+                            .await;
+                        }
+                    });
+                }),
             )
             .await;
     }

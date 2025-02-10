@@ -5,9 +5,7 @@ use chunk::{Chunk, ChunkSection};
 use entity::{Entity, EntityData, EntityType};
 use tokio::sync::mpsc::{Sender, channel};
 use voxidian_protocol::{
-    packet::s2c::play::{
-        AddEntityS2CPlayPacket, BlockUpdateS2CPlayPacket, EntityPositionSyncS2CPlayPacket,
-    },
+    packet::s2c::play::{AddEntityS2CPlayPacket, BlockUpdateS2CPlayPacket},
     registry::RegEntry,
     value::{Angle, BlockPos, DimType, EntityMetadata, EntityType as PtcEntityType, Uuid, VarInt},
 };
@@ -174,57 +172,21 @@ impl DimensionData {
         }
     }
 
-    #[GetEntityId]
-    pub async fn get_entity_id(&self, uuid: Uuid) -> Option<i32> {
-        self.entities.get(&uuid).map(|x| x.id)
-    }
-
-    #[GetEntityType]
-    pub async fn get_entity_type(&self, uuid: Uuid) -> Option<Key<EntityType>> {
-        self.entities.get(&uuid).map(|x| x.entity_type.clone())
-    }
-
-    #[GetEntityPosition]
-    pub async fn get_entity_position(&self, uuid: Uuid) -> Option<(Vec3<f64>, Vec2<f32>)> {
-        self.entities.get(&uuid).map(|x| (x.position, x.heading))
-    }
-
-    #[SetEntityPosition]
-    pub async fn set_entity_position(
+    #[ManipulateEntity]
+    pub async fn manipulate_entity(
         &mut self,
         uuid: Uuid,
-        position: Vec3<f64>,
-        heading: Vec2<f32>,
+        f: Box<dyn Fn(&mut EntityData) + Send + Sync>,
     ) {
-        let Some(entity) = self.entities.get_mut(&uuid) else {
-            return;
-        };
+        if let Some(entity) = self.entities.get_mut(&uuid) {
+            f(entity);
+        }
+    }
 
-        entity.position = position;
-        entity.heading = heading;
-
-        let entity = entity.clone();
-        for conn in self.server.clone().unwrap().connections().await.clone() {
-            let sender = self.sender.clone();
-            tokio::spawn(async move {
-                if let Some(dim) = conn.get_dimension().await {
-                    if dim.sender.clone().same_channel(&sender) {
-                        conn.write_packet(EntityPositionSyncS2CPlayPacket {
-                            entity_id: entity.id.into(),
-                            x: entity.position.x(),
-                            y: entity.position.y(),
-                            z: entity.position.z(),
-                            vx: 0.0,
-                            vy: 0.0,
-                            vz: 0.0,
-                            yaw: entity.heading.y(),
-                            pitch: entity.heading.x(),
-                            on_ground: false,
-                        })
-                        .await;
-                    }
-                }
-            });
+    #[ReadEntity]
+    pub async fn read_entity(&self, uuid: Uuid, f: Box<dyn Fn(&EntityData) + Send + Sync>) {
+        if let Some(entity) = self.entities.get(&uuid) {
+            f(entity);
         }
     }
 }
