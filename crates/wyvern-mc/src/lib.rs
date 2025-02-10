@@ -1,5 +1,6 @@
 #![feature(try_blocks)]
 
+pub mod components;
 pub mod dimension;
 pub mod events;
 pub mod player;

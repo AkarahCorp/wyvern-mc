@@ -28,15 +28,12 @@ impl ProxyBuilder {
             tokio::spawn(server.start());
         }
 
-        loop {
-            match signal::ctrl_c().await {
-                Ok(()) => {
-                    tokio::task::yield_now().await;
-                }
-                Err(err) => {
-                    log::error!("Unable to listen for shutdown signal: {}", err);
-                    break;
-                }
+        match signal::ctrl_c().await {
+            Ok(()) => {
+                tokio::task::yield_now().await;
+            }
+            Err(err) => {
+                log::error!("Unable to listen for shutdown signal: {}", err);
             }
         }
     }
