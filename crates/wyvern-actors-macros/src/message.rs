@@ -95,10 +95,10 @@ pub fn message(attr: TokenStream, item: TokenStream) -> TokenStream {
     let attr_message_type = attr.message_type;
 
     let o = quote! {
-
         pub(crate) enum #attr_message_type {
             #(#enum_types)*
         }
+
         impl wyvern_actors::Actor for #target_type {
             async fn handle_messages(&mut self) {
                 loop {

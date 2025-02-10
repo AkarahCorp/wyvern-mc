@@ -88,20 +88,6 @@ async fn on_command(event: PlayerCommandEvent) {
         }
     }
 
-    if event.command.as_str() == "spawnentity" {
-        let dim = event.player.get_dimension().await.unwrap();
-        let mut entity = dim.spawn_entity(Key::new("minecraft", "zombie")).await;
-        entity.teleport(Vec3::new(10.0, 1.0, 10.0)).await;
-        for _ in 1..500000 {
-            tokio::task::yield_now().await;
-        }
-        entity.teleport(Vec3::new(10.0, -3.0, 10.0)).await;
-        for _ in 1..500000 {
-            tokio::task::yield_now().await;
-        }
-        entity.teleport(Vec3::new(10.0, 4.0, 10.0)).await;
-    }
-
     if event.command == "rootdir" {
         let dimension = event
             .player
@@ -176,8 +162,10 @@ async fn on_server_start(event: ServerStartEvent) {
     tokio::task::yield_now().await;
 
     for dimension in event.server.get_all_dimensions().await {
-        dimension
-            .spawn_entity(Key::new("minecraft", "zombie"))
-            .await;
+        for _ in 1..10 {
+            dimension
+                .spawn_entity(Key::new("minecraft", "zombie"))
+                .await;
+        }
     }
 }

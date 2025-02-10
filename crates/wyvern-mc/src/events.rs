@@ -28,12 +28,18 @@ macro_rules! event_bus {
             }
 
             async fn dispatch_sync(self, bus: std::sync::Arc<EventBus>) {
+                let tick1 = std::time::Instant::now();
+                let tick2 = std::time::Instant::now();
+                let time_time = tick2 - tick1;
+                let start = std::time::Instant::now();
                 let futures_to_poll = bus
                         .$name
                         .clone()
                         .into_iter()
                         .map(|x| x(self.clone()));
                     join_all(futures_to_poll).await;
+                let end = std::time::Instant::now();
+                log::debug!("Event {:?} took {:?} to execute", std::any::type_name::<Self>(), (end - start) - (time_time));
             }
         })*
 

@@ -244,17 +244,20 @@ impl ConnectionData {
                 },
                 C2SPlayPackets::AcceptTeleportation(packet) => {
                     if packet.teleport_id.as_i32() == 0 {
+                        log::debug!("Setting dimension...");
                         this.associated_data.dimension = this
                             .connected_server
                             .dimension(Key::new("wyvern", "root"))
                             .await;
 
+                        log::debug!("Sending game events chunk packet...");
                         this.write_packet(GameEventS2CPlayPacket {
                             event: GameEvent::WaitForChunks,
                             value: 0.0,
                         })
                         .await;
 
+                        log::debug!("Sending all entities...");
                         for entity in this
                             .associated_data
                             .dimension
@@ -264,6 +267,8 @@ impl ConnectionData {
                             .await
                         {
                             let position = entity.position().await;
+
+                            log::debug!("Entity @ {:?}...", position);
                             this.write_packet(AddEntityS2CPlayPacket {
                                 id: entity.entity_id().await.into(),
                                 uuid: *entity.uuid(),
@@ -287,22 +292,6 @@ impl ConnectionData {
                             })
                             .await;
                         }
-
-                        // for _conn in this.connected_server.connections().await.clone() {
-                        //     let _data = this.associated_data.clone();
-                        //     let _server = this.connected_server.clone();
-
-                        //     // TODO: figure out player spawning logic
-                        //     // tokio::spawn(async move {
-                        //     //     conn.write_packet(BundleDelimiterS2CPlayPacket).await;
-
-                        //     //     conn.write_packet(SetEntityDataS2CPlayPacket {
-                        //     //         entity: (data.entity_id + 10).into(),
-                        //     //         data: EntityMetadata::new()
-                        //     //     }).await;
-                        //     //     conn.write_packet(BundleDelimiterS2CPlayPacket).await;
-                        //     // });
-                        // }
                     }
 
                     this.send_chunks().await;

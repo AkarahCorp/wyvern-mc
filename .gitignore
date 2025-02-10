@@ -13,3 +13,7 @@ Cargo.lock
 .zed
 dxcompiler.dll
 dxil.dll
+
+flamegraph.svg
+perf.data
+perf.data.old
