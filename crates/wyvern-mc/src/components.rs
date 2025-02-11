@@ -1,6 +1,15 @@
 pub trait ComponentHolder<R: ComponentRegistry<Self>>: Sized {
-    fn get<C: Component<Self, R, V>, V>(&self, component: &C) -> &V {
+    fn get<C: Component<Self, R, V>, V>(&self, component: &C) -> Option<V> {
         component.get_component(self)
+    }
+
+    fn set<C: Component<Self, R, V>, V>(&mut self, component: &C, value: V) {
+        component.insert_component(self, value);
+    }
+
+    fn with<C: Component<Self, R, V>, V>(mut self, component: &C, value: V) -> Self {
+        component.insert_component(&mut self, value);
+        self
     }
 }
 
@@ -8,7 +17,7 @@ pub trait ComponentRegistry<H: ComponentHolder<Self>>: Sized {}
 
 pub trait Component<H: ComponentHolder<R>, R: ComponentRegistry<H>, V> {
     fn insert_component(&self, holder: &mut H, value: V);
-    fn get_component<'a>(&self, holder: &'a H) -> &'a V;
+    fn get_component(&self, holder: &H) -> Option<V>;
 }
 
 #[cfg(test)]
@@ -40,8 +49,8 @@ mod tests {
             holder.name = value;
         }
 
-        fn get_component<'a>(&self, holder: &'a Entity) -> &'a String {
-            &holder.name
+        fn get_component(&self, holder: &Entity) -> Option<String> {
+            Some(holder.name.clone())
         }
     }
 
@@ -52,8 +61,8 @@ mod tests {
             holder.kind = value;
         }
 
-        fn get_component<'a>(&self, holder: &'a Entity) -> &'a Key<EntityType> {
-            &holder.kind
+        fn get_component(&self, holder: &Entity) -> Option<Key<EntityType>> {
+            Some(holder.kind.clone())
         }
     }
 
@@ -64,8 +73,8 @@ mod tests {
             kind: Key::new("minecraft", "zombie"),
         };
         let kind = entity.get(&EntityComponents::ENTITY_KIND);
-        assert_eq!(*kind, Key::new("minecraft", "zombie"));
+        assert_eq!(kind, Some(Key::new("minecraft", "zombie")));
         let name = entity.get(&EntityComponents::CUSTOM_NAME);
-        assert_eq!(*name, "Zombie".to_string());
+        assert_eq!(name, Some("Zombie".to_string()));
     }
 }

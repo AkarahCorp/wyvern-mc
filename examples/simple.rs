@@ -4,7 +4,8 @@ use noise::{NoiseFn, Simplex};
 use rand::Rng;
 use voxidian_protocol::value::{DimEffects, DimMonsterSpawnLightLevel, DimType};
 use wyvern_mc::{
-    dimension::{blocks::BlockState, chunk::Chunk, properties::Properties},
+    components::ComponentHolder,
+    dimension::{blocks::BlockState, chunk::Chunk, properties::BlockComponents},
     events::{DimensionCreateEvent, PlayerCommandEvent, ServerStartEvent, ServerTickEvent},
     proxy::ProxyBuilder,
     server::ServerBuilder,
@@ -80,7 +81,7 @@ async fn on_command(event: PlayerCommandEvent) {
                         .set_block(
                             Vec3::new(x, y, z),
                             BlockState::new(Key::new("minecraft", "grass_block"))
-                                .with_property(Properties::SNOWY, value),
+                                .with(&BlockComponents::SNOWY, value),
                         )
                         .await;
                 }
@@ -132,7 +133,7 @@ async fn dim_init(event: DimensionCreateEvent) {
                     chunk.set_block_at(
                         new_pos,
                         BlockState::new(Key::new("minecraft", "grass_block"))
-                            .with_property(Properties::SNOWY, false),
+                            .with(&BlockComponents::SNOWY, false),
                     );
                 }
             }

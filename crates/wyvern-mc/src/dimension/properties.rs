@@ -1,24 +1,28 @@
 use std::{marker::PhantomData, str::FromStr};
 
+use crate::components::{Component, ComponentRegistry};
+
+use super::blocks::BlockState;
+
 #[allow(dead_code)]
-pub struct BlockProperty<T: FromStr + ToString> {
+pub struct StateProperty<T: FromStr + ToString> {
     pub(crate) name: &'static str,
     pub(crate) condition: fn(&T) -> bool,
     _phantom: PhantomData<T>,
 }
 
 #[allow(dead_code)]
-impl<T: FromStr + ToString> BlockProperty<T> {
-    pub const fn new(name: &'static str) -> BlockProperty<T> {
-        BlockProperty {
+impl<T: FromStr + ToString> StateProperty<T> {
+    pub const fn new(name: &'static str) -> StateProperty<T> {
+        StateProperty {
             name,
             condition: |_| true,
             _phantom: PhantomData,
         }
     }
 
-    pub const fn new_restrict(name: &'static str, condition: fn(&T) -> bool) -> BlockProperty<T> {
-        BlockProperty {
+    pub const fn new_restrict(name: &'static str, condition: fn(&T) -> bool) -> StateProperty<T> {
+        StateProperty {
             name,
             condition,
             _phantom: PhantomData,
@@ -26,24 +30,36 @@ impl<T: FromStr + ToString> BlockProperty<T> {
     }
 }
 
-pub struct Properties;
+impl<T: FromStr + ToString> Component<BlockState, BlockComponents, T> for StateProperty<T> {
+    fn insert_component(&self, holder: &mut BlockState, value: T) {
+        holder.insert_raw_property(self.name, &value.to_string());
+    }
 
-impl Properties {
-    pub const AGE: BlockProperty<u8> = BlockProperty::new_restrict("age", |x| *x <= 15);
-    pub const SNOWY: BlockProperty<bool> = BlockProperty::new("snowy");
-    pub const FACING: BlockProperty<BlockDirection> = BlockProperty::new("facing");
-    pub const BANNER_ROTATION: BlockProperty<u8> =
-        BlockProperty::new_restrict("rotation", |x| *x <= 15);
-    pub const OPEN: BlockProperty<bool> = BlockProperty::new("open");
-    pub const WATERLOGGED: BlockProperty<bool> = BlockProperty::new("waterlogged");
-    pub const AXIS: BlockProperty<Axis> = BlockProperty::new("axis");
-    pub const BED_OCCUPIED: BlockProperty<bool> = BlockProperty::new("occupied");
-    pub const BED_PART: BlockProperty<BedPart> = BlockProperty::new("part");
-    pub const BEEHIVE_HONEY_LEVEL: BlockProperty<u8> =
-        BlockProperty::new_restrict("honey_level", |x| *x <= 5);
-    pub const POWERED: BlockProperty<bool> = BlockProperty::new("powered");
-    pub const FURNACE_LIT: BlockProperty<bool> = BlockProperty::new("bool");
+    fn get_component(&self, holder: &BlockState) -> Option<T> {
+        T::from_str(&holder.state.iter().find(|x| x.0 == self.name)?.1).ok()
+    }
 }
+
+pub struct BlockComponents;
+
+impl BlockComponents {
+    pub const AGE: StateProperty<u8> = StateProperty::new_restrict("age", |x| *x <= 15);
+    pub const SNOWY: StateProperty<bool> = StateProperty::new("snowy");
+    pub const FACING: StateProperty<BlockDirection> = StateProperty::new("facing");
+    pub const BANNER_ROTATION: StateProperty<u8> =
+        StateProperty::new_restrict("rotation", |x| *x <= 15);
+    pub const OPEN: StateProperty<bool> = StateProperty::new("open");
+    pub const WATERLOGGED: StateProperty<bool> = StateProperty::new("waterlogged");
+    pub const AXIS: StateProperty<Axis> = StateProperty::new("axis");
+    pub const BED_OCCUPIED: StateProperty<bool> = StateProperty::new("occupied");
+    pub const BED_PART: StateProperty<BedPart> = StateProperty::new("part");
+    pub const BEEHIVE_HONEY_LEVEL: StateProperty<u8> =
+        StateProperty::new_restrict("honey_level", |x| *x <= 5);
+    pub const POWERED: StateProperty<bool> = StateProperty::new("powered");
+    pub const FURNACE_LIT: StateProperty<bool> = StateProperty::new("bool");
+}
+
+impl ComponentRegistry<BlockState> for BlockComponents {}
 
 macro_rules! make_enum {
     (
