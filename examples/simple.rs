@@ -2,6 +2,7 @@ use std::sync::LazyLock;
 
 use noise::{NoiseFn, Simplex};
 use rand::Rng;
+use tokio::runtime::Builder;
 use voxidian_protocol::value::{DimEffects, DimMonsterSpawnLightLevel, DimType};
 use wyvern_mc::{
     components::ComponentHolder,
@@ -15,9 +16,21 @@ use wyvern_mc::{
     },
 };
 
-#[tokio::main]
-async fn main() {
+fn main() {
     env_logger::init();
+    
+    log::info!("Running proxy with {:?} worker threads:", std::thread::available_parallelism().unwrap());
+    let rt = Builder::new_multi_thread()
+    .worker_threads(std::thread::available_parallelism().unwrap().into())
+    .enable_io()
+    .enable_time()
+    .build()
+    .unwrap();
+
+    rt.block_on(main_rt());
+}
+
+async fn main_rt() {
 
     let mut proxy = ProxyBuilder::new();
     proxy.with_server({

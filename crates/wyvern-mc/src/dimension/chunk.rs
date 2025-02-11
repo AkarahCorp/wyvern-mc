@@ -1,3 +1,5 @@
+use std::mem::MaybeUninit;
+
 use voxidian_protocol::{
     registry::RegEntry,
     value::{
@@ -66,7 +68,24 @@ impl Chunk {
 #[derive(Clone, Debug)]
 pub struct ChunkSection {
     block_count: i16,
-    blocks: [[[RegEntry<ProtocolState>; 16]; 16]; 16],
+    blocks: [[[ChunkBlock; 16]; 16]; 16],
+}
+
+#[derive(Clone, Debug, Copy)]
+struct ChunkBlock {
+    block_state: u16,
+    #[allow(unused)]
+    block_meta: u16
+}
+
+impl ChunkBlock {
+    pub fn air() -> ChunkBlock {
+        ChunkBlock { block_state: 0, block_meta: 0 }
+    }
+
+    pub fn id(&self) -> u16 {
+        self.block_state
+    }
 }
 
 impl ChunkSection {
@@ -75,7 +94,7 @@ impl ChunkSection {
             block_count: 0,
             blocks: std::array::from_fn(|_| {
                 std::array::from_fn(|_| {
-                    std::array::from_fn(|_| unsafe { RegEntry::new_unchecked(0) })
+                    std::array::from_fn(|_| ChunkBlock::air())
                 })
             }),
         }
@@ -92,7 +111,7 @@ impl ChunkSection {
             self.block_count -= 1;
         }
         self.blocks[pos.x()][pos.y()][pos.z()] =
-            unsafe { RegEntry::new_unchecked(block.protocol_id().try_into().unwrap()) };
+            ChunkBlock { block_state: block.protocol_id().try_into().unwrap(), block_meta: 0 };
     }
 
     pub fn get_block_at(&mut self, pos: Vec3<usize>) -> BlockState {
@@ -101,17 +120,21 @@ impl ChunkSection {
     }
 
     pub fn flatten_blocks(&self) -> [RegEntry<ProtocolState>; 4096] {
-        let mut arr = [unsafe { RegEntry::new_unchecked(0) }; 4096];
+        // SAFETY: We are only setting values in `arr`, and we already assume underlying values aren't initialized, meaning this is safe.
+        let mut arr: [MaybeUninit<RegEntry<ProtocolState>>; 4096] = unsafe { MaybeUninit::uninit().assume_init() };
         let mut idx = 0;
         for y in 0..16 {
             for z in 0..16 {
                 for x in 0..16 {
-                    arr[idx] = self.blocks[x][y][z];
+                    // SAFETY: This is safe since the underlying memory isn't initialized and writable.
+                    arr[idx] = unsafe { MaybeUninit::new(RegEntry::new_unchecked(self.blocks[x][y][z].block_state as usize)) };
                     idx += 1;
                 }
             }
         }
-        arr
+        // SAFETY: `arr` is never transmuted back until all elements are set,
+        // allowing this to work without UB
+        unsafe { std::mem::transmute(arr) }
     }
 
     pub fn into_protocol_section(&self) -> ProtocolSection {
