@@ -1,6 +1,6 @@
 use std::{marker::PhantomData, str::FromStr};
 
-use crate::components::{Component, ComponentRegistry};
+use crate::components::{ComponentKind, ComponentRegistry};
 
 use super::blocks::BlockState;
 
@@ -30,7 +30,7 @@ impl<T: FromStr + ToString> StateProperty<T> {
     }
 }
 
-impl<T: FromStr + ToString> Component<BlockState, BlockComponents, T> for StateProperty<T> {
+impl<T: FromStr + ToString> ComponentKind<BlockState, BlockComponents, T> for StateProperty<T> {
     fn insert_component(&self, holder: &mut BlockState, value: T) {
         holder.insert_raw_property(self.name, &value.to_string());
     }

@@ -1,13 +1,13 @@
 pub trait ComponentHolder<R: ComponentRegistry<Self>>: Sized {
-    fn get<C: Component<Self, R, V>, V>(&self, component: &C) -> Option<V> {
+    fn get<C: ComponentKind<Self, R, V>, V>(&self, component: &C) -> Option<V> {
         component.get_component(self)
     }
 
-    fn set<C: Component<Self, R, V>, V>(&mut self, component: &C, value: V) {
+    fn set<C: ComponentKind<Self, R, V>, V>(&mut self, component: &C, value: V) {
         component.insert_component(self, value);
     }
 
-    fn with<C: Component<Self, R, V>, V>(mut self, component: &C, value: V) -> Self {
+    fn with<C: ComponentKind<Self, R, V>, V>(mut self, component: &C, value: V) -> Self {
         component.insert_component(&mut self, value);
         self
     }
@@ -15,7 +15,7 @@ pub trait ComponentHolder<R: ComponentRegistry<Self>>: Sized {
 
 pub trait ComponentRegistry<H: ComponentHolder<Self>>: Sized {}
 
-pub trait Component<H: ComponentHolder<R>, R: ComponentRegistry<H>, V> {
+pub trait ComponentKind<H: ComponentHolder<R>, R: ComponentRegistry<H>, V> {
     fn insert_component(&self, holder: &mut H, value: V);
     fn get_component(&self, holder: &H) -> Option<V>;
 }
@@ -24,7 +24,7 @@ pub trait Component<H: ComponentHolder<R>, R: ComponentRegistry<H>, V> {
 mod tests {
     use crate::{dimension::entity::EntityType, values::Key};
 
-    use super::{Component, ComponentHolder, ComponentRegistry};
+    use super::{ComponentKind, ComponentHolder, ComponentRegistry};
 
     struct Entity {
         name: String,
@@ -33,7 +33,7 @@ mod tests {
 
     impl ComponentHolder<EntityComponents> for Entity {}
 
-    struct EntityComponents {}
+    struct EntityComponents;
 
     impl ComponentRegistry<Entity> for EntityComponents {}
 
@@ -44,7 +44,7 @@ mod tests {
 
     struct CustomName;
 
-    impl Component<Entity, EntityComponents, String> for CustomName {
+    impl ComponentKind<Entity, EntityComponents, String> for CustomName {
         fn insert_component(&self, holder: &mut Entity, value: String) {
             holder.name = value;
         }
@@ -56,7 +56,7 @@ mod tests {
 
     struct EntityKind;
 
-    impl Component<Entity, EntityComponents, Key<EntityType>> for EntityKind {
+    impl ComponentKind<Entity, EntityComponents, Key<EntityType>> for EntityKind {
         fn insert_component(&self, holder: &mut Entity, value: Key<EntityType>) {
             holder.kind = value;
         }
