@@ -59,7 +59,7 @@ impl ConnectionData {
             received_bytes: VecDeque::new(),
             bytes_to_send: Vec::new(),
             packet_processing: PacketProcessing {
-                secret_cipher: SecretCipher::no_cipher(),
+                secret_cipher: SecretCipher::NONE,
                 compression: CompressionMode::None,
             },
             receiver,
