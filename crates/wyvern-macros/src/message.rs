@@ -99,7 +99,7 @@ pub fn message(attr: TokenStream, item: TokenStream) -> TokenStream {
             #(#enum_types)*
         }
 
-        impl wyvern_actors::Actor for #target_type {
+        impl crate::actors::Actor for #target_type {
             async fn handle_messages(&mut self) {
                 loop {
                     tokio::task::yield_now().await;

@@ -6,7 +6,6 @@ edition = "2024"
 [dependencies]
 voxidian-protocol = { workspace = true }
 tokio = { workspace = true }
-wyvern-actors = { workspace = true }
-wyvern-actors-macros = { workspace = true }
+wyvern-macros = { workspace = true }
 futures = { workspace = true }
 log = { workspace = true }

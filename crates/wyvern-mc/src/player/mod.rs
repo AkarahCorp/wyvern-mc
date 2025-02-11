@@ -18,6 +18,7 @@ use voxidian_protocol::{
     },
     value::{Angle, VarInt},
 };
+use wyvern_macros::{actor, message};
 
 use crate::{
     dimension::Dimension,
@@ -30,7 +31,7 @@ pub mod data;
 pub mod net;
 pub mod stages;
 
-#[crate::actor(Player, PlayerMessage)]
+#[actor(Player, PlayerMessage)]
 pub struct ConnectionData {
     pub(crate) stream: TcpStream,
     #[allow(dead_code)]
@@ -45,7 +46,7 @@ pub struct ConnectionData {
     pub(crate) sender: Sender<PlayerMessage>,
 }
 
-#[crate::message(Player, PlayerMessage)]
+#[message(Player, PlayerMessage)]
 impl ConnectionData {
     #[SetStage]
     pub async fn set_stage(&mut self, stage: Stage) {

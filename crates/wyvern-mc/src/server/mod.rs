@@ -6,8 +6,8 @@ use std::{
 
 use dimensions::DimensionContainer;
 use registries::RegistryContainer;
-use wyvern_actors::Actor;
-use wyvern_actors_macros::{actor, message};
+use crate::actors::Actor;
+use crate::{actor, message};
 
 use crate::{
     dimension::{Dimension, DimensionData},

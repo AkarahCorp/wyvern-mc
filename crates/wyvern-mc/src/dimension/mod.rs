@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt::Debug};
+use std::collections::HashMap;
 
 use blocks::BlockState;
 use chunk::{Chunk, ChunkSection};

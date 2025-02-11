@@ -13,7 +13,7 @@ use voxidian_protocol::packet::{
     processing::{CompressionMode, PacketProcessing, SecretCipher},
     s2c::play::KeepAliveS2CPlayPacket,
 };
-use wyvern_actors::Actor;
+use crate::actors::Actor;
 
 use crate::{player::PlayerMessage, server::Server};
 

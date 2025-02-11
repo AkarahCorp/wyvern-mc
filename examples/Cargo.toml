@@ -15,6 +15,3 @@ env_logger = { workspace = true }
 [[example]]
 name = "simple"
 path = "./simple.rs"
-
-[profile.release]
-debug = true
