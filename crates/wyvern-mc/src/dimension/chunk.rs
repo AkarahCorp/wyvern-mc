@@ -75,12 +75,15 @@ pub struct ChunkSection {
 struct ChunkBlock {
     block_state: u16,
     #[allow(unused)]
-    block_meta: u16
+    block_meta: u16,
 }
 
 impl ChunkBlock {
     pub fn air() -> ChunkBlock {
-        ChunkBlock { block_state: 0, block_meta: 0 }
+        ChunkBlock {
+            block_state: 0,
+            block_meta: 0,
+        }
     }
 
     pub fn id(&self) -> u16 {
@@ -93,9 +96,7 @@ impl ChunkSection {
         ChunkSection {
             block_count: 0,
             blocks: std::array::from_fn(|_| {
-                std::array::from_fn(|_| {
-                    std::array::from_fn(|_| ChunkBlock::air())
-                })
+                std::array::from_fn(|_| std::array::from_fn(|_| ChunkBlock::air()))
             }),
         }
     }
@@ -110,8 +111,10 @@ impl ChunkSection {
         } else if old_block.id() != 0 && new_block.id() == 0 {
             self.block_count -= 1;
         }
-        self.blocks[pos.x()][pos.y()][pos.z()] =
-            ChunkBlock { block_state: block.protocol_id().try_into().unwrap(), block_meta: 0 };
+        self.blocks[pos.x()][pos.y()][pos.z()] = ChunkBlock {
+            block_state: block.protocol_id().try_into().unwrap(),
+            block_meta: 0,
+        };
     }
 
     pub fn get_block_at(&mut self, pos: Vec3<usize>) -> BlockState {
@@ -121,13 +124,18 @@ impl ChunkSection {
 
     pub fn flatten_blocks(&self) -> [RegEntry<ProtocolState>; 4096] {
         // SAFETY: We are only setting values in `arr`, and we already assume underlying values aren't initialized, meaning this is safe.
-        let mut arr: [MaybeUninit<RegEntry<ProtocolState>>; 4096] = unsafe { MaybeUninit::uninit().assume_init() };
+        let mut arr: [MaybeUninit<RegEntry<ProtocolState>>; 4096] =
+            unsafe { MaybeUninit::uninit().assume_init() };
         let mut idx = 0;
         for y in 0..16 {
             for z in 0..16 {
                 for x in 0..16 {
                     // SAFETY: This is safe since the underlying memory isn't initialized and writable.
-                    arr[idx] = unsafe { MaybeUninit::new(RegEntry::new_unchecked(self.blocks[x][y][z].block_state as usize)) };
+                    arr[idx] = unsafe {
+                        MaybeUninit::new(RegEntry::new_unchecked(
+                            self.blocks[x][y][z].block_state as usize,
+                        ))
+                    };
                     idx += 1;
                 }
             }

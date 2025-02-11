@@ -4,10 +4,10 @@ use std::{
     time::{Duration, Instant},
 };
 
-use dimensions::DimensionContainer;
-use registries::RegistryContainer;
 use crate::actors::Actor;
 use crate::{actor, message};
+use dimensions::DimensionContainer;
+use registries::RegistryContainer;
 
 use crate::{
     dimension::{Dimension, DimensionData},

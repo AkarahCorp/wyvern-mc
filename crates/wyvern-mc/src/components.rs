@@ -24,7 +24,7 @@ pub trait ComponentKind<H: ComponentHolder<R>, R: ComponentRegistry<H>, V> {
 mod tests {
     use crate::{dimension::entity::EntityType, values::Key};
 
-    use super::{ComponentKind, ComponentHolder, ComponentRegistry};
+    use super::{ComponentHolder, ComponentKind, ComponentRegistry};
 
     struct Entity {
         name: String,

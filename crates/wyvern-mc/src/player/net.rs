@@ -6,6 +6,7 @@ use std::{
     time::{Duration, Instant},
 };
 
+use crate::actors::Actor;
 use tokio::{io::AsyncWriteExt, net::TcpStream, sync::*};
 use voxidian_protocol::packet::{
     DecodeError, PrefixedPacketDecode, Stage,
@@ -13,7 +14,6 @@ use voxidian_protocol::packet::{
     processing::{CompressionMode, PacketProcessing, SecretCipher},
     s2c::play::KeepAliveS2CPlayPacket,
 };
-use crate::actors::Actor;
 
 use crate::{player::PlayerMessage, server::Server};
 
