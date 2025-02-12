@@ -2,6 +2,8 @@ mod item;
 pub use item::*;
 mod data;
 pub use data::*;
+mod components;
+pub use components::*;
 
 pub trait Inventory {
     fn get_slot(&self, slot: usize) -> impl Future<Output = Option<ItemStack>> + Send;

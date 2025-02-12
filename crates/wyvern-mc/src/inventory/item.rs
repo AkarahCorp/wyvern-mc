@@ -1,11 +1,13 @@
-use std::sync::LazyLock;
+use std::{collections::HashMap, sync::LazyLock};
 
 use voxidian_protocol::{
     registry::Registry,
     value::{DataComponentTypes, DataComponents, Item, SlotData},
 };
 
-use crate::values::Key;
+use crate::{components::ComponentHolder, values::Key};
+
+use super::ItemComponents;
 
 pub struct ItemType;
 
@@ -13,7 +15,7 @@ pub struct ItemType;
 pub struct ItemStack {
     id: Key<ItemType>,
     count: u16,
-    components: Vec<DataComponents>,
+    pub(crate) components: HashMap<DataComponentTypes, DataComponents>,
 }
 
 impl ItemStack {
@@ -21,7 +23,7 @@ impl ItemStack {
         ItemStack {
             id,
             count: 1,
-            components: Vec::new(),
+            components: HashMap::new(),
         }
     }
 
@@ -29,7 +31,7 @@ impl ItemStack {
         ItemStack {
             id: Key::constant("minecraft", "air"),
             count: 0,
-            components: Vec::new(),
+            components: HashMap::new(),
         }
     }
 }
@@ -44,11 +46,20 @@ static ITEM_REGISTRY: LazyLock<Registry<Item>> = LazyLock::new(Item::vanilla_reg
 
 impl From<ItemStack> for SlotData {
     fn from(value: ItemStack) -> Self {
+        let components: Vec<DataComponents> = value.components.values().cloned().collect();
+        let present_types: Vec<DataComponentTypes> =
+            components.iter().map(|x| x.as_type()).collect();
+        log::debug!("components: {:?}", components);
         SlotData {
             id: ITEM_REGISTRY.make_entry(&value.id.into()).unwrap(),
             count: (value.count as i32).into(),
-            components: value.components,
-            removed_components: DataComponentTypes::all_types(),
+            components,
+            removed_components: DataComponentTypes::all_types()
+                .into_iter()
+                .filter(|x| !present_types.contains(x))
+                .collect(),
         }
     }
 }
+
+impl ComponentHolder<ItemComponents> for ItemStack {}

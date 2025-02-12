@@ -16,7 +16,7 @@ use wyvern_mc::{
         properties::BlockComponents,
     },
     events::{DimensionCreateEvent, PlayerCommandEvent, ServerStartEvent, ServerTickEvent},
-    inventory::{Inventory, ItemStack},
+    inventory::{Inventory, ItemComponents, ItemStack},
     key,
     proxy::ProxyBuilder,
     runtime::Runtime,
@@ -182,12 +182,30 @@ async fn on_server_tick(event: ServerTickEvent) {
         if player.get_stage().await == Stage::Play {
             player
                 .get_inventory()
-                .set_slot(0, ItemStack::new(Key::new("minecraft", "stone")))
+                .set_slot(
+                    0,
+                    ItemStack::new(Key::new("minecraft", "stone"))
+                        .with(&ItemComponents::MAX_DAMAGE, 10)
+                        .with(&ItemComponents::DAMAGE, 1)
+                        .with(
+                            &ItemComponents::ITEM_MODEL,
+                            Key::constant("minecraft", "stone"),
+                        ),
+                )
                 .await;
 
             player
                 .get_inventory()
-                .set_slot(1, ItemStack::new(Key::new("minecraft", "diamond_sword")))
+                .set_slot(
+                    1,
+                    ItemStack::new(Key::new("minecraft", "diamond_sword"))
+                        .with(&ItemComponents::MAX_DAMAGE, 20)
+                        .with(&ItemComponents::DAMAGE, 6)
+                        .with(
+                            &ItemComponents::ITEM_MODEL,
+                            Key::constant("minecraft", "diamond_sword"),
+                        ),
+                )
                 .await;
         }
     }
