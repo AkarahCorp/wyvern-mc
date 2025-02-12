@@ -7,7 +7,8 @@ use std::{
 };
 
 use crate::actors::Actor;
-use tokio::{io::AsyncWriteExt, net::TcpStream, sync::*};
+use flume::{Receiver, Sender};
+use tokio::{io::AsyncWriteExt, net::TcpStream};
 use voxidian_protocol::packet::{
     DecodeError, PrefixedPacketDecode, Stage,
     c2s::handshake::C2SHandshakePackets,
@@ -27,8 +28,8 @@ impl ConnectionData {
         addr: IpAddr,
         server: Server,
     ) -> ConnectionWithSignal {
-        let (signal_tx, signal_rx) = mpsc::channel(1);
-        let (data_tx, data_rx) = mpsc::channel(256);
+        let (signal_tx, signal_rx) = flume::bounded(1);
+        let (data_tx, data_rx) = flume::bounded(256);
 
         tokio::spawn(ConnectionData::execute_connection(
             stream,
@@ -48,9 +49,9 @@ impl ConnectionData {
     pub async fn execute_connection(
         stream: TcpStream,
         addr: IpAddr,
-        sender: mpsc::Sender<PlayerMessage>,
-        receiver: mpsc::Receiver<PlayerMessage>,
-        signal: mpsc::Sender<ConnectionStoppedSignal>,
+        sender: Sender<PlayerMessage>,
+        receiver: Receiver<PlayerMessage>,
+        signal: Sender<ConnectionStoppedSignal>,
         server: Server,
     ) {
         let conn = ConnectionData {
@@ -79,7 +80,7 @@ impl ConnectionData {
             let result = self.handle_incoming_bytes().await;
             if result.is_err() {
                 log::info!("A player has disconnected. Stopping their connection data...");
-                let _ = self.signal.send(ConnectionStoppedSignal).await;
+                let _ = self.signal.send(ConnectionStoppedSignal);
                 break;
             }
             self.handle_messages().await;

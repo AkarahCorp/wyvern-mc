@@ -55,7 +55,7 @@ impl ServerBuilder {
     }
 
     pub async fn start(self) {
-        let chan = tokio::sync::mpsc::channel(128);
+        let chan = flume::unbounded();
         let server = ServerData {
             connections: Vec::new(),
             registries: Arc::new(self.registries.into()),

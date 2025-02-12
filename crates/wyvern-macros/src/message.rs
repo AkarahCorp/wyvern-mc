@@ -109,8 +109,8 @@ pub fn message(attr: TokenStream, item: TokenStream) -> TokenStream {
                                 #(#enum_arms)*
                             }
                         },
-                        Err(tokio::sync::mpsc::error::TryRecvError::Empty) => { return; },
-                        Err(tokio::sync::mpsc::error::TryRecvError::Disconnected) => { return; }
+                        Err(flume::TryRecvError::Empty) => { return; },
+                        Err(flume::TryRecvError::Disconnected) => { return; }
                     }
                     tokio::task::yield_now().await;
                 }
@@ -144,7 +144,7 @@ fn create_enum_types_from_variant(variant: &MessageVariant) -> TokenStream {
         .map(|x| *x.ty.clone())
         .collect::<Vec<_>>();
 
-    let sender_type: Type = syn::parse2(quote! { tokio::sync::oneshot::Sender<#rt> }).unwrap();
+    let sender_type: Type = syn::parse2(quote! { flume::Sender<#rt> }).unwrap();
     param_types.push(sender_type);
 
     let variant_name = &variant.name;
@@ -194,8 +194,8 @@ fn create_fn_from_variant(variant: &MessageVariant) -> TokenStream {
 
     let r = quote! {
         pub async fn #name(&self, #(#param_names: #param_types),*) -> #rt {
-            let (tx, mut rx) = tokio::sync::oneshot::channel();
-            self.sender.send(#enum_type::#enum_variant(#(#param_names,)* tx)).await.unwrap();
+            let (tx, mut rx) = flume::bounded(2);
+            self.sender.send_async(#enum_type::#enum_variant(#(#param_names,)* tx)).await.unwrap();
             loop {
                 match rx.try_recv() {
                     Ok(v) => return v,

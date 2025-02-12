@@ -13,6 +13,7 @@ rust-format = { version = "*" }
 futures = { version = "*" }
 log = { version = "*" }
 env_logger = { version = "*" }
+flume = { version = "*", features = ["async"] }
 
 [profile.release]
 debug = true

@@ -1,11 +1,9 @@
 use std::{collections::VecDeque, net::IpAddr};
 
 use data::PlayerData;
+use flume::{Receiver, Sender};
 use net::ConnectionStoppedSignal;
-use tokio::{
-    net::TcpStream,
-    sync::mpsc::{self, Receiver, Sender},
-};
+use tokio::net::TcpStream;
 use voxidian_protocol::{
     packet::{
         PacketBuf, PacketEncode, PrefixedPacketEncode, Stage,
@@ -39,7 +37,7 @@ pub(crate) struct ConnectionData {
     pub(crate) received_bytes: VecDeque<u8>,
     pub(crate) bytes_to_send: Vec<u8>,
     pub(crate) packet_processing: PacketProcessing,
-    pub(crate) signal: mpsc::Sender<ConnectionStoppedSignal>,
+    pub(crate) signal: Sender<ConnectionStoppedSignal>,
     pub(crate) connected_server: Server,
     pub(crate) stage: Stage,
     pub(crate) associated_data: PlayerData,

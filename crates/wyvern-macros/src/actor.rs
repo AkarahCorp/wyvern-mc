@@ -39,12 +39,12 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
     let o = quote! {
         #[derive(Clone, Debug)]
         pub struct #attr_actor_type {
-            pub(crate) sender: tokio::sync::mpsc::Sender<#attr_message_type>
+            pub(crate) sender: flume::Sender<#attr_message_type>
         }
 
         pub(crate) struct #strct_type {
             #(#fields),*,
-            pub(crate) receiver: tokio::sync::mpsc::Receiver<#attr_message_type>
+            pub(crate) receiver: flume::Receiver<#attr_message_type>
         }
     };
     o

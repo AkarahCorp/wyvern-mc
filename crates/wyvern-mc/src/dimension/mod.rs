@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use blocks::BlockState;
 use chunk::{Chunk, ChunkSection};
 use entity::{Entity, EntityData, EntityType};
-use tokio::sync::mpsc::{Sender, channel};
+use flume::Sender;
 use voxidian_protocol::{
     packet::s2c::play::{AddEntityS2CPlayPacket, BlockUpdateS2CPlayPacket},
     registry::RegEntry,
@@ -197,7 +197,7 @@ impl DimensionData {
         server: Server,
         dim_type: Key<DimType>,
     ) -> DimensionData {
-        let chan = channel(1024);
+        let chan = flume::unbounded();
         DimensionData {
             name,
             chunks: HashMap::new(),

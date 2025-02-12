@@ -9,3 +9,4 @@ tokio = { workspace = true }
 wyvern-macros = { workspace = true }
 futures = { workspace = true }
 log = { workspace = true }
+flume = { workspace = true }
