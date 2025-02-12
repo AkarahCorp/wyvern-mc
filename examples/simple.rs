@@ -15,6 +15,7 @@ use wyvern_mc::{
     events::{DimensionCreateEvent, PlayerCommandEvent, ServerStartEvent, ServerTickEvent},
     key,
     proxy::ProxyBuilder,
+    runtime::Runtime,
     server::ServerBuilder,
     values::{
         Key, Vec3,
@@ -25,10 +26,13 @@ use wyvern_mc::{
 fn main() {
     env_logger::init();
 
+    Runtime::tokio();
+
     log::info!(
         "Running proxy with {:?} worker threads:",
         std::thread::available_parallelism().unwrap()
     );
+
     let rt = Builder::new_multi_thread()
         .worker_threads(std::thread::available_parallelism().unwrap().into())
         .enable_io()

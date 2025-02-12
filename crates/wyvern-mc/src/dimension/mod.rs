@@ -12,6 +12,7 @@ use voxidian_protocol::{
 
 use crate::{
     events::ChunkLoadEvent,
+    runtime::Runtime,
     server::Server,
     values::{Key, Vec2, Vec3},
 };
@@ -67,12 +68,12 @@ impl DimensionData {
         chunk.set_block_at(pos_in_chunk, block_state.clone());
 
         let server = self.server.clone().unwrap();
-        tokio::spawn(async move {
+        Runtime::spawn(async move {
             for conn in server.connections().await {
                 let block_state = block_state.clone();
                 let pos = position;
                 let conn = conn.clone();
-                tokio::spawn(async move {
+                Runtime::spawn(async move {
                     if conn.is_loaded_in_world().await {
                         conn.write_packet(BlockUpdateS2CPlayPacket {
                             pos: BlockPos::new(pos.x(), pos.y(), pos.z()),

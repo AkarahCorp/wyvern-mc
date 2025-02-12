@@ -4,8 +4,8 @@ use std::{
     time::{Duration, Instant},
 };
 
-use crate::actors::Actor;
 use crate::{actor, message};
+use crate::{actors::Actor, runtime::Runtime};
 use async_net::TcpListener;
 use dimensions::DimensionContainer;
 use flume::Sender;
@@ -37,7 +37,7 @@ pub(crate) struct ServerData {
 impl Server {
     pub fn spawn_event<E: Event + Send + 'static>(&self, event: E) {
         let server = self.clone();
-        tokio::spawn(async move {
+        Runtime::spawn(async move {
             event.dispatch(server.event_bus().await);
         });
     }
@@ -100,7 +100,7 @@ impl ServerData {
             sender: root_dim.sender.clone(),
         };
         self.dimensions.insert(name, dim.clone());
-        tokio::spawn(async move {
+        Runtime::spawn(async move {
             loop {
                 root_dim.handle_messages().await;
             }
@@ -134,13 +134,13 @@ impl ServerData {
             sender: self.sender.clone(),
         };
         let snd_clone = snd.clone();
-        tokio::spawn(async move {
+        Runtime::spawn(async move {
             snd_clone.spawn_event(ServerStartEvent {
                 server: snd_clone.clone(),
             });
         });
-        tokio::spawn(self.handle_loops(snd.clone()));
-        tokio::spawn(Self::networking_loop(snd));
+        Runtime::spawn(self.handle_loops(snd.clone()));
+        Runtime::spawn(Self::networking_loop(snd));
     }
 
     pub async fn handle_loops(mut self, server: Server) {

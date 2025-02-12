@@ -1,6 +1,4 @@
-use tokio::signal;
-
-use crate::server::ServerBuilder;
+use crate::{runtime::Runtime, server::ServerBuilder};
 
 pub struct ProxyBuilder {
     servers: Vec<ServerBuilder>,
@@ -25,16 +23,11 @@ impl ProxyBuilder {
 
     pub async fn start_all(self) {
         for server in self.servers {
-            tokio::spawn(server.start());
+            Runtime::spawn(server.start());
         }
 
-        match signal::ctrl_c().await {
-            Ok(()) => {
-                futures_lite::future::yield_now().await;
-            }
-            Err(err) => {
-                log::error!("Unable to listen for shutdown signal: {}", err);
-            }
+        loop {
+            futures_lite::future::yield_now().await;
         }
     }
 }

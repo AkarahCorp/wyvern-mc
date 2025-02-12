@@ -5,7 +5,6 @@ edition = "2024"
 
 [dependencies]
 voxidian-protocol = { workspace = true }
-tokio = { workspace = true }
 wyvern-macros = { workspace = true }
 futures-util = { workspace = true }
 futures-lite = { workspace = true }
@@ -13,3 +12,7 @@ log = { workspace = true }
 flume = { workspace = true }
 async-net = { workspace = true }
 async-io = { workspace = true }
+tokio = { workspace = true, optional = true }
+
+[features]
+rt-tokio = ["dep:tokio"]

@@ -21,7 +21,7 @@ macro_rules! event_bus {
             }
 
             fn dispatch(self, bus: std::sync::Arc<EventBus>) {
-                tokio::spawn(async move {
+                crate::runtime::Runtime::spawn(async move {
                     self.dispatch_sync(bus).await;
                 });
             }

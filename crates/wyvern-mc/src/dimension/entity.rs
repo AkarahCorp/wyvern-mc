@@ -8,7 +8,10 @@ use voxidian_protocol::{
     value::{EntityMetadata, Uuid},
 };
 
-use crate::values::{Key, Vec2, Vec3};
+use crate::{
+    runtime::Runtime,
+    values::{Key, Vec2, Vec3},
+};
 
 use super::Dimension;
 
@@ -83,7 +86,7 @@ impl Entity {
 
                     let server = server.clone();
                     let dimension = dimension.clone();
-                    tokio::spawn(async move {
+                    Runtime::spawn(async move {
                         let dimension = dimension.clone();
                         for conn in server.connections().await {
                             let Some(dim) = conn.get_dimension().await else {

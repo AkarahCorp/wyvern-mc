@@ -6,7 +6,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use crate::actors::Actor;
+use crate::{actors::Actor, runtime::Runtime};
 use async_net::TcpStream;
 use flume::{Receiver, Sender};
 use futures_lite::{AsyncReadExt, AsyncWriteExt};
@@ -33,7 +33,7 @@ impl ConnectionData {
         let (signal_tx, signal_rx) = flume::bounded(1);
         let (data_tx, data_rx) = flume::bounded(256);
 
-        tokio::spawn(ConnectionData::execute_connection(
+        Runtime::spawn(ConnectionData::execute_connection(
             stream,
             addr,
             data_tx.clone(),
@@ -109,7 +109,9 @@ impl ConnectionData {
             Either::Left(_) => Ok(()),
             Either::Right(bytes_read) => match bytes_read.0 {
                 Ok(bytes_read) => {
-                    if bytes_read == 0 {}
+                    if bytes_read == 0 {
+                        return Err(());
+                    }
                     for byte in &buf[0..bytes_read] {
                         let byte = self
                             .packet_processing
