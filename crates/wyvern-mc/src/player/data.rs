@@ -2,6 +2,7 @@ use std::time::Instant;
 
 use crate::{
     dimension::Dimension,
+    inventory::DataInventory,
     values::{Vec2, Vec3},
 };
 use voxidian_protocol::{packet::c2s::play::InputFlags, value::Uuid};
@@ -25,6 +26,8 @@ pub struct PlayerData {
     pub(crate) entity_id: i32,
 
     pub(crate) last_sent_keep_alive: Instant,
+
+    pub(crate) inventory: DataInventory,
 }
 
 impl Default for PlayerData {
@@ -53,6 +56,8 @@ impl Default for PlayerData {
             is_loaded: false,
             entity_id: 0,
             last_sent_keep_alive: Instant::now(),
+
+            inventory: DataInventory::new(),
         }
     }
 }

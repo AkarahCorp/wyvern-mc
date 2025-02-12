@@ -174,7 +174,7 @@ impl DimensionData {
     }
 
     #[ManipulateEntity]
-    pub async fn manipulate_entity(
+    pub(crate) async fn manipulate_entity(
         &mut self,
         uuid: Uuid,
         f: Box<dyn Fn(&mut EntityData) + Send + Sync>,
@@ -185,7 +185,7 @@ impl DimensionData {
     }
 
     #[ReadEntity]
-    pub async fn read_entity(&self, uuid: Uuid, f: Box<dyn Fn(&EntityData) + Send + Sync>) {
+    pub(crate) async fn read_entity(&self, uuid: Uuid, f: Box<dyn Fn(&EntityData) + Send + Sync>) {
         if let Some(entity) = self.entities.get(&uuid) {
             f(entity);
         }

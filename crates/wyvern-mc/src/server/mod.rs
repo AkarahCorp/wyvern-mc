@@ -1,6 +1,6 @@
 use std::{
     net::{Ipv4Addr, SocketAddrV4},
-    sync::Arc,
+    sync::{Arc, Mutex},
     time::{Duration, Instant},
 };
 
@@ -10,6 +10,7 @@ use async_net::TcpListener;
 use dimensions::DimensionContainer;
 use flume::Sender;
 use registries::RegistryContainer;
+use voxidian_protocol::packet::Stage;
 
 use crate::{
     dimension::{Dimension, DimensionData},
@@ -124,6 +125,17 @@ impl ServerData {
     pub async fn connections(&self) -> Vec<Player> {
         self.connections.iter().map(|x| x.lower()).collect()
     }
+
+    #[GetPlayers]
+    pub async fn all_players(&self) -> Vec<Player> {
+        let mut vec = Vec::new();
+        for conn in &self.connections {
+            if *conn.stage.lock().unwrap() == Stage::Play {
+                vec.push(conn.lower());
+            }
+        }
+        vec
+    }
 }
 
 impl ServerData {
@@ -172,8 +184,13 @@ impl ServerData {
             match new_client {
                 Ok((stream, addr)) => {
                     log::info!("Accepted new client: {:?}", addr);
-                    let signal =
-                        ConnectionData::connection_channel(stream, addr.ip(), server.clone());
+                    let stage = Arc::new(Mutex::new(Stage::Handshake));
+                    let signal = ConnectionData::connection_channel(
+                        stream,
+                        addr.ip(),
+                        server.clone(),
+                        stage,
+                    );
                     server.spawn_connection_internal(signal).await;
                 }
                 Err(_err) => {}

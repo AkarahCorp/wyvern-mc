@@ -3,7 +3,10 @@ use std::sync::LazyLock;
 use noise::{NoiseFn, Simplex};
 use rand::Rng;
 use tokio::runtime::Builder;
-use voxidian_protocol::value::{DimEffects, DimMonsterSpawnLightLevel, DimType};
+use voxidian_protocol::{
+    packet::Stage,
+    value::{DimEffects, DimMonsterSpawnLightLevel, DimType},
+};
 use wyvern_mc::{
     components::ComponentHolder,
     dimension::{
@@ -13,6 +16,7 @@ use wyvern_mc::{
         properties::BlockComponents,
     },
     events::{DimensionCreateEvent, PlayerCommandEvent, ServerStartEvent, ServerTickEvent},
+    inventory::{Inventory, ItemStack},
     key,
     proxy::ProxyBuilder,
     runtime::Runtime,
@@ -171,6 +175,20 @@ async fn on_server_tick(event: ServerTickEvent) {
                 rand::random::<f64>() * 128.0,
             );
             entity.teleport(new_pos).await;
+        }
+    }
+
+    for player in event.server.all_players().await {
+        if player.get_stage().await == Stage::Play {
+            player
+                .get_inventory()
+                .set_slot(0, ItemStack::new(Key::new("minecraft", "stone")))
+                .await;
+
+            player
+                .get_inventory()
+                .set_slot(1, ItemStack::new(Key::new("minecraft", "diamond_sword")))
+                .await;
         }
     }
 }

@@ -1,8 +1,13 @@
-use std::{collections::VecDeque, net::IpAddr};
+use std::{
+    collections::VecDeque,
+    net::IpAddr,
+    sync::{Arc, Mutex},
+};
 
 use async_net::TcpStream;
 use data::PlayerData;
 use flume::{Receiver, Sender};
+use inventory::PlayerInventory;
 use net::ConnectionStoppedSignal;
 use voxidian_protocol::{
     packet::{
@@ -11,7 +16,8 @@ use voxidian_protocol::{
         s2c::play::{
             AddEntityS2CPlayPacket, ForgetLevelChunkS2CPlayPacket, GameEvent,
             GameEventS2CPlayPacket, Gamemode, PlayerPositionS2CPlayPacket,
-            PlayerRotationS2CPlayPacket, RespawnS2CPlayPacket, TeleportFlags,
+            PlayerRotationS2CPlayPacket, RespawnS2CPlayPacket, SetPlayerInventoryS2CPlayPacket,
+            TeleportFlags,
         },
     },
     value::{Angle, VarInt},
@@ -20,12 +26,14 @@ use wyvern_macros::{actor, message};
 
 use crate::{
     dimension::Dimension,
+    inventory::{Inventory, ItemStack},
     server::Server,
     values::{Vec2, Vec3},
 };
 
 pub mod chunkload;
 pub mod data;
+pub mod inventory;
 pub mod net;
 pub mod stages;
 
@@ -39,7 +47,7 @@ pub(crate) struct ConnectionData {
     pub(crate) packet_processing: PacketProcessing,
     pub(crate) signal: Sender<ConnectionStoppedSignal>,
     pub(crate) connected_server: Server,
-    pub(crate) stage: Stage,
+    pub(crate) stage: Arc<Mutex<Stage>>,
     pub(crate) associated_data: PlayerData,
     pub(crate) sender: Sender<PlayerMessage>,
 }
@@ -48,12 +56,12 @@ pub(crate) struct ConnectionData {
 impl ConnectionData {
     #[SetStage]
     pub async fn set_stage(&mut self, stage: Stage) {
-        self.stage = stage;
+        *self.stage.lock().unwrap() = stage;
     }
 
     #[GetStage]
     pub async fn get_stage(&mut self) -> Stage {
-        self.stage
+        *self.stage.lock().unwrap()
     }
 
     #[IsLoaded]
@@ -171,6 +179,23 @@ impl ConnectionData {
             .await;
         }
     }
+
+    #[GetInvSlot]
+    pub(crate) async fn get_inv_slot(&self, slot: usize) -> Option<ItemStack> {
+        self.associated_data.inventory.get_slot(slot).await
+    }
+
+    #[SetInvSlot]
+    pub(crate) async fn set_inv_slot(&mut self, slot: usize, item: ItemStack) {
+        let copy = item.clone();
+        self.associated_data.inventory.set_slot(slot, copy).await;
+
+        self.write_packet(SetPlayerInventoryS2CPlayPacket {
+            slot: (slot as i32).into(),
+            data: item.into(),
+        })
+        .await;
+    }
 }
 
 impl Player {
@@ -187,6 +212,12 @@ impl Player {
         new_buf.write_u8s(len_buf.as_slice());
         new_buf.write_u8s(buf.as_slice());
         self.send_packet_buf(new_buf).await;
+    }
+
+    pub fn get_inventory(&self) -> PlayerInventory {
+        PlayerInventory {
+            player: self.clone(),
+        }
     }
 }
 
@@ -209,6 +240,7 @@ impl ConnectionData {
 pub struct ConnectionWithSignal {
     pub(crate) player: Player,
     pub(crate) _signal: Receiver<ConnectionStoppedSignal>,
+    pub(crate) stage: Arc<Mutex<Stage>>,
 }
 
 impl ConnectionWithSignal {

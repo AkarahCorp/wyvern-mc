@@ -73,7 +73,7 @@ impl ConnectionData {
             async |packet: C2SLoginPackets, this: &mut Self| match packet {
                 C2SLoginPackets::CustomQueryAnswer(_packet) => todo!(),
                 C2SLoginPackets::LoginAcknowledged(_packet) => {
-                    this.stage = Stage::Config;
+                    *this.stage.lock().unwrap() = Stage::Config;
                     this.write_packet(SelectKnownPacksS2CConfigPacket {
                         known_packs: vec![KnownPack {
                             namespace: "minecraft".to_string(),
@@ -106,7 +106,7 @@ impl ConnectionData {
             match packet {
                 C2SConfigPackets::CustomPayload(_packet) => {}
                 C2SConfigPackets::FinishConfiguration(_packet) => {
-                    this.stage = Stage::Play;
+                    *this.stage.lock().unwrap() = Stage::Play;
                     this.associated_data.entity_id = this.connected_server.get_entity_id().await;
                     this.write_packet(LoginS2CPlayPacket {
                         entity: this.associated_data.entity_id,

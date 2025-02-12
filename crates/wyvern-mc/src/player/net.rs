@@ -3,6 +3,7 @@ use std::{
     fmt::Debug,
     io::ErrorKind,
     net::IpAddr,
+    sync::{Arc, Mutex},
     time::{Duration, Instant},
 };
 
@@ -29,6 +30,7 @@ impl ConnectionData {
         stream: TcpStream,
         addr: IpAddr,
         server: Server,
+        stage: Arc<Mutex<Stage>>,
     ) -> ConnectionWithSignal {
         let (signal_tx, signal_rx) = flume::bounded(1);
         let (data_tx, data_rx) = flume::bounded(256);
@@ -40,11 +42,13 @@ impl ConnectionData {
             data_rx,
             signal_tx,
             server,
+            stage.clone(),
         ));
 
         ConnectionWithSignal {
             player: Player { sender: data_tx },
             _signal: signal_rx,
+            stage,
         }
     }
 
@@ -55,6 +59,7 @@ impl ConnectionData {
         receiver: Receiver<PlayerMessage>,
         signal: Sender<ConnectionStoppedSignal>,
         server: Server,
+        stage: Arc<Mutex<Stage>>,
     ) {
         let conn = ConnectionData {
             stream,
@@ -68,7 +73,7 @@ impl ConnectionData {
             receiver,
             sender: sender.clone(),
             signal,
-            stage: Stage::Handshake,
+            stage,
             connected_server: server,
             associated_data: PlayerData::default(),
         };
@@ -129,11 +134,12 @@ impl ConnectionData {
     }
 
     pub async fn read_incoming_packets(&mut self) {
-        match self.stage {
+        let stage = *self.stage.lock().unwrap();
+        match stage {
             Stage::Handshake => {
                 self.read_packets(async |packet: C2SHandshakePackets, this: &mut Self| {
                     let C2SHandshakePackets::Intention(packet) = packet;
-                    this.stage = packet.intended_stage.into_stage();
+                    *this.stage.lock().unwrap() = packet.intended_stage.into_stage();
                 })
                 .await;
             }
