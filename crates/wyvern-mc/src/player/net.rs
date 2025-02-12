@@ -88,7 +88,6 @@ impl ConnectionData {
             self.handle_messages().await;
             self.read_incoming_packets().await;
             self.write_outgoing_packets().await;
-            self.handle_messages().await;
 
             let now = Instant::now();
             if now > self.associated_data.last_sent_keep_alive + Duration::from_secs(5) {
@@ -102,7 +101,7 @@ impl ConnectionData {
         let mut buf = [0; 512];
 
         match futures_util::future::select(
-            async_io::Timer::after(Duration::from_micros(1)),
+            async_io::Timer::after(Duration::from_millis(5)),
             self.stream.read(&mut buf),
         )
         .await

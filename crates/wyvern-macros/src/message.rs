@@ -112,7 +112,6 @@ pub fn message(attr: TokenStream, item: TokenStream) -> TokenStream {
                         Err(flume::TryRecvError::Empty) => { return; },
                         Err(flume::TryRecvError::Disconnected) => { return; }
                     }
-                    futures_lite::future::yield_now().await;
                 }
             }
         }
