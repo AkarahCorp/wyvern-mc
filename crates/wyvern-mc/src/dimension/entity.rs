@@ -127,3 +127,6 @@ pub struct EntityData {
 
     pub(crate) metadata: EntityMetadata,
 }
+
+pub struct Entities;
+wyvern_macros::generate_entity_types!();

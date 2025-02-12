@@ -1,17 +1,25 @@
-use std::{fmt::Debug, hash::Hash, marker::PhantomData};
+use std::{borrow::Cow, fmt::Debug, hash::Hash, marker::PhantomData};
 
 use voxidian_protocol::value::Identifier;
 
 pub struct Key<T> {
-    namespace: String,
-    path: String,
+    namespace: Cow<'static, str>,
+    path: Cow<'static, str>,
     _phantom: PhantomData<T>,
 }
 impl<T> Key<T> {
-    pub fn new(namespace: impl Into<String>, path: impl Into<String>) -> Key<T> {
+    pub fn new(namespace: &str, path: &str) -> Key<T> {
         Key {
-            namespace: namespace.into(),
-            path: path.into(),
+            namespace: Cow::Owned(namespace.into()),
+            path: Cow::Owned(path.into()),
+            _phantom: PhantomData,
+        }
+    }
+
+    pub const fn constant(namespace: &'static str, path: &'static str) -> Key<T> {
+        Key {
+            namespace: Cow::Borrowed(namespace),
+            path: Cow::Borrowed(path),
             _phantom: PhantomData,
         }
     }
@@ -43,7 +51,7 @@ impl<T> Key<T> {
 
 impl<T> From<Identifier> for Key<T> {
     fn from(value: Identifier) -> Self {
-        Key::new(value.namespace, value.path)
+        Key::new(&value.namespace, &value.path)
     }
 }
 
@@ -82,4 +90,11 @@ impl<T> Clone for Key<T> {
             _phantom: self._phantom,
         }
     }
+}
+
+#[macro_export]
+macro_rules! key {
+    ($namespace:ident:$path:ident) => {
+        Key::constant(stringify!($namespace), stringify!($path));
+    };
 }

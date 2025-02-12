@@ -57,3 +57,6 @@ impl From<&BlockState> for ProtocolState {
         }
     }
 }
+
+pub struct Blocks;
+wyvern_macros::generate_blocks_types!();

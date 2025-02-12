@@ -6,8 +6,14 @@ use tokio::runtime::Builder;
 use voxidian_protocol::value::{DimEffects, DimMonsterSpawnLightLevel, DimType};
 use wyvern_mc::{
     components::ComponentHolder,
-    dimension::{blocks::BlockState, chunk::Chunk, properties::BlockComponents},
+    dimension::{
+        blocks::{BlockState, Blocks},
+        chunk::Chunk,
+        entity::Entities,
+        properties::BlockComponents,
+    },
     events::{DimensionCreateEvent, PlayerCommandEvent, ServerStartEvent, ServerTickEvent},
+    key,
     proxy::ProxyBuilder,
     server::ServerBuilder,
     values::{
@@ -109,7 +115,7 @@ async fn on_command(event: PlayerCommandEvent) {
             .player
             .get_server()
             .await
-            .dimension(Key::new("wyvern", "root"))
+            .dimension(key!(wyvern:root))
             .await
             .unwrap();
         event.player.change_dimension(dimension).await;
@@ -120,7 +126,7 @@ async fn on_command(event: PlayerCommandEvent) {
             .player
             .get_server()
             .await
-            .dimension(Key::new("example", "alternate"))
+            .dimension(key!(example:alternate))
             .await
             .unwrap();
         event.player.change_dimension(dimension).await;
@@ -145,11 +151,7 @@ async fn dim_init(event: DimensionCreateEvent) {
                     ]) + 1.0;
 
                     let new_pos = Vec3::new(x2, f64::floor(y * -16.0 + 8.0) as i32, z2);
-                    chunk.set_block_at(
-                        new_pos,
-                        BlockState::new(Key::new("minecraft", "grass_block"))
-                            .with(&BlockComponents::SNOWY, false),
-                    );
+                    chunk.set_block_at(new_pos, BlockState::new(Blocks::BLACKSTONE));
                 }
             }
         })
@@ -170,18 +172,13 @@ async fn on_server_tick(event: ServerTickEvent) {
 }
 
 async fn on_server_start(event: ServerStartEvent) {
-    event
-        .server
-        .create_dimension(Key::new("example", "alternate"))
-        .await;
+    event.server.create_dimension(key!(example:alternate)).await;
 
     tokio::task::yield_now().await;
 
     for dimension in event.server.get_all_dimensions().await {
-        for _ in 1..10 {
-            dimension
-                .spawn_entity(Key::new("minecraft", "zombie"))
-                .await;
+        for _ in 1..50 {
+            dimension.spawn_entity(Entities::AXOLOTL).await;
         }
     }
 }
