@@ -6,6 +6,7 @@ use std::{
 
 use crate::actors::Actor;
 use crate::{actor, message};
+use async_net::TcpListener;
 use dimensions::DimensionContainer;
 use flume::Sender;
 use registries::RegistryContainer;
@@ -21,8 +22,6 @@ mod builder;
 pub use builder::*;
 pub mod dimensions;
 pub mod registries;
-
-use tokio::net::TcpListener;
 
 #[actor(Server, ServerMessage)]
 pub(crate) struct ServerData {

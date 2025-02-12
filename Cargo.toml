@@ -14,6 +14,8 @@ futures = { version = "*" }
 log = { version = "*" }
 env_logger = { version = "*" }
 flume = { version = "*", features = ["async"] }
+async-net = { version = "*" }
+async-io = { version = "*" }
 
 [profile.release]
 debug = true

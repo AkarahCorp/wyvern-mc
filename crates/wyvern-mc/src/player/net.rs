@@ -7,8 +7,9 @@ use std::{
 };
 
 use crate::actors::Actor;
+use async_net::TcpStream;
 use flume::{Receiver, Sender};
-use tokio::{io::AsyncWriteExt, net::TcpStream};
+use futures::{AsyncReadExt, AsyncWriteExt, future::Either};
 use voxidian_protocol::packet::{
     DecodeError, PrefixedPacketDecode, Stage,
     c2s::handshake::C2SHandshakePackets,
@@ -98,25 +99,30 @@ impl ConnectionData {
 
     pub async fn handle_incoming_bytes(&mut self) -> Result<(), ()> {
         let mut buf = [0; 512];
-        let bytes_read = self.stream.try_read(&mut buf);
-        match bytes_read {
-            Ok(bytes_read) => {
-                if bytes_read == 0 {
-                    return Err(());
-                }
-                for byte in &buf[0..bytes_read] {
-                    let byte = self
-                        .packet_processing
-                        .secret_cipher
-                        .decrypt_u8(*byte)
-                        .unwrap();
-                    self.received_bytes.push_back(byte);
-                }
 
-                Ok(())
-            }
-            Err(e) if e.kind() == ErrorKind::WouldBlock => Ok(()),
-            Err(_e) => Err(()),
+        match futures::future::select(
+            async_io::Timer::after(Duration::from_micros(1)),
+            self.stream.read(&mut buf),
+        )
+        .await
+        {
+            Either::Left(_) => Ok(()),
+            Either::Right(bytes_read) => match bytes_read.0 {
+                Ok(bytes_read) => {
+                    if bytes_read == 0 {}
+                    for byte in &buf[0..bytes_read] {
+                        let byte = self
+                            .packet_processing
+                            .secret_cipher
+                            .decrypt_u8(*byte)
+                            .unwrap();
+                        self.received_bytes.push_back(byte);
+                    }
+                    Ok(())
+                }
+                Err(e) if e.kind() == ErrorKind::WouldBlock => Ok(()),
+                Err(_e) => Err(()),
+            },
         }
     }
 
@@ -152,9 +158,7 @@ impl ConnectionData {
             }
 
             self.stream.write_all(&self.bytes_to_send).await.unwrap();
-
             self.bytes_to_send.clear();
-            tokio::task::yield_now().await;
         }
     }
 

@@ -1,9 +1,9 @@
 use std::{collections::VecDeque, net::IpAddr};
 
+use async_net::TcpStream;
 use data::PlayerData;
 use flume::{Receiver, Sender};
 use net::ConnectionStoppedSignal;
-use tokio::net::TcpStream;
 use voxidian_protocol::{
     packet::{
         PacketBuf, PacketEncode, PrefixedPacketEncode, Stage,
@@ -178,7 +178,7 @@ impl Player {
         let mut buf = PacketBuf::new();
         packet.encode_prefixed(&mut buf).unwrap();
 
-        let mut len_buf = PacketBuf::new();
+        let mut len_buf: PacketBuf = PacketBuf::new();
         VarInt::from(buf.iter().count())
             .encode(&mut len_buf)
             .unwrap();

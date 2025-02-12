@@ -10,3 +10,5 @@ wyvern-macros = { workspace = true }
 futures = { workspace = true }
 log = { workspace = true }
 flume = { workspace = true }
+async-net = { workspace = true }
+async-io = { workspace = true }
