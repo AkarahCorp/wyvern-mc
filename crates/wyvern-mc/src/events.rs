@@ -6,8 +6,7 @@ use crate::{
     server::Server,
     values::{Vec2, Vec3},
 };
-
-use futures::future::join_all;
+use futures_util::future::join_all;
 
 macro_rules! event_bus {
     ($($name:ident : $t:ty)*) => {

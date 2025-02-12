@@ -9,7 +9,8 @@ use std::{
 use crate::actors::Actor;
 use async_net::TcpStream;
 use flume::{Receiver, Sender};
-use futures::{AsyncReadExt, AsyncWriteExt, future::Either};
+use futures_lite::{AsyncReadExt, AsyncWriteExt};
+use futures_util::future::Either;
 use voxidian_protocol::packet::{
     DecodeError, PrefixedPacketDecode, Stage,
     c2s::handshake::C2SHandshakePackets,
@@ -77,7 +78,7 @@ impl ConnectionData {
 
     pub async fn event_loop(mut self) {
         loop {
-            tokio::task::yield_now().await;
+            futures_lite::future::yield_now().await;
             let result = self.handle_incoming_bytes().await;
             if result.is_err() {
                 log::info!("A player has disconnected. Stopping their connection data...");
@@ -100,7 +101,7 @@ impl ConnectionData {
     pub async fn handle_incoming_bytes(&mut self) -> Result<(), ()> {
         let mut buf = [0; 512];
 
-        match futures::future::select(
+        match futures_util::future::select(
             async_io::Timer::after(Duration::from_micros(1)),
             self.stream.read(&mut buf),
         )

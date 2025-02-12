@@ -102,7 +102,7 @@ pub fn message(attr: TokenStream, item: TokenStream) -> TokenStream {
         impl crate::actors::Actor for #target_type {
             async fn handle_messages(&mut self) {
                 loop {
-                    tokio::task::yield_now().await;
+                    futures_lite::future::yield_now().await;
                     match self.receiver.try_recv() {
                         Ok(v) => {
                             match v {
@@ -112,7 +112,7 @@ pub fn message(attr: TokenStream, item: TokenStream) -> TokenStream {
                         Err(flume::TryRecvError::Empty) => { return; },
                         Err(flume::TryRecvError::Disconnected) => { return; }
                     }
-                    tokio::task::yield_now().await;
+                    futures_lite::future::yield_now().await;
                 }
             }
         }
@@ -199,7 +199,7 @@ fn create_fn_from_variant(variant: &MessageVariant) -> TokenStream {
             loop {
                 match rx.try_recv() {
                     Ok(v) => return v,
-                    Err(e) => tokio::task::yield_now().await
+                    Err(e) => futures_lite::future::yield_now().await
                 };
             };
         }

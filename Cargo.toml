@@ -10,7 +10,8 @@ proc-macro2 = { version = "*" }
 syn = { version = "*", features = ["full"] }
 quote = { version = "*" }
 rust-format = { version = "*" }
-futures = { version = "*" }
+futures-util = { version = "*" }
+futures-lite = { version = "*" }
 log = { version = "*" }
 env_logger = { version = "*" }
 flume = { version = "*", features = ["async"] }

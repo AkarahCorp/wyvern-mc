@@ -114,9 +114,9 @@ impl ServerData {
             dimension: dim_clone,
             server: server_clone.clone(),
         });
-        tokio::task::yield_now().await;
-        tokio::task::yield_now().await;
-        tokio::task::yield_now().await;
+        futures_lite::future::yield_now().await;
+        futures_lite::future::yield_now().await;
+        futures_lite::future::yield_now().await;
         dim
     }
 
