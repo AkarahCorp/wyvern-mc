@@ -33,7 +33,7 @@ impl Chunk {
         }
     }
 
-    pub fn section_at_mut(&mut self, section: i32) -> Option<&mut ChunkSection> {
+    pub(crate) fn section_at_mut(&mut self, section: i32) -> Option<&mut ChunkSection> {
         self.sections
             .get_mut((section + -self.min_sections) as usize)
     }
@@ -66,13 +66,13 @@ impl Chunk {
 }
 
 #[derive(Clone, Debug)]
-pub struct ChunkSection {
+pub(crate) struct ChunkSection {
     block_count: i16,
     blocks: [[[ChunkBlock; 16]; 16]; 16],
 }
 
 #[derive(Clone, Debug, Copy)]
-struct ChunkBlock {
+pub(crate) struct ChunkBlock {
     block_state: u16,
     #[allow(unused)]
     block_meta: u16,
@@ -145,7 +145,7 @@ impl ChunkSection {
         unsafe { std::mem::transmute(arr) }
     }
 
-    pub fn into_protocol_section(&self) -> ProtocolSection {
+    pub fn as_protocol_section(&self) -> ProtocolSection {
         ProtocolSection {
             block_count: self.block_count,
             block_states: PalettedContainer {

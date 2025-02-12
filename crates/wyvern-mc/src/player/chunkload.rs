@@ -76,7 +76,7 @@ impl ConnectionData {
             for y in (dim_type.min_y..dim_type.max_y).step_by(16) {
                 let pos = Vec3::new(chunk_x, y, chunk_z);
                 let chunk = dimension.get_chunk_section(pos).await;
-                sections.push(chunk.into_protocol_section());
+                sections.push(chunk.as_protocol_section());
             }
 
             let packet = LevelChunkWithLightS2CPlayPacket {

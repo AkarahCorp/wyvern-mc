@@ -24,7 +24,7 @@ pub mod registries;
 use tokio::{net::TcpListener, sync::mpsc::Sender};
 
 #[actor(Server, ServerMessage)]
-pub struct ServerData {
+pub(crate) struct ServerData {
     pub(crate) connections: Vec<ConnectionWithSignal>,
     pub(crate) registries: Arc<RegistryContainer>,
     pub(crate) dimensions: DimensionContainer,

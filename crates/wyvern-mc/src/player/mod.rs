@@ -32,7 +32,7 @@ pub mod net;
 pub mod stages;
 
 #[actor(Player, PlayerMessage)]
-pub struct ConnectionData {
+pub(crate) struct ConnectionData {
     pub(crate) stream: TcpStream,
     #[allow(dead_code)]
     pub(crate) addr: IpAddr,
