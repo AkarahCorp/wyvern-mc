@@ -217,7 +217,7 @@ impl DimensionData {
 
             let dim_type = registries
                 .dimension_types
-                .get(&self.dim_type.clone().into())
+                .get(self.dim_type.clone())
                 .unwrap();
 
             let min_sections = dim_type.min_y / 16;

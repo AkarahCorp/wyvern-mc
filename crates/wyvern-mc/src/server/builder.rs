@@ -26,12 +26,12 @@ impl ServerBuilder {
         ServerBuilder {
             events: EventBus::default(),
             registries: RegistryContainerBuilder {
-                damage_types: DamageType::vanilla_registry(),
-                biomes: Biome::vanilla_registry(),
-                wolf_variants: Registry::new(),
-                painting_variants: Registry::new(),
-                dimension_types: Registry::new(),
-                entity_types: EntityType::vanilla_registry(),
+                damage_types: DamageType::vanilla_registry().into(),
+                biomes: Biome::vanilla_registry().into(),
+                wolf_variants: Registry::new().into(),
+                painting_variants: Registry::new().into(),
+                dimension_types: Registry::new().into(),
+                entity_types: EntityType::vanilla_registry().into(),
             },
             dimensions: DimensionContainer {
                 dimensions: HashMap::new(),

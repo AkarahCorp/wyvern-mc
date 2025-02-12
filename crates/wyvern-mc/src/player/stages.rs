@@ -172,6 +172,7 @@ impl ConnectionData {
                             .registries()
                             .await
                             .biomes
+                            .inner
                             .to_registry_data_packet(),
                     )
                     .await;
@@ -180,6 +181,7 @@ impl ConnectionData {
                             .registries()
                             .await
                             .damage_types
+                            .inner
                             .to_registry_data_packet(),
                     )
                     .await;
@@ -188,6 +190,7 @@ impl ConnectionData {
                             .registries()
                             .await
                             .wolf_variants
+                            .inner
                             .to_registry_data_packet(),
                     )
                     .await;
@@ -196,6 +199,7 @@ impl ConnectionData {
                             .registries()
                             .await
                             .painting_variants
+                            .inner
                             .to_registry_data_packet(),
                     )
                     .await;
@@ -204,6 +208,7 @@ impl ConnectionData {
                             .registries()
                             .await
                             .dimension_types
+                            .inner
                             .to_registry_data_packet(),
                     )
                     .await;
@@ -277,7 +282,7 @@ impl ConnectionData {
                                     .registries()
                                     .await
                                     .entity_types
-                                    .make_entry(&entity.entity_type().await.into())
+                                    .make_entry(entity.entity_type().await.retype())
                                     .unwrap(),
                                 x: position.0.x(),
                                 y: position.0.x(),

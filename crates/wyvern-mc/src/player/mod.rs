@@ -99,7 +99,7 @@ impl ConnectionData {
                 .registries()
                 .await
                 .dimension_types
-                .make_entry(&dimension.get_dimension_type().await.into())
+                .make_entry(dimension.get_dimension_type().await)
                 .unwrap(),
             dim_name: dimension.get_name().await.into(),
             seed: 0,
@@ -157,7 +157,7 @@ impl ConnectionData {
                     .registries()
                     .await
                     .entity_types
-                    .make_entry(&entity.entity_type().await.into())
+                    .make_entry(entity.entity_type().await.retype())
                     .unwrap(),
                 x: position.0.x(),
                 y: position.0.x(),

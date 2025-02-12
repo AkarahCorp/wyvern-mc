@@ -1,13 +1,10 @@
-use voxidian_protocol::{
-    registry::Registry,
-    value::{
-        Biome, DamageType, DimType, EntityType, PaintingVariant as PtcPaintingVariant,
-        WolfVariant as PtcWolfVariant,
-    },
+use voxidian_protocol::value::{
+    Biome, DamageType, DimType, EntityType, PaintingVariant as PtcPaintingVariant,
+    WolfVariant as PtcWolfVariant,
 };
 
 use crate::values::{
-    Key,
+    Key, Registry,
     regval::{PaintingVariant, WolfVariant},
 };
 
@@ -51,14 +48,14 @@ impl From<RegistryContainerBuilder> for RegistryContainer {
 
 impl RegistryContainerBuilder {
     pub fn wolf_variant(&mut self, key: Key<WolfVariant>, value: WolfVariant) {
-        self.wolf_variants.insert(key.into(), value.into());
+        self.wolf_variants.insert(key.retype(), value.into());
     }
 
     pub fn painting_variant(&mut self, key: Key<PaintingVariant>, value: PaintingVariant) {
-        self.painting_variants.insert(key.into(), value.into());
+        self.painting_variants.insert(key.retype(), value.into());
     }
 
     pub fn dimension_type(&mut self, key: Key<DimType>, value: DimType) {
-        self.dimension_types.insert(key.into(), value);
+        self.dimension_types.insert(key, value);
     }
 }

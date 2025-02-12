@@ -43,9 +43,7 @@ impl ConnectionData {
 
         let dim_reg = &self.connected_server.registries().await.dimension_types;
 
-        let dim_type = dim_reg
-            .get(&dimension.get_dimension_type().await.into())
-            .unwrap();
+        let dim_type = dim_reg.get(dimension.get_dimension_type().await).unwrap();
 
         let mut chunks = Vec::new();
         for chunk_x in (cx - render_distance)..(cx + render_distance) {
