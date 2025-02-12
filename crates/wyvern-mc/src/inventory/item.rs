@@ -42,7 +42,7 @@ impl Default for ItemStack {
     }
 }
 
-static ITEM_REGISTRY: LazyLock<Registry<Item>> = LazyLock::new(Item::vanilla_registry);
+pub(crate) static ITEM_REGISTRY: LazyLock<Registry<Item>> = LazyLock::new(Item::vanilla_registry);
 
 impl From<ItemStack> for SlotData {
     fn from(value: ItemStack) -> Self {
