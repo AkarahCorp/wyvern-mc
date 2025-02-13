@@ -158,7 +158,7 @@ impl ChunkSection {
                 bits_per_entry: 0,
                 format: PaletteFormat::SingleValued {
                     entry: Biome::vanilla_registry()
-                        .make_entry(&Identifier::new("minecraft", "plains"))
+                        .get_entry(&Identifier::new("minecraft", "plains"))
                         .unwrap(),
                 },
             },

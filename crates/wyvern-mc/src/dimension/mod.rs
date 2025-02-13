@@ -147,7 +147,7 @@ impl DimensionData {
                         id: id.into(),
                         uuid,
                         kind: PtcEntityType::vanilla_registry()
-                            .make_entry(&entity_type.clone().into())
+                            .get_entry(&entity_type.clone().into())
                             .unwrap(),
                         x: 0.0,
                         y: 0.0,

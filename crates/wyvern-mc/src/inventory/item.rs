@@ -51,7 +51,7 @@ impl From<ItemStack> for SlotData {
             components.iter().map(|x| x.as_type()).collect();
         log::debug!("components: {:?}", components);
         SlotData {
-            id: ITEM_REGISTRY.make_entry(&value.id.into()).unwrap(),
+            id: ITEM_REGISTRY.get_entry(&value.id.into()).unwrap(),
             count: (value.count as i32).into(),
             components,
             removed_components: DataComponentTypes::all_types()

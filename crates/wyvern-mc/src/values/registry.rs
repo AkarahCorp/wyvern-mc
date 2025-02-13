@@ -27,8 +27,8 @@ impl<T> Registry<T> {
         self.inner.clear();
     }
 
-    pub(crate) fn make_entry(&self, key: Key<T>) -> Option<RegEntry<T>> {
-        self.inner.make_entry(&key.into())
+    pub(crate) fn get_entry(&self, key: Key<T>) -> Option<RegEntry<T>> {
+        self.inner.get_entry(&key.into())
     }
 }
 

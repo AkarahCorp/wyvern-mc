@@ -56,43 +56,36 @@ pub(crate) struct ConnectionData {
 impl ConnectionData {
     #[SetStage]
     pub async fn set_stage(&mut self, stage: Stage) {
-        log::error!("1");
         *self.stage.lock().unwrap() = stage;
     }
 
     #[GetStage]
     pub async fn get_stage(&mut self) -> Stage {
-        log::error!("2");
         *self.stage.lock().unwrap()
     }
 
     #[IsLoaded]
     pub async fn is_loaded_in_world(&self) -> bool {
-        log::error!("3");
         self.associated_data.is_loaded
     }
 
     #[SendPacketBuf]
     pub async fn send_packet_buf(&mut self, buf: PacketBuf) {
-        log::error!("buf: {:?}", buf);
         self.bytes_to_send.extend(buf.iter());
     }
 
     #[GetServer]
     pub async fn get_server(&self) -> Server {
-        log::error!("5");
         self.connected_server.clone()
     }
 
     #[GetDimension]
     pub async fn get_dimension(&self) -> Option<Dimension> {
-        log::error!("6");
         self.associated_data.dimension.clone()
     }
 
     #[ChangeDimension]
     pub async fn change_dimension(&mut self, dimension: Dimension) {
-        log::error!("7");
         for chunk in self.associated_data.loaded_chunks.clone() {
             self.write_packet(ForgetLevelChunkS2CPlayPacket {
                 chunk_z: chunk.y(),
@@ -112,7 +105,7 @@ impl ConnectionData {
                 .registries()
                 .await
                 .dimension_types
-                .make_entry(dimension.get_dimension_type().await)
+                .get_entry(dimension.get_dimension_type().await)
                 .unwrap(),
             dim_name: dimension.get_name().await.into(),
             seed: 0,
@@ -170,7 +163,7 @@ impl ConnectionData {
                     .registries()
                     .await
                     .entity_types
-                    .make_entry(entity.entity_type().await.retype())
+                    .get_entry(entity.entity_type().await.retype())
                     .unwrap(),
                 x: position.0.x(),
                 y: position.0.x(),
@@ -189,13 +182,11 @@ impl ConnectionData {
 
     #[GetInvSlot]
     pub(crate) async fn get_inv_slot(&self, slot: usize) -> Option<ItemStack> {
-        log::error!("8");
         self.associated_data.inventory.get_slot(slot).await
     }
 
     #[SetInvSlot]
     pub(crate) async fn set_inv_slot(&mut self, slot: usize, item: ItemStack) {
-        log::error!("9");
         let copy = item.clone();
         self.associated_data.inventory.set_slot(slot, copy).await;
 

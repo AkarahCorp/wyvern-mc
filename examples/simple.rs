@@ -12,7 +12,6 @@ use wyvern_mc::{
     dimension::{
         blocks::{BlockState, Blocks},
         chunk::Chunk,
-        entity::Entities,
         properties::BlockComponents,
     },
     events::{DimensionCreateEvent, PlayerCommandEvent, ServerStartEvent, ServerTickEvent},
