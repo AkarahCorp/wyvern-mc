@@ -437,7 +437,7 @@ impl ConnectionData {
                         {
                             let position = entity.position().await;
 
-                            log::error!("Entity @ {:?}...", position);
+                            log::debug!("Sending entity @ {:?}...", position);
                             this.write_packet(AddEntityS2CPlayPacket {
                                 id: entity.entity_id().await.into(),
                                 uuid: *entity.uuid(),
@@ -499,6 +499,14 @@ impl ConnectionData {
                         new_position: this.associated_data.last_position,
                         new_direction: this.associated_data.last_direction,
                     });
+
+                    this.associated_data
+                        .dimension
+                        .as_ref()
+                        .unwrap()
+                        .get_entity(this.associated_data.uuid)
+                        .teleport(this.associated_data.last_position)
+                        .await;
                 }
                 C2SPlayPackets::MovePlayerPosRot(packet) => {
                     this.associated_data.last_position = this
@@ -520,6 +528,14 @@ impl ConnectionData {
                         .unwrap()
                         .get_entity(this.associated_data.uuid)
                         .teleport(this.associated_data.last_position)
+                        .await;
+
+                    this.associated_data
+                        .dimension
+                        .as_ref()
+                        .unwrap()
+                        .get_entity(this.associated_data.uuid)
+                        .rotate(this.associated_data.last_direction)
                         .await;
 
                     this.send_chunks().await;
@@ -546,6 +562,14 @@ impl ConnectionData {
                         new_position: this.associated_data.last_position,
                         new_direction: this.associated_data.last_direction,
                     });
+
+                    this.associated_data
+                        .dimension
+                        .as_ref()
+                        .unwrap()
+                        .get_entity(this.associated_data.uuid)
+                        .rotate(this.associated_data.last_direction)
+                        .await;
                 }
                 C2SPlayPackets::ClientInformation(packet) => {
                     this.associated_data.render_distance = packet.info.view_distance as i32;

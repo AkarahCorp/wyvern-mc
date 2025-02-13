@@ -118,6 +118,49 @@ impl Entity {
             )
             .await;
     }
+
+    pub async fn rotate(&mut self, heading: Vec2<f32>) {
+        let dimension = self.dimension.clone();
+        let server = self.dimension.get_server().await.unwrap();
+
+        self.dimension
+            .manipulate_entity(
+                self.uuid,
+                Box::new(move |entity: &mut EntityData| {
+                    entity.heading = heading;
+
+                    let entity = Arc::new(entity.clone());
+
+                    let server = server.clone();
+                    let dimension = dimension.clone();
+                    Runtime::spawn(async move {
+                        let dimension = dimension.clone();
+                        for conn in server.connections().await {
+                            let Some(dim) = conn.get_dimension().await else {
+                                continue;
+                            };
+                            if !dim.sender.same_channel(&dimension.sender) {
+                                continue;
+                            }
+                            conn.write_packet(EntityPositionSyncS2CPlayPacket {
+                                entity_id: entity.id.into(),
+                                x: entity.position.x(),
+                                y: entity.position.y(),
+                                z: entity.position.z(),
+                                vx: 0.0,
+                                vy: 0.0,
+                                vz: 0.0,
+                                yaw: entity.heading.x(),
+                                pitch: entity.heading.y(),
+                                on_ground: false,
+                            })
+                            .await;
+                        }
+                    });
+                }),
+            )
+            .await;
+    }
 }
 
 pub struct EntityType;
