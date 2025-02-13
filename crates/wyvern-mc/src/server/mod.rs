@@ -139,7 +139,7 @@ impl ServerData {
 }
 
 impl ServerData {
-    pub async fn start(mut self) {
+    pub async fn start(self) {
         log::info!("A server is starting!");
         let snd = Server {
             sender: self.sender.clone(),

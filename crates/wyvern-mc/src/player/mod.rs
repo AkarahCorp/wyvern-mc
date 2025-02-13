@@ -20,7 +20,7 @@ use voxidian_protocol::{
             TeleportFlags,
         },
     },
-    value::{Angle, Text, TextComponent, VarInt},
+    value::{Angle, Text, TextComponent, Uuid, VarInt},
 };
 use wyvern_macros::{actor, message};
 
@@ -262,6 +262,16 @@ impl Player {
         }))
         .await;
         value.lock().unwrap().clone()
+    }
+
+    pub async fn uuid(&self) -> Uuid {
+        let value = Arc::new(Mutex::new(Uuid::nil()));
+        let value_clone = value.clone();
+        self.read_data(Box::new(move |data| {
+            *value_clone.lock().unwrap() = data.uuid;
+        }))
+        .await;
+        *value.lock().unwrap()
     }
 
     pub async fn position(&self) -> (Vec3<f64>, Vec2<f32>) {

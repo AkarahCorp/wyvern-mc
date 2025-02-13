@@ -30,6 +30,10 @@ impl Entity {
         &self.dimension
     }
 
+    pub async fn remove(&self) {
+        self.dimension.remove_entity(self.uuid).await;
+    }
+
     pub async fn entity_id(&self) -> i32 {
         let id = Arc::new(AtomicI32::new(0));
         let id_clone = id.clone();

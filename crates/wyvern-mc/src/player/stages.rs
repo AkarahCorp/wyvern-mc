@@ -14,8 +14,8 @@ use voxidian_protocol::{
             login::LoginFinishedS2CLoginPacket,
             play::{
                 AddEntityS2CPlayPacket, DisconnectS2CPlayPacket, GameEvent, GameEventS2CPlayPacket,
-                Gamemode, LoginS2CPlayPacket, PlayerPositionS2CPlayPacket,
-                PongResponseS2CPlayPacket, TeleportFlags,
+                Gamemode, LoginS2CPlayPacket, PlayerActionEntry, PlayerInfoUpdateS2CPlayPacket,
+                PlayerPositionS2CPlayPacket, PongResponseS2CPlayPacket, TeleportFlags,
             },
             status::{
                 PongResponseS2CStatusPacket, StatusResponse, StatusResponsePlayers,
@@ -35,7 +35,6 @@ use crate::{
         PlayerCommandEvent, PlayerJoinEvent, PlayerMoveEvent, SwapHandsEvent,
     },
     inventory::{ITEM_REGISTRY, Inventory, ItemStack},
-    player::net::ConnectionStoppedSignal,
     runtime::Runtime,
     values::{Key, Vec3, cell::Token},
 };
@@ -374,18 +373,71 @@ impl ConnectionData {
                         })
                         .await;
 
+                        log::debug!("Broadcasting this player info...");
+                        for player in this.connected_server.connections().await {
+                            let data = this.associated_data.clone();
+                            futures_lite::future::race(
+                                async {
+                                    player
+                                        .write_packet(PlayerInfoUpdateS2CPlayPacket {
+                                            actions: vec![(data.uuid, vec![
+                                                PlayerActionEntry::AddPlayer {
+                                                    name: data.username.clone(),
+                                                    properties: vec![].into(),
+                                                },
+                                                PlayerActionEntry::Listed(true),
+                                            ])],
+                                        })
+                                        .await;
+                                },
+                                async {
+                                    loop {
+                                        Runtime::yield_now().await;
+                                        this.handle_messages().await;
+                                    }
+                                },
+                            )
+                            .await;
+                            log::debug!("All done!");
+                        }
+
+                        log::debug!("Sending over current player info...");
+                        for player in this.connected_server.connections().await {
+                            if player.sender.same_channel(&this.sender) {
+                                this.write_packet(PlayerInfoUpdateS2CPlayPacket {
+                                    actions: vec![(this.associated_data.uuid, vec![
+                                        PlayerActionEntry::AddPlayer {
+                                            name: this.associated_data.username.clone(),
+                                            properties: vec![].into(),
+                                        },
+                                    ])],
+                                })
+                                .await;
+                            } else {
+                                this.write_packet(PlayerInfoUpdateS2CPlayPacket {
+                                    actions: vec![(player.uuid().await, vec![
+                                        PlayerActionEntry::AddPlayer {
+                                            name: player.username().await,
+                                            properties: vec![].into(),
+                                        },
+                                    ])],
+                                })
+                                .await;
+                            }
+                        }
+
                         log::debug!("Sending all entities...");
                         for entity in this
                             .associated_data
                             .dimension
-                            .as_mut()
+                            .as_ref()
                             .unwrap()
-                            .get_all_entities()
+                            .get_all_entities_and_humans()
                             .await
                         {
                             let position = entity.position().await;
 
-                            log::debug!("Entity @ {:?}...", position);
+                            log::error!("Entity @ {:?}...", position);
                             this.write_packet(AddEntityS2CPlayPacket {
                                 id: entity.entity_id().await.into(),
                                 uuid: *entity.uuid(),
@@ -409,6 +461,23 @@ impl ConnectionData {
                             })
                             .await;
                         }
+
+                        log::debug!("Spawning human...");
+                        let dim = this.associated_data.dimension.as_ref().unwrap().clone();
+                        let data = this.associated_data.clone();
+                        futures_lite::future::race(
+                            async {
+                                dim.spawn_human(data.uuid, data.entity_id).await;
+                            },
+                            async {
+                                loop {
+                                    Runtime::yield_now().await;
+                                    this.handle_messages().await;
+                                }
+                            },
+                        )
+                        .await;
+                        log::debug!("All done!");
                     }
 
                     this.send_chunks().await;
@@ -444,6 +513,14 @@ impl ConnectionData {
                         .last_direction
                         .with_x(packet.pitch)
                         .with_y(packet.yaw);
+
+                    this.associated_data
+                        .dimension
+                        .as_ref()
+                        .unwrap()
+                        .get_entity(this.associated_data.uuid)
+                        .teleport(this.associated_data.last_position)
+                        .await;
 
                     this.send_chunks().await;
 

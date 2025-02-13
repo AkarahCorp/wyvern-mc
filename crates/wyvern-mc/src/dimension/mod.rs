@@ -7,7 +7,10 @@ use flume::Sender;
 use voxidian_protocol::{
     packet::s2c::play::{AddEntityS2CPlayPacket, BlockUpdateS2CPlayPacket},
     registry::RegEntry,
-    value::{Angle, BlockPos, DimType, EntityMetadata, EntityType as PtcEntityType, Uuid, VarInt},
+    value::{
+        Angle, BlockPos, DimType, EntityMetadata, EntityType as PtcEntityType, Identifier, Uuid,
+        VarInt,
+    },
 };
 
 use crate::{
@@ -33,6 +36,15 @@ pub struct DimensionData {
     pub(crate) sender: Sender<DimensionMessage>,
     pub(crate) dim_type: Key<DimType>,
     pub(crate) chunk_generator: fn(&mut Chunk, i32, i32),
+}
+
+impl Dimension {
+    pub fn get_entity(&self, entity: Uuid) -> Entity {
+        Entity {
+            uuid: entity,
+            dimension: self.clone(),
+        }
+    }
 }
 
 #[crate::message(Dimension, DimensionMessage)]
@@ -113,6 +125,20 @@ impl DimensionData {
     pub async fn get_all_entities(&self) -> Vec<Entity> {
         self.entities
             .values()
+            .filter(|x| x.entity_type != Key::constant("minecraft", "player"))
+            .map(|x| Entity {
+                dimension: Dimension {
+                    sender: self.sender.clone(),
+                },
+                uuid: x.uuid,
+            })
+            .collect()
+    }
+
+    #[GetAllEntitiesAndHumans]
+    pub async fn get_all_entities_and_humans(&self) -> Vec<Entity> {
+        self.entities
+            .values()
             .map(|x| Entity {
                 dimension: Dimension {
                     sender: self.sender.clone(),
@@ -171,6 +197,55 @@ impl DimensionData {
             },
             uuid,
         }
+    }
+
+    #[SpawnHuman]
+    pub(crate) async fn spawn_human(&mut self, uuid: Uuid, id: i32) -> Entity {
+        self.entities.insert(uuid, EntityData {
+            entity_type: Key::constant("minecraft", "player"),
+            uuid,
+            id,
+            position: Vec3::new(0.0, 0.0, 0.0),
+            heading: Vec2::new(0.0, 0.0),
+            metadata: EntityMetadata::new(),
+        });
+
+        for conn in self.server.clone().unwrap().connections().await {
+            if let Some(dim) = conn.get_dimension().await {
+                if dim.sender.same_channel(&self.sender) && conn.uuid().await != uuid {
+                    conn.write_packet(AddEntityS2CPlayPacket {
+                        id: id.into(),
+                        uuid,
+                        kind: PtcEntityType::vanilla_registry()
+                            .get_entry(&Identifier::new("minecraft", "player"))
+                            .unwrap(),
+                        x: 0.0,
+                        y: 0.0,
+                        z: 0.0,
+                        pitch: Angle::of_deg(0.0),
+                        yaw: Angle::of_deg(0.0),
+                        head_yaw: Angle::of_deg(0.0),
+                        data: VarInt::from(0),
+                        vel_x: 0,
+                        vel_y: 0,
+                        vel_z: 0,
+                    })
+                    .await;
+                }
+            };
+        }
+
+        Entity {
+            dimension: Dimension {
+                sender: self.sender.clone(),
+            },
+            uuid,
+        }
+    }
+
+    #[RemoveEntity]
+    pub(crate) async fn remove_entity(&mut self, uuid: Uuid) {
+        self.entities.remove(&uuid);
     }
 
     #[ManipulateEntity]
