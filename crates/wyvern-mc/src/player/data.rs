@@ -2,7 +2,7 @@ use std::time::Instant;
 
 use crate::{
     dimension::Dimension,
-    inventory::DataInventory,
+    inventory::{DataInventory, ItemStack},
     values::{Vec2, Vec3},
 };
 use voxidian_protocol::{
@@ -33,6 +33,7 @@ pub struct PlayerData {
     pub(crate) inventory: DataInventory,
     pub(crate) screen: Option<ScreenWindowKind>,
     pub(crate) window_id: Option<i8>,
+    pub(crate) held_slot: i16,
 }
 
 impl Default for PlayerData {
@@ -62,9 +63,10 @@ impl Default for PlayerData {
             entity_id: 0,
             last_sent_keep_alive: Instant::now(),
 
-            inventory: DataInventory::new(),
+            inventory: DataInventory::new_filled(36, ItemStack::air),
             screen: None,
             window_id: None,
+            held_slot: 36,
         }
     }
 }

@@ -4,7 +4,7 @@ use voxidian_protocol::{
         c2s::{
             config::C2SConfigPackets,
             login::C2SLoginPackets,
-            play::{C2SPlayPackets, PlayerStatus},
+            play::{BlockFace, C2SPlayPackets, PlayerStatus},
             status::C2SStatusPackets,
         },
         s2c::{
@@ -28,9 +28,10 @@ use voxidian_protocol::{
 };
 
 use crate::{
+    dimension::blocks::BlockState,
     events::{PlayerCommandEvent, PlayerMoveEvent},
     inventory::{ITEM_REGISTRY, Inventory, ItemStack},
-    values::Key,
+    values::{Key, Vec3},
 };
 
 use super::{ConnectionData, Player};
@@ -382,7 +383,6 @@ impl ConnectionData {
                         .await;
                 }
                 C2SPlayPackets::ChunkBatchReceived(_packet) => {}
-
                 C2SPlayPackets::SetCreativeModeSlot(packet) => {
                     let item = ITEM_REGISTRY.lookup(&packet.new_item.id).unwrap();
                     let stack = ItemStack::new(item.id.clone().into());
@@ -391,6 +391,50 @@ impl ConnectionData {
                         .inventory
                         .set_slot(packet.slot as usize, stack)
                         .await;
+                }
+                C2SPlayPackets::SetCarriedItem(packet) => {
+                    this.associated_data.held_slot = packet.slot + 36;
+                }
+                C2SPlayPackets::UseItemOn(packet) => {
+                    let face = match packet.face {
+                        BlockFace::Down => Vec3::new(0, -1, 0),
+                        BlockFace::Up => Vec3::new(0, 1, 0),
+                        BlockFace::North => Vec3::new(0, 0, -1),
+                        BlockFace::South => Vec3::new(0, 0, 1),
+                        BlockFace::West => Vec3::new(-1, 0, 0),
+                        BlockFace::East => Vec3::new(1, 0, 0),
+                    };
+                    let target = Vec3::new(packet.target.x, packet.target.y, packet.target.z);
+                    let final_pos = Vec3::new(
+                        target.x() + face.x(),
+                        target.y() + face.y(),
+                        target.z() + face.z(),
+                    );
+                    let held = this
+                        .associated_data
+                        .inventory
+                        .get_slot(this.associated_data.held_slot as usize)
+                        .await
+                        .unwrap();
+                    log::error!("Held: {:?}", held);
+                    let state = BlockState::new(held.kind().retype());
+                    this.associated_data
+                        .dimension
+                        .as_ref()
+                        .unwrap()
+                        .set_block(final_pos, state)
+                        .await;
+                    log::error!(
+                        "{:?} {:?} {:?}",
+                        this.associated_data
+                            .dimension
+                            .as_ref()
+                            .unwrap()
+                            .get_block_at(final_pos)
+                            .await,
+                        final_pos,
+                        packet.target
+                    );
                 }
                 packet => {
                     log::warn!(

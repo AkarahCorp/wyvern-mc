@@ -21,6 +21,14 @@ impl DataInventory {
             slots: HashMap::new(),
         }
     }
+
+    pub fn new_filled(slots: usize, f: fn() -> ItemStack) -> DataInventory {
+        let mut map = HashMap::new();
+        for idx in 0..slots {
+            map.insert(idx, f());
+        }
+        DataInventory { slots: map }
+    }
 }
 
 impl Default for DataInventory {

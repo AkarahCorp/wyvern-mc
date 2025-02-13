@@ -34,6 +34,10 @@ impl ItemStack {
             components: HashMap::new(),
         }
     }
+
+    pub fn kind(&self) -> Key<ItemType> {
+        self.id.clone()
+    }
 }
 
 impl Default for ItemStack {

@@ -32,11 +32,15 @@ impl BlockState {
     }
 
     pub fn protocol_id(&self) -> i32 {
-        *BLOCK_STATE_TO_ID.get(&self.into()).unwrap()
+        *BLOCK_STATE_TO_ID.get(&self.into()).unwrap_or(&0)
     }
 
     pub fn from_protocol_id(id: i32) -> Self {
-        Self::from(ID_TO_BLOCK_STATE.get(&id).unwrap())
+        Self::from(
+            ID_TO_BLOCK_STATE
+                .get(&id)
+                .unwrap_or(ID_TO_BLOCK_STATE.get(&0).unwrap()),
+        )
     }
 }
 
