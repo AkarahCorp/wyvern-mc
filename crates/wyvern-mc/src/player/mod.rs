@@ -14,10 +14,9 @@ use voxidian_protocol::{
         PacketBuf, PacketEncode, PrefixedPacketEncode, Stage,
         processing::PacketProcessing,
         s2c::play::{
-            AddEntityS2CPlayPacket, ForgetLevelChunkS2CPlayPacket, GameEvent,
-            GameEventS2CPlayPacket, Gamemode, PlayerPositionS2CPlayPacket,
-            PlayerRotationS2CPlayPacket, RespawnS2CPlayPacket, SetPlayerInventoryS2CPlayPacket,
-            TeleportFlags,
+            AddEntityS2CPlayPacket, ContainerSetSlotS2CPlayPacket, ForgetLevelChunkS2CPlayPacket,
+            GameEvent, GameEventS2CPlayPacket, Gamemode, PlayerPositionS2CPlayPacket,
+            PlayerRotationS2CPlayPacket, RespawnS2CPlayPacket, TeleportFlags,
         },
     },
     value::{Angle, VarInt},
@@ -190,11 +189,19 @@ impl ConnectionData {
         let copy = item.clone();
         self.associated_data.inventory.set_slot(slot, copy).await;
 
-        self.write_packet(SetPlayerInventoryS2CPlayPacket {
-            slot: (slot as i32).into(),
-            data: item.into(),
+        self.write_packet(ContainerSetSlotS2CPlayPacket {
+            window_id: VarInt::new(-2),
+            state_id: VarInt::new(0),
+            slot: slot as u16,
+            slot_data: item.into(),
         })
         .await;
+
+        log::debug!("{:?}", VarInt::new(-2).as_bytes());
+        log::debug!(
+            "{:?}",
+            VarInt::decode_iter(&mut VarInt::new(-2).as_bytes().into_iter())
+        );
     }
 }
 

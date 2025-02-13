@@ -174,15 +174,15 @@ impl ConnectionData {
                     }
                     C2SConfigPackets::KeepAlive(_packet) => todo!(),
                     C2SConfigPackets::SelectKnownPacks(_packet) => {
-                        let packet = this
-                            .connected_server
-                            .registries()
-                            .await
-                            .biomes
-                            .inner
-                            .to_registry_data_packet();
-
-                        this.write_packet(packet).await;
+                        this.write_packet(
+                            this.connected_server
+                                .registries()
+                                .await
+                                .biomes
+                                .inner
+                                .to_registry_data_packet(),
+                        )
+                        .await;
                         this.write_packet(
                             this.connected_server
                                 .registries()

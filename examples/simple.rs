@@ -182,7 +182,7 @@ async fn on_server_tick(event: ServerTickEvent) {
             player
                 .get_inventory()
                 .set_slot(
-                    0,
+                    36,
                     ItemStack::new(Key::new("minecraft", "stone"))
                         .with(&ItemComponents::MAX_DAMAGE, 10)
                         .with(&ItemComponents::DAMAGE, 1)
@@ -196,7 +196,7 @@ async fn on_server_tick(event: ServerTickEvent) {
             player
                 .get_inventory()
                 .set_slot(
-                    1,
+                    37,
                     ItemStack::new(Key::new("minecraft", "diamond_sword"))
                         .with(&ItemComponents::MAX_DAMAGE, 20)
                         .with(&ItemComponents::DAMAGE, 6)
