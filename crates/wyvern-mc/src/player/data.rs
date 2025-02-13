@@ -5,7 +5,10 @@ use crate::{
     inventory::DataInventory,
     values::{Vec2, Vec3},
 };
-use voxidian_protocol::{packet::c2s::play::InputFlags, value::Uuid};
+use voxidian_protocol::{
+    packet::{c2s::play::InputFlags, s2c::play::ScreenWindowKind},
+    value::Uuid,
+};
 
 #[derive(Debug, Clone)]
 pub struct PlayerData {
@@ -28,6 +31,8 @@ pub struct PlayerData {
     pub(crate) last_sent_keep_alive: Instant,
 
     pub(crate) inventory: DataInventory,
+    pub(crate) screen: Option<ScreenWindowKind>,
+    pub(crate) window_id: Option<i8>,
 }
 
 impl Default for PlayerData {
@@ -58,6 +63,8 @@ impl Default for PlayerData {
             last_sent_keep_alive: Instant::now(),
 
             inventory: DataInventory::new(),
+            screen: None,
+            window_id: None,
         }
     }
 }

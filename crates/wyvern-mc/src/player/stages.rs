@@ -29,6 +29,7 @@ use voxidian_protocol::{
 
 use crate::{
     events::{PlayerCommandEvent, PlayerMoveEvent},
+    inventory::{ITEM_REGISTRY, Inventory, ItemStack},
     values::Key,
 };
 
@@ -131,7 +132,7 @@ impl ConnectionData {
                             dim: unsafe { RegEntry::new_unchecked(0) },
                             dim_name: Identifier::new("wyvern", "fake"),
                             seed: 0,
-                            gamemode: Gamemode::Creative,
+                            gamemode: Gamemode::Survival,
                             old_gamemode: Gamemode::None,
                             is_debug: false,
                             is_flat: false,
@@ -381,6 +382,16 @@ impl ConnectionData {
                         .await;
                 }
                 C2SPlayPackets::ChunkBatchReceived(_packet) => {}
+
+                C2SPlayPackets::SetCreativeModeSlot(packet) => {
+                    let item = ITEM_REGISTRY.lookup(&packet.new_item.id).unwrap();
+                    let stack = ItemStack::new(item.id.clone().into());
+
+                    this.associated_data
+                        .inventory
+                        .set_slot(packet.slot as usize, stack)
+                        .await;
+                }
                 packet => {
                     log::warn!(
                         "Received unknown play packet, this packet will be ignored. {:?}",

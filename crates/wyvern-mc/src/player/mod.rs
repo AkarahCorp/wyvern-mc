@@ -187,21 +187,22 @@ impl ConnectionData {
     #[SetInvSlot]
     pub(crate) async fn set_inv_slot(&mut self, slot: usize, item: ItemStack) {
         let copy = item.clone();
+
+        let slot = self
+            .associated_data
+            .screen
+            .map(|x| x.container_slot_count())
+            .unwrap_or(0)
+            + slot;
         self.associated_data.inventory.set_slot(slot, copy).await;
 
-        self.write_packet(ContainerSetSlotS2CPlayPacket {
-            window_id: VarInt::new(-2),
-            state_id: VarInt::new(0),
+        let packet = ContainerSetSlotS2CPlayPacket {
+            window_id: VarInt::new(self.associated_data.window_id.unwrap_or(0) as i32),
+            state_id: VarInt::new(1),
             slot: slot as u16,
             slot_data: item.into(),
-        })
-        .await;
-
-        log::debug!("{:?}", VarInt::new(-2).as_bytes());
-        log::debug!(
-            "{:?}",
-            VarInt::decode_iter(&mut VarInt::new(-2).as_bytes().into_iter())
-        );
+        };
+        self.write_packet(packet).await;
     }
 }
 
