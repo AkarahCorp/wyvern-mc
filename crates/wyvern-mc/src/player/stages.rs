@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use voxidian_protocol::{
     packet::{
         Stage,
@@ -17,7 +15,7 @@ use voxidian_protocol::{
             play::{
                 AddEntityS2CPlayPacket, GameEvent, GameEventS2CPlayPacket, Gamemode,
                 LoginS2CPlayPacket, PlayerPositionS2CPlayPacket, PongResponseS2CPlayPacket,
-                SetPlayerInventoryS2CPlayPacket, TeleportFlags,
+                TeleportFlags,
             },
             status::{
                 PongResponseS2CStatusPacket, StatusResponse, StatusResponsePlayers,
@@ -26,14 +24,11 @@ use voxidian_protocol::{
         },
     },
     registry::RegEntry,
-    value::{Angle, Identifier, LengthPrefixHashMap, SlotData, Text, VarInt},
+    value::{Angle, Identifier, LengthPrefixHashMap, Text, VarInt},
 };
 
 use crate::{
-    components::ComponentHolder,
     events::{PlayerCommandEvent, PlayerMoveEvent},
-    inventory::{ITEM_REGISTRY, Inventory, ItemComponents, ItemStack, ItemType},
-    runtime::Runtime,
     values::Key,
 };
 
@@ -316,20 +311,6 @@ impl ConnectionData {
 
                     this.send_chunks().await;
 
-                    // this.write_packet(EntityPositionSyncS2CPlayPacket {
-                    //     entity_id: (this.associated_data.entity_id + 5).into(),
-                    //     x: this.associated_data.last_position.x(),
-                    //     y: this.associated_data.last_position.y(),
-                    //     z: this.associated_data.last_position.z(),
-                    //     vx: 0.0,
-                    //     vy: 0.0,
-                    //     vz: 0.0,
-                    //     yaw: 15.0,
-                    //     pitch: 27.0,
-                    //     on_ground: false,
-                    // })
-                    // .await;
-
                     this.connected_server.spawn_event(PlayerMoveEvent {
                         player: Player {
                             sender: this.sender.clone(),
@@ -389,21 +370,6 @@ impl ConnectionData {
                         .await;
                 }
                 C2SPlayPackets::ChunkBatchReceived(_packet) => {}
-                C2SPlayPackets::SetCreativeModeSlot(packet) => {
-                    log::debug!("PACKET: {:?}", packet);
-
-                    let id = ITEM_REGISTRY.lookup(&packet.new_item.id).unwrap();
-                    let key: Key<ItemType> = id.id.clone().into();
-
-                    log::debug!("KEY: {:?}", key);
-
-                    let item =
-                        ItemStack::new(key.clone()).with(&ItemComponents::ITEM_MODEL, key.retype());
-                    this.associated_data
-                        .inventory
-                        .set_slot(packet.slot as usize, item.clone())
-                        .await;
-                }
                 packet => {
                     log::warn!(
                         "Received unknown play packet, this packet will be ignored. {:?}",

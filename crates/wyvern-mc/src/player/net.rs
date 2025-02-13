@@ -90,12 +90,18 @@ impl ConnectionData {
                 let _ = self.signal.send(ConnectionStoppedSignal);
                 break;
             }
+            log::error!("a");
             self.handle_messages().await;
+            log::error!("b");
             self.read_incoming_packets().await;
+            log::error!("c");
             self.write_outgoing_packets().await;
+            log::error!("d");
 
             let now = Instant::now();
-            if now > self.associated_data.last_sent_keep_alive + Duration::from_secs(5) {
+            if now > self.associated_data.last_sent_keep_alive + Duration::from_secs(5)
+                && *self.stage.lock().unwrap() == Stage::Play
+            {
                 self.write_packet(KeepAliveS2CPlayPacket(10)).await;
                 self.associated_data.last_sent_keep_alive = Instant::now();
             }

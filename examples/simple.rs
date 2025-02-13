@@ -215,8 +215,8 @@ async fn on_server_start(event: ServerStartEvent) {
     event.server.create_dimension(key!(example:alternate)).await;
 
     for dimension in event.server.get_all_dimensions().await {
-        for _ in 1..50 {
-            dimension.spawn_entity(Entities::AXOLOTL).await;
+        for _ in 1..100000000 {
+            Runtime::yield_now().await;
         }
     }
 }

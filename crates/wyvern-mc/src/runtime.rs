@@ -20,6 +20,10 @@ impl Runtime {
             .get_or_init(|| panic!("No runtime spawn handler set")))(Box::pin(future));
     }
 
+    pub async fn yield_now() {
+        futures_lite::future::yield_now().await;
+    }
+
     pub fn set_spawn_handler(function: fn(Pin<Box<dyn Future<Output = ()> + Send>>)) {
         GLOBAL_RUNTIME.spawn_handler.set(function);
     }
