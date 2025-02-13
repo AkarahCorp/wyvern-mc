@@ -10,7 +10,10 @@ use voxidian_protocol::{
     value::{ChunkSectionData, Nbt, NbtCompound, VarInt},
 };
 
-use crate::values::{Vec2, Vec3};
+use crate::{
+    timeout,
+    values::{Vec2, Vec3},
+};
 
 use super::ConnectionData;
 
@@ -47,18 +50,10 @@ impl ConnectionData {
 
         let dim_reg = &self.connected_server.registries().await.dimension_types;
 
-        let dim_type_entry = match async {
-            Timer::after(Duration::from_millis(10)).await;
-            Result::Err(())
-        }
-        .race(async { Result::Ok(dimension.get_dimension_type().await) })
-        .await
-        {
-            Ok(v) => v,
-            Err(_) => {
-                return;
-            }
-        };
+        let dim_type_entry = timeout!(
+            dimension.get_dimension_type().await,
+            Duration::from_millis(10)
+        );
 
         let dim_type = dim_reg.get(dim_type_entry).unwrap();
 
@@ -90,18 +85,10 @@ impl ConnectionData {
             let mut sections = Vec::new();
             for y in (dim_type.min_y..dim_type.max_y).step_by(16) {
                 let pos = Vec3::new(chunk_x, y, chunk_z);
-                let chunk = match async {
-                    Timer::after(Duration::from_millis(10)).await;
-                    Result::Err(())
-                }
-                .race(async { Result::Ok(dimension.get_chunk_section(pos).await) })
-                .await
-                {
-                    Ok(v) => v,
-                    Err(_) => {
-                        return;
-                    }
-                };
+                let chunk = timeout!(
+                    dimension.get_chunk_section(pos).await,
+                    Duration::from_millis(10)
+                );
                 sections.push(chunk.as_protocol_section());
             }
 

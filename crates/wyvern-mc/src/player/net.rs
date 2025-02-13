@@ -87,6 +87,10 @@ impl ConnectionData {
             let result = self.handle_incoming_bytes().await;
             if result.is_err() {
                 log::info!("A player has disconnected. Stopping their connection data...");
+
+                if let Some(dim) = self.associated_data.dimension {
+                    dim.remove_entity(self.associated_data.uuid).await;
+                }
                 let _ = self.signal.send(ConnectionStoppedSignal);
                 break;
             }

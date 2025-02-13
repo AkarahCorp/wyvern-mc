@@ -376,31 +376,23 @@ impl ConnectionData {
                         log::debug!("Broadcasting this player info...");
                         for player in this.connected_server.connections().await {
                             let data = this.associated_data.clone();
-                            futures_lite::future::race(
-                                async {
-                                    player
-                                        .write_packet(PlayerInfoUpdateS2CPlayPacket {
-                                            actions: vec![(data.uuid, vec![
-                                                PlayerActionEntry::AddPlayer {
-                                                    name: data.username.clone(),
-                                                    properties: vec![].into(),
-                                                },
-                                                PlayerActionEntry::Listed(true),
-                                            ])],
-                                        })
-                                        .await;
-                                },
-                                async {
-                                    loop {
-                                        Runtime::yield_now().await;
-                                        this.handle_messages().await;
-                                    }
-                                },
-                            )
+                            this.intertwine(async move || {
+                                player
+                                    .write_packet(PlayerInfoUpdateS2CPlayPacket {
+                                        actions: vec![(data.uuid, vec![
+                                            PlayerActionEntry::AddPlayer {
+                                                name: data.username.clone(),
+                                                properties: vec![].into(),
+                                            },
+                                            PlayerActionEntry::Listed(true),
+                                        ])],
+                                    })
+                                    .await;
+                            })
                             .await;
-                            log::debug!("All done!");
                         }
 
+                        log::debug!("All done!");
                         log::debug!("Sending over current player info...");
                         for player in this.connected_server.connections().await {
                             if player.sender.same_channel(&this.sender) {
@@ -465,17 +457,9 @@ impl ConnectionData {
                         log::debug!("Spawning human...");
                         let dim = this.associated_data.dimension.as_ref().unwrap().clone();
                         let data = this.associated_data.clone();
-                        futures_lite::future::race(
-                            async {
-                                dim.spawn_human(data.uuid, data.entity_id).await;
-                            },
-                            async {
-                                loop {
-                                    Runtime::yield_now().await;
-                                    this.handle_messages().await;
-                                }
-                            },
-                        )
+                        this.intertwine(async move || {
+                            dim.spawn_human(data.uuid, data.entity_id).await;
+                        })
                         .await;
                         log::debug!("All done!");
                     }

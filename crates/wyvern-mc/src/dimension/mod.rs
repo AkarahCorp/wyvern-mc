@@ -5,7 +5,9 @@ use chunk::{Chunk, ChunkSection};
 use entity::{Entity, EntityData, EntityType};
 use flume::Sender;
 use voxidian_protocol::{
-    packet::s2c::play::{AddEntityS2CPlayPacket, BlockUpdateS2CPlayPacket},
+    packet::s2c::play::{
+        AddEntityS2CPlayPacket, BlockUpdateS2CPlayPacket, RemoveEntitiesS2CPlayPacket,
+    },
     registry::RegEntry,
     value::{
         Angle, BlockPos, DimType, EntityMetadata, EntityType as PtcEntityType, Identifier, Uuid,
@@ -245,7 +247,18 @@ impl DimensionData {
 
     #[RemoveEntity]
     pub(crate) async fn remove_entity(&mut self, uuid: Uuid) {
-        self.entities.remove(&uuid);
+        let entry = self.entities.remove(&uuid);
+
+        if let Some(entry) = entry {
+            for conn in self.server.clone().unwrap().connections().await {
+                Runtime::spawn(async move {
+                    conn.write_packet(RemoveEntitiesS2CPlayPacket {
+                        entities: vec![VarInt::new(entry.id)].into(),
+                    })
+                    .await;
+                });
+            }
+        };
     }
 
     #[ManipulateEntity]
