@@ -13,9 +13,9 @@ use voxidian_protocol::{
             },
             login::LoginFinishedS2CLoginPacket,
             play::{
-                AddEntityS2CPlayPacket, GameEvent, GameEventS2CPlayPacket, Gamemode,
-                LoginS2CPlayPacket, PlayerPositionS2CPlayPacket, PongResponseS2CPlayPacket,
-                TeleportFlags,
+                AddEntityS2CPlayPacket, DisconnectS2CPlayPacket, GameEvent, GameEventS2CPlayPacket,
+                Gamemode, LoginS2CPlayPacket, PlayerPositionS2CPlayPacket,
+                PongResponseS2CPlayPacket, TeleportFlags,
             },
             status::{
                 PongResponseS2CStatusPacket, StatusResponse, StatusResponsePlayers,
@@ -24,17 +24,20 @@ use voxidian_protocol::{
         },
     },
     registry::RegEntry,
-    value::{Angle, Identifier, LengthPrefixHashMap, Text, VarInt},
+    value::{Angle, Identifier, LengthPrefixHashMap, Text, TextComponent, VarInt},
 };
 
 use crate::{
-    dimension::blocks::BlockState,
+    actors::Actor,
+    dimension::{Dimension, blocks::BlockState},
     events::{
         BreakBlockEvent, ChangeHeldSlotEvent, ChatMessageEvent, DropItemEvent, PlaceBlockEvent,
-        PlayerCommandEvent, PlayerMoveEvent, SwapHandsEvent,
+        PlayerCommandEvent, PlayerJoinEvent, PlayerMoveEvent, SwapHandsEvent,
     },
     inventory::{ITEM_REGISTRY, Inventory, ItemStack},
-    values::{Key, Vec3},
+    player::net::ConnectionStoppedSignal,
+    runtime::Runtime,
+    values::{Key, Vec3, cell::Token},
 };
 
 use super::{ConnectionData, Player};
@@ -329,10 +332,40 @@ impl ConnectionData {
                 C2SPlayPackets::AcceptTeleportation(packet) => {
                     if packet.teleport_id.as_i32() == 0 {
                         log::debug!("Setting dimension...");
-                        this.associated_data.dimension = this
-                            .connected_server
-                            .dimension(Key::new("wyvern", "root"))
+
+                        let key = Key::<Dimension>::constant("null", "null");
+                        let token = Token::new(Key::<Dimension>::constant("null", "null"));
+                        let token_copy = token.clone();
+                        this.connected_server.spawn_event(PlayerJoinEvent {
+                            player: Player {
+                                sender: this.sender.clone(),
+                            },
+                            new_dimension: token_copy,
+                        });
+
+                        loop {
+                            Runtime::yield_now().await;
+                            this.handle_messages().await;
+
+                            if token.get() != key {
+                                break;
+                            }
+                        }
+
+                        this.associated_data.dimension =
+                            this.connected_server.dimension(token.get()).await;
+
+                        if this.associated_data.dimension.is_none() {
+                            let mut text = Text::new();
+                            text.push(TextComponent::of_literal(
+                                "Failed to set dimension in PlayerJoinEvent",
+                            ));
+                            this.write_packet(DisconnectS2CPlayPacket {
+                                reason: text.to_nbt(),
+                            })
                             .await;
+                            return;
+                        }
 
                         log::debug!("Sending game events chunk packet...");
                         this.write_packet(GameEventS2CPlayPacket {

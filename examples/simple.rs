@@ -1,7 +1,6 @@
 use std::sync::{Arc, LazyLock};
 
 use noise::{NoiseFn, Simplex};
-use rand::Rng;
 use tokio::runtime::Builder;
 use voxidian_protocol::{
     packet::Stage,
@@ -16,7 +15,7 @@ use wyvern_mc::{
     },
     events::{
         BreakBlockEvent, ChatMessageEvent, DimensionCreateEvent, DropItemEvent, PlaceBlockEvent,
-        PlayerCommandEvent, ServerStartEvent, ServerTickEvent,
+        PlayerCommandEvent, PlayerJoinEvent, ServerStartEvent, ServerTickEvent,
     },
     inventory::{Inventory, ItemComponents, ItemStack},
     key,
@@ -61,6 +60,7 @@ async fn main_rt() {
         b.on_event(on_place);
         b.on_event(on_break);
         b.on_event(on_chat);
+        b.on_event(on_join);
         b.modify_registries(|registries| {
             registries.wolf_variant(Key::new("minecraft", "pale"), WolfVariant {
                 angry_texture: Key::empty(),
@@ -223,13 +223,8 @@ async fn on_server_tick(event: Arc<ServerTickEvent>) {
 }
 
 async fn on_server_start(event: Arc<ServerStartEvent>) {
+    event.server.create_dimension(key!(example:root)).await;
     event.server.create_dimension(key!(example:alternate)).await;
-
-    for _dimension in event.server.get_all_dimensions().await {
-        for _ in 1..100000000 {
-            Runtime::yield_now().await;
-        }
-    }
 }
 
 async fn on_drop_item(event: Arc<DropItemEvent>) {
@@ -254,4 +249,8 @@ async fn on_chat(event: Arc<ChatMessageEvent>) {
             ))
             .await;
     }
+}
+
+async fn on_join(event: Arc<PlayerJoinEvent>) {
+    event.new_dimension.set(key!(example:root));
 }

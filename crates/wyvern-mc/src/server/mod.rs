@@ -141,7 +141,6 @@ impl ServerData {
 impl ServerData {
     pub async fn start(mut self) {
         log::info!("A server is starting!");
-        self.create_dimension(Key::new("wyvern", "root")).await;
         let snd = Server {
             sender: self.sender.clone(),
         };

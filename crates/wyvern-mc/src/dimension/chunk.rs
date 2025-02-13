@@ -38,7 +38,7 @@ impl Chunk {
             .get_mut((section + -self.min_sections) as usize)
     }
 
-    pub fn set_block_at(&mut self, pos: Vec3<i32>, mut block: BlockState) {
+    pub fn set_block_at(&mut self, pos: Vec3<i32>, block: BlockState) {
         let section_y = pos.y().div_euclid(16);
         let local_y = pos.y().rem_euclid(16);
         if let Some(section) = self.section_at_mut(section_y) {

@@ -5,7 +5,7 @@ use crate::{
     inventory::ItemStack,
     player::Player,
     server::Server,
-    values::{Vec2, Vec3},
+    values::{Key, Vec2, Vec3, cell::Token},
 };
 use futures_util::future::join_all;
 
@@ -48,6 +48,7 @@ macro_rules! event_bus {
 }
 
 event_bus! {
+    on_join: PlayerJoinEvent
     on_dim_create: DimensionCreateEvent
     on_server_tick: ServerTickEvent
     on_player_move: PlayerMoveEvent
@@ -158,4 +159,10 @@ pub struct ServerStartEvent {
 pub struct ChatMessageEvent {
     pub player: Player,
     pub message: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct PlayerJoinEvent {
+    pub player: Player,
+    pub new_dimension: Token<Key<Dimension>>,
 }
