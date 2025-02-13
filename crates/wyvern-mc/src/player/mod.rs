@@ -16,10 +16,11 @@ use voxidian_protocol::{
         s2c::play::{
             AddEntityS2CPlayPacket, ContainerSetSlotS2CPlayPacket, ForgetLevelChunkS2CPlayPacket,
             GameEvent, GameEventS2CPlayPacket, Gamemode, PlayerPositionS2CPlayPacket,
-            PlayerRotationS2CPlayPacket, RespawnS2CPlayPacket, TeleportFlags,
+            PlayerRotationS2CPlayPacket, RespawnS2CPlayPacket, SystemChatS2CPlayPacket,
+            TeleportFlags,
         },
     },
-    value::{Angle, VarInt},
+    value::{Angle, Text, TextComponent, VarInt},
 };
 use wyvern_macros::{actor, message};
 
@@ -204,6 +205,11 @@ impl ConnectionData {
         };
         self.write_packet(packet).await;
     }
+
+    #[ReadData]
+    pub(crate) async fn read_data(&self, f: Box<dyn Fn(&PlayerData) + Send + Sync>) {
+        f(&self.associated_data)
+    }
 }
 
 impl Player {
@@ -226,6 +232,46 @@ impl Player {
         PlayerInventory {
             player: self.clone(),
         }
+    }
+
+    pub async fn send_message(&self, content: &str) {
+        let mut text = Text::new();
+        text.push(TextComponent::of_literal(content));
+        self.write_packet(SystemChatS2CPlayPacket {
+            content: text.to_nbt(),
+            is_actionbar: false,
+        })
+        .await;
+    }
+
+    pub async fn send_action_bar(&self, content: &str) {
+        let mut text = Text::new();
+        text.push(TextComponent::of_literal(content));
+        self.write_packet(SystemChatS2CPlayPacket {
+            content: text.to_nbt(),
+            is_actionbar: true,
+        })
+        .await;
+    }
+
+    pub async fn username(&self) -> String {
+        let value = Arc::new(Mutex::new(String::new()));
+        let value_clone = value.clone();
+        self.read_data(Box::new(move |data| {
+            *value_clone.lock().unwrap() = data.username.clone();
+        }))
+        .await;
+        value.lock().unwrap().clone()
+    }
+
+    pub async fn position(&self) -> (Vec3<f64>, Vec2<f32>) {
+        let value = Arc::new(Mutex::new((Vec3::new(0.0, 0.0, 0.0), Vec2::new(0.0, 0.0))));
+        let value_clone = value.clone();
+        self.read_data(Box::new(move |data| {
+            *value_clone.lock().unwrap() = (data.last_position, data.last_direction);
+        }))
+        .await;
+        *value.lock().unwrap()
     }
 }
 

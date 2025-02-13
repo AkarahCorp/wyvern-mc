@@ -39,14 +39,14 @@ impl ServerBuilder {
         }
     }
 
-    pub fn on_event<E: Event + 'static, F>(&mut self, f: fn(E) -> F)
+    pub fn on_event<E: Event + 'static, F>(&mut self, f: fn(Arc<E>) -> F)
     where
         F: Future<Output = ()> + Send + 'static,
     {
-        let handler = Box::new(move |event: E| {
+        let handler = Box::new(move |event: Arc<E>| {
             Box::pin(f(event)) as Pin<Box<dyn Future<Output = ()> + Send>>
         })
-            as Box<dyn Fn(E) -> Pin<Box<dyn Future<Output = ()> + Send>> + Send + Sync>;
+            as Box<dyn Fn(Arc<E>) -> Pin<Box<dyn Future<Output = ()> + Send>> + Send + Sync>;
         E::add_handler(&mut self.events, handler);
     }
 

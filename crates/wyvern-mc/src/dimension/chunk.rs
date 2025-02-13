@@ -60,7 +60,6 @@ impl Chunk {
                 pos.z() as usize,
             ))
         } else {
-            log::error!("nuh {:?} {:?}", section_y, pos.y());
             BlockState::from_protocol_id(0)
         }
     }

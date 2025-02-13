@@ -29,7 +29,10 @@ use voxidian_protocol::{
 
 use crate::{
     dimension::blocks::BlockState,
-    events::{PlayerCommandEvent, PlayerMoveEvent},
+    events::{
+        BreakBlockEvent, ChangeHeldSlotEvent, ChatMessageEvent, DropItemEvent, PlaceBlockEvent,
+        PlayerCommandEvent, PlayerMoveEvent, SwapHandsEvent,
+    },
     inventory::{ITEM_REGISTRY, Inventory, ItemStack},
     values::{Key, Vec3},
 };
@@ -251,15 +254,78 @@ impl ConnectionData {
                         command: packet.command,
                     });
                 }
-                C2SPlayPackets::PlayerAction(packet) => match packet.status {
-                    PlayerStatus::StartedDigging => {}
-                    PlayerStatus::CancelledDigging => {}
-                    PlayerStatus::FinishedDigging => {}
-                    PlayerStatus::DropItemStack => {}
-                    PlayerStatus::DropItem => {}
-                    PlayerStatus::FinishUsingItem => {}
-                    PlayerStatus::SwapItems => {}
-                },
+                C2SPlayPackets::PlayerAction(packet) => {
+                    log::warn!("{:?}", packet);
+                    match packet.status {
+                        PlayerStatus::StartedDigging => {}
+                        PlayerStatus::CancelledDigging => {}
+                        PlayerStatus::FinishedDigging => {
+                            let block =
+                                Vec3::new(packet.location.x, packet.location.y, packet.location.z);
+                            this.associated_data
+                                .dimension
+                                .as_ref()
+                                .unwrap()
+                                .set_block(
+                                    block,
+                                    BlockState::new(Key::constant("minecraft", "air")),
+                                )
+                                .await;
+                            this.connected_server.spawn_event(BreakBlockEvent {
+                                player: Player {
+                                    sender: this.sender.clone(),
+                                },
+                                position: block,
+                            });
+                        }
+                        PlayerStatus::DropItemStack => {
+                            let Some(item) = this
+                                .get_inv_slot(this.associated_data.held_slot as usize)
+                                .await
+                            else {
+                                return;
+                            };
+                            this.set_inv_slot(
+                                this.associated_data.held_slot as usize,
+                                ItemStack::air(),
+                            )
+                            .await;
+                            this.connected_server.spawn_event(DropItemEvent {
+                                player: Player {
+                                    sender: this.sender.clone(),
+                                },
+                                item,
+                            });
+                        }
+                        PlayerStatus::DropItem => {
+                            let Some(item) = this
+                                .get_inv_slot(this.associated_data.held_slot as usize)
+                                .await
+                            else {
+                                return;
+                            };
+                            this.set_inv_slot(
+                                this.associated_data.held_slot as usize,
+                                ItemStack::air(),
+                            )
+                            .await;
+                            this.connected_server.spawn_event(DropItemEvent {
+                                player: Player {
+                                    sender: this.sender.clone(),
+                                },
+                                item,
+                            });
+                        }
+                        PlayerStatus::FinishUsingItem => {}
+                        PlayerStatus::SwapItems => {
+                            this.connected_server.spawn_event(SwapHandsEvent {
+                                player: Player {
+                                    sender: this.sender.clone(),
+                                },
+                            });
+                        }
+                    }
+                }
                 C2SPlayPackets::AcceptTeleportation(packet) => {
                     if packet.teleport_id.as_i32() == 0 {
                         log::debug!("Setting dimension...");
@@ -394,6 +460,13 @@ impl ConnectionData {
                 }
                 C2SPlayPackets::SetCarriedItem(packet) => {
                     this.associated_data.held_slot = packet.slot + 36;
+
+                    this.connected_server.spawn_event(ChangeHeldSlotEvent {
+                        player: Player {
+                            sender: this.sender.clone(),
+                        },
+                        slot: packet.slot + 36,
+                    });
                 }
                 C2SPlayPackets::UseItemOn(packet) => {
                     let face = match packet.face {
@@ -410,31 +483,37 @@ impl ConnectionData {
                         target.y() + face.y(),
                         target.z() + face.z(),
                     );
-                    let held = this
+                    let Some(held) = this
                         .associated_data
                         .inventory
                         .get_slot(this.associated_data.held_slot as usize)
                         .await
-                        .unwrap();
-                    log::error!("Held: {:?}", held);
+                    else {
+                        return;
+                    };
                     let state = BlockState::new(held.kind().retype());
                     this.associated_data
                         .dimension
                         .as_ref()
                         .unwrap()
-                        .set_block(final_pos, state)
+                        .set_block(final_pos, state.clone())
                         .await;
-                    log::error!(
-                        "{:?} {:?} {:?}",
-                        this.associated_data
-                            .dimension
-                            .as_ref()
-                            .unwrap()
-                            .get_block_at(final_pos)
-                            .await,
-                        final_pos,
-                        packet.target
-                    );
+
+                    this.connected_server.spawn_event(PlaceBlockEvent {
+                        player: Player {
+                            sender: this.sender.clone(),
+                        },
+                        position: final_pos,
+                        block: state,
+                    });
+                }
+                C2SPlayPackets::Chat(packet) => {
+                    this.connected_server.spawn_event(ChatMessageEvent {
+                        player: Player {
+                            sender: this.sender.clone(),
+                        },
+                        message: packet.message,
+                    });
                 }
                 packet => {
                     log::warn!(

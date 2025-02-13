@@ -1,4 +1,4 @@
-use std::sync::LazyLock;
+use std::sync::{Arc, LazyLock};
 
 use noise::{NoiseFn, Simplex};
 use rand::Rng;
@@ -14,7 +14,10 @@ use wyvern_mc::{
         chunk::Chunk,
         properties::BlockComponents,
     },
-    events::{DimensionCreateEvent, PlayerCommandEvent, ServerStartEvent, ServerTickEvent},
+    events::{
+        BreakBlockEvent, ChatMessageEvent, DimensionCreateEvent, DropItemEvent, PlaceBlockEvent,
+        PlayerCommandEvent, ServerStartEvent, ServerTickEvent,
+    },
     inventory::{Inventory, ItemComponents, ItemStack},
     key,
     proxy::ProxyBuilder,
@@ -54,6 +57,10 @@ async fn main_rt() {
         b.on_event(on_server_tick);
         b.on_event(dim_init);
         b.on_event(on_command);
+        b.on_event(on_drop_item);
+        b.on_event(on_place);
+        b.on_event(on_break);
+        b.on_event(on_chat);
         b.modify_registries(|registries| {
             registries.wolf_variant(Key::new("minecraft", "pale"), WolfVariant {
                 angry_texture: Key::empty(),
@@ -95,7 +102,7 @@ async fn main_rt() {
 
 static SIMPLEX: LazyLock<Simplex> = LazyLock::new(|| Simplex::new(0));
 
-async fn on_command(event: PlayerCommandEvent) {
+async fn on_command(event: Arc<PlayerCommandEvent>) {
     if event.command.as_str() == "overload" {
         for x in 1..100 {
             for y in 1..10 {
@@ -140,7 +147,7 @@ async fn on_command(event: PlayerCommandEvent) {
     }
 }
 
-async fn dim_init(event: DimensionCreateEvent) {
+async fn dim_init(event: Arc<DimensionCreateEvent>) {
     event
         .dimension
         .set_chunk_generator(|chunk: &mut Chunk, x, z| {
@@ -165,7 +172,7 @@ async fn dim_init(event: DimensionCreateEvent) {
         .await;
 }
 
-async fn on_server_tick(event: ServerTickEvent) {
+async fn on_server_tick(event: Arc<ServerTickEvent>) {
     for dim in event.server.get_all_dimensions().await {
         for mut entity in dim.get_all_entities().await {
             let new_pos = Vec3::new(
@@ -210,12 +217,36 @@ async fn on_server_tick(event: ServerTickEvent) {
     }
 }
 
-async fn on_server_start(event: ServerStartEvent) {
+async fn on_server_start(event: Arc<ServerStartEvent>) {
     event.server.create_dimension(key!(example:alternate)).await;
 
     for _dimension in event.server.get_all_dimensions().await {
         for _ in 1..100000000 {
             Runtime::yield_now().await;
         }
+    }
+}
+
+async fn on_drop_item(event: Arc<DropItemEvent>) {
+    event.player.send_message("You dropped an item, wow!").await;
+}
+
+async fn on_place(event: Arc<PlaceBlockEvent>) {
+    event.player.send_message("You placed an item, wow!").await;
+}
+
+async fn on_break(event: Arc<BreakBlockEvent>) {
+    event.player.send_message("You broke an item, wow!").await;
+}
+
+async fn on_chat(event: Arc<ChatMessageEvent>) {
+    for player in event.player.get_server().await.all_players().await {
+        player
+            .send_message(&format!(
+                "{}: {}",
+                event.player.username().await,
+                event.message
+            ))
+            .await;
     }
 }
