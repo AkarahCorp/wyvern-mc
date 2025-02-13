@@ -38,7 +38,7 @@ impl Chunk {
             .get_mut((section + -self.min_sections) as usize)
     }
 
-    pub fn set_block_at(&mut self, pos: Vec3<i32>, block: BlockState) {
+    pub fn set_block_at(&mut self, pos: Vec3<i32>, mut block: BlockState) {
         let section_y = pos.y().div_euclid(16);
         let local_y = pos.y().rem_euclid(16);
         if let Some(section) = self.section_at_mut(section_y) {
@@ -103,6 +103,7 @@ impl ChunkSection {
 
     pub fn set_block_at(&mut self, pos: Vec3<usize>, block: BlockState) {
         let old_block = self.blocks[pos.x()][pos.y()][pos.z()];
+
         let new_block: RegEntry<BlockState> =
             unsafe { RegEntry::new_unchecked(block.clone().protocol_id() as usize) };
 
@@ -111,8 +112,9 @@ impl ChunkSection {
         } else if old_block.id() != 0 && new_block.id() == 0 {
             self.block_count -= 1;
         }
+
         self.blocks[pos.x()][pos.y()][pos.z()] = ChunkBlock {
-            block_state: block.protocol_id().try_into().unwrap(),
+            block_state: new_block.id() as u16,
             block_meta: 0,
         };
     }

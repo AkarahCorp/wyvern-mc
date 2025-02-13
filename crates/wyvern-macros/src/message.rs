@@ -101,8 +101,7 @@ pub fn message(attr: TokenStream, item: TokenStream) -> TokenStream {
 
         impl crate::actors::Actor for #target_type {
             async fn handle_messages(&mut self) {
-                loop {
-                    futures_lite::future::yield_now().await;
+                for _ in 0..512 {
                     match self.receiver.try_recv() {
                         Ok(v) => {
                             match v {
@@ -193,7 +192,7 @@ fn create_fn_from_variant(variant: &MessageVariant) -> TokenStream {
 
     let r = quote! {
         pub async fn #name(&self, #(#param_names: #param_types),*) -> #rt {
-            let (tx, mut rx) = flume::bounded(2);
+            let (tx, mut rx) = flume::bounded(1);
             self.sender.send_async(#enum_type::#enum_variant(#(#param_names,)* tx)).await.unwrap();
             loop {
                 match rx.try_recv() {
@@ -230,7 +229,7 @@ fn create_match_arm_from_variant(variant: &MessageVariant) -> TokenStream {
     let r = quote! {
         #enum_type::#enum_variant(#(#param_names,)* tx) => {
             let r = self.#name(#(#param_names,)*).await;
-            tx.send(r).unwrap();
+            let _ = tx.send(r);
         }
     };
     r

@@ -104,24 +104,29 @@ static SIMPLEX: LazyLock<Simplex> = LazyLock::new(|| Simplex::new(0));
 
 async fn on_command(event: Arc<PlayerCommandEvent>) {
     if event.command.as_str() == "overload" {
-        for x in 1..100 {
-            for y in 1..10 {
-                for z in 1..100 {
-                    let value = rand::rng().random_bool(0.5);
-                    event
-                        .player
-                        .get_dimension()
-                        .await
-                        .unwrap()
-                        .set_block(
-                            Vec3::new(x, y, z),
-                            BlockState::new(Key::new("minecraft", "grass_block"))
-                                .with(&BlockComponents::SNOWY, value),
-                        )
-                        .await;
+        let event = event.clone();
+        Runtime::spawn(async move {
+            let state = BlockState::new(Key::new("minecraft", "grass_block"))
+                .with(&BlockComponents::SNOWY, false);
+            let dim = event.player.get_dimension().await.unwrap();
+            for x in 1..100 {
+                for y in 1..10 {
+                    for z in 1..100 {
+                        dim.set_block(Vec3::new(x, y, z), state.clone()).await;
+                        Runtime::yield_now().await;
+                        Runtime::yield_now().await;
+                        Runtime::yield_now().await;
+                        Runtime::yield_now().await;
+                        Runtime::yield_now().await;
+                        Runtime::yield_now().await;
+                        Runtime::yield_now().await;
+                        Runtime::yield_now().await;
+                        Runtime::yield_now().await;
+                        Runtime::yield_now().await;
+                    }
                 }
             }
-        }
+        });
     }
 
     if event.command == "rootdir" {

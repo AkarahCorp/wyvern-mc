@@ -73,19 +73,19 @@ impl DimensionData {
                 let block_state = block_state.clone();
                 let pos = position;
                 let conn = conn.clone();
-                Runtime::spawn(async move {
-                    if conn.is_loaded_in_world().await {
-                        conn.write_packet(BlockUpdateS2CPlayPacket {
-                            pos: BlockPos::new(pos.x(), pos.y(), pos.z()),
-                            block: unsafe {
-                                RegEntry::new_unchecked(block_state.protocol_id() as usize)
-                            },
-                        })
-                        .await;
-                    }
-                });
+                if conn.is_loaded_in_world().await {
+                    conn.write_packet(BlockUpdateS2CPlayPacket {
+                        pos: BlockPos::new(pos.x(), pos.y(), pos.z()),
+                        block: unsafe {
+                            RegEntry::new_unchecked(block_state.protocol_id() as usize)
+                        },
+                    })
+                    .await;
+                }
+                Runtime::yield_now().await;
             }
         });
+        Runtime::yield_now().await;
     }
 
     #[GetBlock]
@@ -198,7 +198,7 @@ impl DimensionData {
         server: Server,
         dim_type: Key<DimType>,
     ) -> DimensionData {
-        let chan = flume::unbounded();
+        let chan = flume::bounded(512);
         DimensionData {
             name,
             chunks: HashMap::new(),

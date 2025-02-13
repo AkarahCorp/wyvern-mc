@@ -42,6 +42,18 @@ impl BlockState {
                 .unwrap_or(ID_TO_BLOCK_STATE.get(&0).unwrap()),
         )
     }
+
+    pub fn make_valid(self) -> Self {
+        let mut underlying = ProtocolState {
+            id: self.block.into(),
+            properties: self.state,
+        };
+        underlying.make_valid().unwrap();
+        BlockState {
+            block: underlying.id.into(),
+            state: underlying.properties,
+        }
+    }
 }
 
 impl From<&ProtocolState> for BlockState {

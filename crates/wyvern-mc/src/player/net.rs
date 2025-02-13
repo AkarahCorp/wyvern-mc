@@ -33,7 +33,7 @@ impl ConnectionData {
         stage: Arc<Mutex<Stage>>,
     ) -> ConnectionWithSignal {
         let (signal_tx, signal_rx) = flume::bounded(1);
-        let (data_tx, data_rx) = flume::bounded(256);
+        let (data_tx, data_rx) = flume::bounded(512);
 
         Runtime::spawn(ConnectionData::execute_connection(
             stream,
