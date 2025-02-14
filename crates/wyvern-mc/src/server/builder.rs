@@ -8,7 +8,10 @@ use voxidian_protocol::{
     value::{Biome, DamageType, EntityType},
 };
 
-use crate::events::{Event, EventBus};
+use crate::{
+    actors::ActorResult,
+    events::{Event, EventBus},
+};
 
 use super::{ServerData, dimensions::DimensionContainer, registries::RegistryContainerBuilder};
 
@@ -44,12 +47,16 @@ impl ServerBuilder {
 
     pub fn on_event<E: Event + 'static, F>(mut self, f: fn(Arc<E>) -> F) -> Self
     where
-        F: Future<Output = ()> + Send + 'static,
+        F: Future<Output = ActorResult<()>> + Send + 'static,
     {
         let handler = Box::new(move |event: Arc<E>| {
-            Box::pin(f(event)) as Pin<Box<dyn Future<Output = ()> + Send>>
+            Box::pin(f(event)) as Pin<Box<dyn Future<Output = ActorResult<()>> + Send>>
         })
-            as Box<dyn Fn(Arc<E>) -> Pin<Box<dyn Future<Output = ()> + Send>> + Send + Sync>;
+            as Box<
+                dyn Fn(Arc<E>) -> Pin<Box<dyn Future<Output = ActorResult<()>> + Send>>
+                    + Send
+                    + Sync,
+            >;
         E::add_handler(&mut self.events, handler);
 
         self

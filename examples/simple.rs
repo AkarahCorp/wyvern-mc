@@ -7,6 +7,7 @@ use voxidian_protocol::{
     value::{DimEffects, DimMonsterSpawnLightLevel, DimType},
 };
 use wyvern_mc::{
+    actors::ActorResult,
     components::ComponentHolder,
     dimension::{
         blocks::{BlockState, Blocks},
@@ -98,7 +99,7 @@ async fn main_rt() {
 
 static SIMPLEX: LazyLock<Simplex> = LazyLock::new(|| Simplex::new(0));
 
-async fn on_command(event: Arc<PlayerCommandEvent>) {
+async fn on_command(event: Arc<PlayerCommandEvent>) -> ActorResult<()> {
     if event.command.as_str() == "overload" {
         let event = event.clone();
         Runtime::spawn(async move {
@@ -108,7 +109,9 @@ async fn on_command(event: Arc<PlayerCommandEvent>) {
             for x in 1..100 {
                 for y in 1..10 {
                     for z in 1..100 {
-                        dim.set_block(Vec3::new(x, y, z), state.clone()).await;
+                        dim.set_block(Vec3::new(x, y, z), state.clone())
+                            .await
+                            .unwrap();
                         Runtime::yield_now().await;
                         Runtime::yield_now().await;
                         Runtime::yield_now().await;
@@ -130,10 +133,11 @@ async fn on_command(event: Arc<PlayerCommandEvent>) {
             .player
             .get_server()
             .await
+            .unwrap()
             .dimension(key!(wyvern:root))
             .await
             .unwrap();
-        event.player.change_dimension(dimension).await;
+        event.player.change_dimension(dimension).await.unwrap();
     }
 
     if event.command == "altdir" {
@@ -141,14 +145,17 @@ async fn on_command(event: Arc<PlayerCommandEvent>) {
             .player
             .get_server()
             .await
+            .unwrap()
             .dimension(key!(example:alternate))
             .await
             .unwrap();
-        event.player.change_dimension(dimension).await;
+        event.player.change_dimension(dimension).await.unwrap();
     }
+
+    Ok(())
 }
 
-async fn dim_init(event: Arc<DimensionCreateEvent>) {
+async fn dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
     event
         .dimension
         .set_chunk_generator(|chunk: &mut Chunk, x, z| {
@@ -171,24 +178,27 @@ async fn dim_init(event: Arc<DimensionCreateEvent>) {
             }
         })
         .await;
+
+    Ok(())
 }
 
-async fn on_server_tick(event: Arc<ServerTickEvent>) {
-    for dim in event.server.get_all_dimensions().await {
-        for mut entity in dim.get_all_entities().await {
+async fn on_server_tick(event: Arc<ServerTickEvent>) -> ActorResult<()> {
+    for dim in event.server.get_all_dimensions().await.unwrap() {
+        for mut entity in dim.get_all_entities().await.unwrap() {
             let new_pos = Vec3::new(
                 rand::random::<f64>() * 128.0,
                 rand::random::<f64>() * 16.0,
                 rand::random::<f64>() * 128.0,
             );
-            entity.teleport(new_pos).await;
+            entity.teleport(new_pos).await.unwrap();
         }
     }
 
     for player in event.server.all_players().await {
-        if player.get_stage().await == Stage::Play {
+        if player.get_stage().await.unwrap() == Stage::Play {
             player
                 .get_inventory()
+                .unwrap()
                 .set_slot(
                     36,
                     ItemStack::new(Key::new("minecraft", "stone"))
@@ -199,10 +209,12 @@ async fn on_server_tick(event: Arc<ServerTickEvent>) {
                             Key::constant("minecraft", "stone"),
                         ),
                 )
-                .await;
+                .await
+                .unwrap();
 
             player
                 .get_inventory()
+                .unwrap()
                 .set_slot(
                     37,
                     ItemStack::new(Key::new("minecraft", "diamond_sword"))
@@ -213,40 +225,72 @@ async fn on_server_tick(event: Arc<ServerTickEvent>) {
                             Key::constant("minecraft", "diamond_sword"),
                         ),
                 )
-                .await;
+                .await
+                .unwrap();
         }
     }
+
+    Ok(())
 }
 
-async fn on_server_start(event: Arc<ServerStartEvent>) {
-    event.server.create_dimension(key!(example:root)).await;
-    event.server.create_dimension(key!(example:alternate)).await;
+async fn on_server_start(event: Arc<ServerStartEvent>) -> ActorResult<()> {
+    event
+        .server
+        .create_dimension(key!(example:root))
+        .await
+        .unwrap();
+    event
+        .server
+        .create_dimension(key!(example:alternate))
+        .await
+        .unwrap();
+
+    Ok(())
 }
 
-async fn on_drop_item(event: Arc<DropItemEvent>) {
-    event.player.send_message("You dropped an item, wow!").await;
+async fn on_drop_item(event: Arc<DropItemEvent>) -> ActorResult<()> {
+    event
+        .player
+        .send_message("You dropped an item, wow!")
+        .await
+        .unwrap();
+
+    Ok(())
 }
 
-async fn on_place(event: Arc<PlaceBlockEvent>) {
-    event.player.send_message("You placed an item, wow!").await;
+async fn on_place(event: Arc<PlaceBlockEvent>) -> ActorResult<()> {
+    event
+        .player
+        .send_message("You placed an item, wow!")
+        .await
+        .unwrap();
+    Ok(())
 }
 
-async fn on_break(event: Arc<BreakBlockEvent>) {
-    event.player.send_message("You broke an item, wow!").await;
+async fn on_break(event: Arc<BreakBlockEvent>) -> ActorResult<()> {
+    event
+        .player
+        .send_message("You broke an item, wow!")
+        .await
+        .unwrap();
+    Ok(())
 }
 
-async fn on_chat(event: Arc<ChatMessageEvent>) {
-    for player in event.player.get_server().await.all_players().await {
+async fn on_chat(event: Arc<ChatMessageEvent>) -> ActorResult<()> {
+    for player in event.player.get_server().await.unwrap().all_players().await {
         player
             .send_message(&format!(
                 "{}: {}",
-                event.player.username().await,
+                event.player.username().await.unwrap(),
                 event.message
             ))
-            .await;
+            .await
+            .unwrap();
     }
+    Ok(())
 }
 
-async fn on_join(event: Arc<PlayerJoinEvent>) {
+async fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
     event.new_dimension.set(key!(example:root));
+    Ok(())
 }

@@ -47,5 +47,11 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
             pub(crate) receiver: flume::Receiver<#attr_message_type>
         }
     };
+    // std::fs::write(
+    //     Path::new(&format!("./target/macros/actor/{}", strct_type)),
+    //     RustFmt::new().format_str(o.to_string()).unwrap(),
+    // )
+    // .unwrap();
+    // eprintln!("o: {}", RustFmt::new().format_str(o.to_string()).unwrap());
     o
 }

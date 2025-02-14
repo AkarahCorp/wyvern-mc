@@ -25,6 +25,7 @@ use voxidian_protocol::{
 use wyvern_macros::{actor, message};
 
 use crate::{
+    actors::{ActorError, ActorResult},
     dimension::Dimension,
     inventory::{Inventory, ItemStack},
     server::Server,
@@ -55,37 +56,42 @@ pub(crate) struct ConnectionData {
 #[message(Player, PlayerMessage)]
 impl ConnectionData {
     #[SetStage]
-    pub async fn set_stage(&mut self, stage: Stage) {
+    pub async fn set_stage(&mut self, stage: Stage) -> ActorResult<()> {
         *self.stage.lock().unwrap() = stage;
+        Ok(())
     }
 
     #[GetStage]
-    pub async fn get_stage(&mut self) -> Stage {
-        *self.stage.lock().unwrap()
+    pub async fn get_stage(&mut self) -> ActorResult<Stage> {
+        Ok(*self.stage.lock().unwrap())
     }
 
     #[IsLoaded]
-    pub async fn is_loaded_in_world(&self) -> bool {
-        self.associated_data.is_loaded
+    pub async fn is_loaded_in_world(&self) -> ActorResult<bool> {
+        Ok(self.associated_data.is_loaded)
     }
 
     #[SendPacketBuf]
-    pub async fn send_packet_buf(&mut self, buf: PacketBuf) {
+    pub async fn send_packet_buf(&mut self, buf: PacketBuf) -> ActorResult<()> {
         self.bytes_to_send.extend(buf.iter());
+        Ok(())
     }
 
     #[GetServer]
-    pub async fn get_server(&self) -> Server {
-        self.connected_server.clone()
+    pub async fn get_server(&self) -> ActorResult<Server> {
+        Ok(self.connected_server.clone())
     }
 
     #[GetDimension]
-    pub async fn get_dimension(&self) -> Option<Dimension> {
-        self.associated_data.dimension.clone()
+    pub async fn get_dimension(&self) -> ActorResult<Dimension> {
+        self.associated_data
+            .dimension
+            .clone()
+            .ok_or(ActorError::ActorIsNotLoaded)
     }
 
     #[ChangeDimension]
-    pub async fn change_dimension(&mut self, dimension: Dimension) {
+    pub async fn change_dimension(&mut self, dimension: Dimension) -> ActorResult<()> {
         for chunk in self.associated_data.loaded_chunks.clone() {
             self.write_packet(ForgetLevelChunkS2CPlayPacket {
                 chunk_z: chunk.y(),
@@ -103,11 +109,11 @@ impl ConnectionData {
             dim: self
                 .connected_server
                 .registries()
-                .await
+                .await?
                 .dimension_types
-                .get_entry(dimension.get_dimension_type().await)
+                .get_entry(dimension.get_dimension_type().await?)
                 .unwrap(),
-            dim_name: dimension.get_name().await.into(),
+            dim_name: dimension.get_name().await?.into(),
             seed: 0,
             gamemode: Gamemode::Survival,
             prev_gamemode: Gamemode::None,
@@ -153,17 +159,17 @@ impl ConnectionData {
         })
         .await;
 
-        for entity in dimension.get_all_entities().await {
-            let position = entity.position().await;
+        for entity in dimension.get_all_entities().await? {
+            let position = entity.position().await?;
             self.write_packet(AddEntityS2CPlayPacket {
-                id: entity.entity_id().await.into(),
+                id: entity.entity_id().await?.into(),
                 uuid: *entity.uuid(),
                 kind: self
                     .connected_server
                     .registries()
-                    .await
+                    .await?
                     .entity_types
-                    .get_entry(entity.entity_type().await.retype())
+                    .get_entry(entity.entity_type().await?.retype())
                     .unwrap(),
                 x: position.0.x(),
                 y: position.0.x(),
@@ -178,15 +184,17 @@ impl ConnectionData {
             })
             .await;
         }
+
+        Ok(())
     }
 
     #[GetInvSlot]
-    pub(crate) async fn get_inv_slot(&self, slot: usize) -> Option<ItemStack> {
+    pub(crate) async fn get_inv_slot(&self, slot: usize) -> ActorResult<ItemStack> {
         self.associated_data.inventory.get_slot(slot).await
     }
 
     #[SetInvSlot]
-    pub(crate) async fn set_inv_slot(&mut self, slot: usize, item: ItemStack) {
+    pub(crate) async fn set_inv_slot(&mut self, slot: usize, item: ItemStack) -> ActorResult<()> {
         let copy = item.clone();
 
         let slot = self
@@ -195,7 +203,7 @@ impl ConnectionData {
             .map(|x| x.container_slot_count())
             .unwrap_or(0)
             + slot;
-        self.associated_data.inventory.set_slot(slot, copy).await;
+        self.associated_data.inventory.set_slot(slot, copy).await?;
 
         let packet = ContainerSetSlotS2CPlayPacket {
             window_id: VarInt::new(self.associated_data.window_id.unwrap_or(0) as i32),
@@ -204,16 +212,24 @@ impl ConnectionData {
             slot_data: item.into(),
         };
         self.write_packet(packet).await;
+        Ok(())
     }
 
     #[ReadData]
-    pub(crate) async fn read_data(&self, f: Box<dyn Fn(&PlayerData) + Send + Sync>) {
-        f(&self.associated_data)
+    pub(crate) async fn read_data(
+        &self,
+        f: Box<dyn Fn(&PlayerData) + Send + Sync>,
+    ) -> ActorResult<()> {
+        f(&self.associated_data);
+        Ok(())
     }
 }
 
 impl Player {
-    pub async fn write_packet<P: PrefixedPacketEncode + std::fmt::Debug>(&self, packet: P) {
+    pub async fn write_packet<P: PrefixedPacketEncode + std::fmt::Debug>(
+        &self,
+        packet: P,
+    ) -> ActorResult<()> {
         let mut buf = PacketBuf::new();
         packet.encode_prefixed(&mut buf).unwrap();
 
@@ -225,63 +241,67 @@ impl Player {
         let mut new_buf = PacketBuf::new();
         new_buf.write_u8s(len_buf.as_slice());
         new_buf.write_u8s(buf.as_slice());
-        self.send_packet_buf(new_buf).await;
+        self.send_packet_buf(new_buf).await?;
+
+        Ok(())
     }
 
-    pub fn get_inventory(&self) -> PlayerInventory {
-        PlayerInventory {
+    pub fn get_inventory(&self) -> ActorResult<PlayerInventory> {
+        Ok(PlayerInventory {
             player: self.clone(),
-        }
+        })
     }
 
-    pub async fn send_message(&self, content: &str) {
+    pub async fn send_message(&self, content: &str) -> ActorResult<()> {
         let mut text = Text::new();
         text.push(TextComponent::of_literal(content));
         self.write_packet(SystemChatS2CPlayPacket {
             content: text.to_nbt(),
             is_actionbar: false,
         })
-        .await;
+        .await?;
+        Ok(())
     }
 
-    pub async fn send_action_bar(&self, content: &str) {
+    pub async fn send_action_bar(&self, content: &str) -> ActorResult<()> {
         let mut text = Text::new();
         text.push(TextComponent::of_literal(content));
         self.write_packet(SystemChatS2CPlayPacket {
             content: text.to_nbt(),
             is_actionbar: true,
         })
-        .await;
+        .await?;
+        Ok(())
     }
 
-    pub async fn username(&self) -> String {
+    pub async fn username(&self) -> ActorResult<String> {
         let value = Arc::new(Mutex::new(String::new()));
         let value_clone = value.clone();
         self.read_data(Box::new(move |data| {
             *value_clone.lock().unwrap() = data.username.clone();
         }))
-        .await;
-        value.lock().unwrap().clone()
+        .await?;
+        Ok(value.lock().unwrap().clone())
     }
 
-    pub async fn uuid(&self) -> Uuid {
+    pub async fn uuid(&self) -> ActorResult<Uuid> {
         let value = Arc::new(Mutex::new(Uuid::nil()));
         let value_clone = value.clone();
         self.read_data(Box::new(move |data| {
             *value_clone.lock().unwrap() = data.uuid;
         }))
-        .await;
-        *value.lock().unwrap()
+        .await?;
+        Ok(*value.lock().unwrap())
     }
 
-    pub async fn position(&self) -> (Vec3<f64>, Vec2<f32>) {
+    pub async fn position(&self) -> ActorResult<(Vec3<f64>, Vec2<f32>)> {
         let value = Arc::new(Mutex::new((Vec3::new(0.0, 0.0, 0.0), Vec2::new(0.0, 0.0))));
         let value_clone = value.clone();
         self.read_data(Box::new(move |data| {
             *value_clone.lock().unwrap() = (data.last_position, data.last_direction);
         }))
-        .await;
-        *value.lock().unwrap()
+        .await?;
+        Ok(*value.lock().unwrap())
     }
 }
 

@@ -4,7 +4,11 @@ use std::{
     time::{Duration, Instant},
 };
 
-use crate::{actor, message};
+use crate::{
+    actor,
+    actors::{ActorError, ActorResult},
+    message,
+};
 use crate::{actors::Actor, runtime::Runtime};
 use async_net::TcpListener;
 use dimensions::DimensionContainer;
@@ -36,58 +40,70 @@ pub(crate) struct ServerData {
 }
 
 impl Server {
-    pub fn spawn_event<E: Event + Send + 'static>(&self, event: E) {
+    pub fn spawn_event<E: Event + Send + 'static>(&self, event: E) -> ActorResult<()> {
         let server = self.clone();
         Runtime::spawn(async move {
-            event.dispatch(server.event_bus().await);
+            event.dispatch(server.event_bus().await.unwrap());
         });
+        Ok(())
     }
 
-    pub async fn spawn_event_blocking<E: Event + Send + 'static>(&self, event: E) {
+    pub async fn spawn_event_blocking<E: Event + Send + 'static>(
+        &self,
+        event: E,
+    ) -> ActorResult<()> {
         let server = self.clone();
-        let bus = server.event_bus().await;
+        let bus = server.event_bus().await?;
         event.dispatch(bus);
+        Ok(())
     }
 }
 
 #[message(Server, ServerMessage)]
 impl ServerData {
     #[NewEntityId]
-    pub async fn get_entity_id(&mut self) -> i32 {
+    pub async fn get_entity_id(&mut self) -> ActorResult<i32> {
         self.last_entity_id += 1;
         log::debug!("New entity id produced: {:?}", self.last_entity_id);
-        self.last_entity_id
+        Ok(self.last_entity_id)
     }
 
     #[GetEventBus]
-    pub async fn event_bus(&mut self) -> Arc<EventBus> {
-        self.events.clone()
+    pub async fn event_bus(&mut self) -> ActorResult<Arc<EventBus>> {
+        Ok(self.events.clone())
     }
 
     #[SpawnConnectionInternal]
-    pub async fn spawn_connection_internal(&mut self, conn: ConnectionWithSignal) {
+    pub async fn spawn_connection_internal(
+        &mut self,
+        conn: ConnectionWithSignal,
+    ) -> ActorResult<()> {
         self.connections.push(conn);
+        Ok(())
     }
 
     #[GetRegistries]
-    pub async fn registries(&self) -> Arc<RegistryContainer> {
-        self.registries.clone()
+    pub async fn registries(&self) -> ActorResult<Arc<RegistryContainer>> {
+        Ok(self.registries.clone())
     }
 
     #[GetDimension]
-    pub async fn dimension(&self, key: Key<Dimension>) -> Option<Dimension> {
-        self.dimensions.get(&key).map(|dim| Dimension {
-            sender: dim.sender.clone(),
-        })
+    pub async fn dimension(&self, key: Key<Dimension>) -> ActorResult<Dimension> {
+        self.dimensions
+            .get(&key)
+            .map(|dim| Dimension {
+                sender: dim.sender.clone(),
+            })
+            .ok_or(ActorError::IndexOutOfBounds)
     }
 
     #[GetAllDimensions]
-    pub async fn get_all_dimensions(&self) -> Vec<Dimension> {
-        self.dimensions.dimensions().cloned().collect()
+    pub async fn get_all_dimensions(&self) -> ActorResult<Vec<Dimension>> {
+        Ok(self.dimensions.dimensions().cloned().collect())
     }
 
     #[CreateDimension]
-    pub async fn create_dimension(&mut self, name: Key<Dimension>) -> Dimension {
+    pub async fn create_dimension(&mut self, name: Key<Dimension>) -> ActorResult<Dimension> {
         log::debug!("Creating new dimension: {:?}", name);
         let mut root_dim = DimensionData::new(
             name.clone().retype(),
@@ -111,14 +127,13 @@ impl ServerData {
         let server_clone = Server {
             sender: self.sender.clone(),
         };
-        server_clone.spawn_event(DimensionCreateEvent {
+        let _ = server_clone.spawn_event(DimensionCreateEvent {
             dimension: dim_clone,
             server: server_clone.clone(),
         });
+
         futures_lite::future::yield_now().await;
-        futures_lite::future::yield_now().await;
-        futures_lite::future::yield_now().await;
-        dim
+        Ok(dim)
     }
 
     #[GetConnections]
@@ -146,7 +161,7 @@ impl ServerData {
         };
         let snd_clone = snd.clone();
         Runtime::spawn(async move {
-            snd_clone.spawn_event(ServerStartEvent {
+            let _ = snd_clone.spawn_event(ServerStartEvent {
                 server: snd_clone.clone(),
             });
         });
@@ -165,7 +180,7 @@ impl ServerData {
             if dur > Duration::from_millis(50) {
                 self.last_tick = Instant::now();
 
-                server.spawn_event(ServerTickEvent {
+                let _ = server.spawn_event(ServerTickEvent {
                     server: server.clone(),
                 });
             }
@@ -190,7 +205,7 @@ impl ServerData {
                         server.clone(),
                         stage,
                     );
-                    server.spawn_connection_internal(signal).await;
+                    let _ = server.spawn_connection_internal(signal).await;
                 }
                 Err(_err) => {}
             }

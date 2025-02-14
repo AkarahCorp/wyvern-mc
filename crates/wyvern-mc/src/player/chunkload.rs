@@ -11,6 +11,7 @@ use voxidian_protocol::{
 };
 
 use crate::{
+    actors::{ActorError, ActorResult},
     timeout,
     values::{Vec2, Vec3},
 };
@@ -18,9 +19,9 @@ use crate::{
 use super::ConnectionData;
 
 impl ConnectionData {
-    pub async fn send_chunks(&mut self) {
+    pub async fn send_chunks(&mut self) -> ActorResult<()> {
         let Some(dimension) = &self.associated_data.dimension else {
-            return;
+            return Err(ActorError::ActorIsNotLoaded);
         };
 
         let chunk_center = Vec2::new(
@@ -48,12 +49,13 @@ impl ConnectionData {
             .copied()
             .collect::<Vec<_>>();
 
-        let dim_reg = &self.connected_server.registries().await.dimension_types;
+        let dim_reg = &self.connected_server.registries().await?.dimension_types;
 
         let dim_type_entry = timeout!(
             dimension.get_dimension_type().await,
-            Duration::from_millis(10)
-        );
+            Duration::from_millis(10),
+            Result::Err(ActorError::ActorIsNotLoaded)
+        )?;
 
         let dim_type = dim_reg.get(dim_type_entry).unwrap();
 
@@ -87,8 +89,9 @@ impl ConnectionData {
                 let pos = Vec3::new(chunk_x, y, chunk_z);
                 let chunk = timeout!(
                     dimension.get_chunk_section(pos).await,
-                    Duration::from_millis(10)
-                );
+                    Duration::from_millis(10),
+                    Err(ActorError::ActorDoesNotExist)
+                )?;
                 sections.push(chunk.as_protocol_section());
             }
 
@@ -123,5 +126,7 @@ impl ConnectionData {
             })
             .await;
         }
+
+        Ok(())
     }
 }

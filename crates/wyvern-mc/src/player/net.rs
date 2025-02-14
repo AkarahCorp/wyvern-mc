@@ -7,7 +7,10 @@ use std::{
     time::{Duration, Instant},
 };
 
-use crate::{actors::Actor, runtime::Runtime};
+use crate::{
+    actors::{Actor, ActorResult},
+    runtime::Runtime,
+};
 use async_net::TcpStream;
 use flume::{Receiver, Sender};
 use futures_lite::{AsyncReadExt, AsyncWriteExt};
@@ -89,13 +92,13 @@ impl ConnectionData {
                 log::info!("A player has disconnected. Stopping their connection data...");
 
                 if let Some(dim) = self.associated_data.dimension {
-                    dim.remove_entity(self.associated_data.uuid).await;
+                    let _ = dim.remove_entity(self.associated_data.uuid).await;
                 }
                 let _ = self.signal.send(ConnectionStoppedSignal);
                 break;
             }
             self.handle_messages().await;
-            self.read_incoming_packets().await;
+            let _ = self.read_incoming_packets().await;
             self.write_outgoing_packets().await;
 
             let now = Instant::now();
@@ -139,30 +142,32 @@ impl ConnectionData {
         }
     }
 
-    pub async fn read_incoming_packets(&mut self) {
+    pub async fn read_incoming_packets(&mut self) -> ActorResult<()> {
         let stage = *self.stage.lock().unwrap();
         match stage {
             Stage::Handshake => {
                 self.read_packets(async |packet: C2SHandshakePackets, this: &mut Self| {
                     let C2SHandshakePackets::Intention(packet) = packet;
                     *this.stage.lock().unwrap() = packet.intended_stage.into_stage();
+                    Ok(())
                 })
-                .await;
+                .await?;
             }
             Stage::Status => {
-                self.status_stage().await;
+                self.status_stage().await?;
             }
             Stage::Login => {
-                self.login_stage().await;
+                self.login_stage().await?;
             }
             Stage::Config => {
-                self.configuration_stage().await;
+                self.configuration_stage().await?;
             }
             Stage::Play => {
-                self.play_phase().await;
+                self.play_phase().await?;
             }
             Stage::Transfer => todo!("doesn't exist, this needs to be removed D:"),
         }
+        Ok(())
     }
 
     pub async fn write_outgoing_packets(&mut self) {
@@ -176,17 +181,20 @@ impl ConnectionData {
         }
     }
 
-    pub async fn read_packets<T: PrefixedPacketDecode + Debug, F: AsyncFnOnce(T, &mut Self)>(
+    pub async fn read_packets<
+        T: PrefixedPacketDecode + Debug,
+        F: AsyncFnOnce(T, &mut Self) -> ActorResult<()>,
+    >(
         &mut self,
         f: F,
-    ) {
+    ) -> ActorResult<()> {
         match self
             .packet_processing
             .decode_from_raw_queue(self.received_bytes.iter().copied())
         {
             Ok((mut buf, consumed)) => {
                 if consumed == 0 {
-                    return;
+                    return Ok(());
                 }
 
                 let byte_cache = self.received_bytes.clone();
@@ -198,7 +206,8 @@ impl ConnectionData {
                 let buf_copy = buf.clone();
                 match T::decode_prefixed(&mut buf) {
                     Ok(packet) => {
-                        f(packet, self).await;
+                        f(packet, self).await?;
+                        Ok(())
                     }
                     Err(DecodeError::EndOfBuffer) => {
                         log::error!(
@@ -216,13 +225,14 @@ impl ConnectionData {
                             self.received_bytes,
                             rv
                         );
+                        Ok(())
                     }
                     Err(e) => {
                         panic!("{:?}", e);
                     }
                 }
             }
-            Err(DecodeError::EndOfBuffer) => {}
+            Err(DecodeError::EndOfBuffer) => Ok(()),
             Err(e) => {
                 panic!("err: {:?}", e);
             }

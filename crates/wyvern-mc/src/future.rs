@@ -1,6 +1,6 @@
 #[macro_export]
 macro_rules! timeout {
-    ($fut:expr, $timer:expr) => {
+    ($fut:expr, $timer:expr$(,)? $(,$else:expr)?) => {
         match async {
             Timer::after($timer).await;
             Result::Err(())
@@ -10,7 +10,7 @@ macro_rules! timeout {
         {
             Ok(v) => v,
             Err(_) => {
-                return;
+                return $($else)?;
             }
         }
     };

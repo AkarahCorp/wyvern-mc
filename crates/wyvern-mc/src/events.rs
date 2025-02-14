@@ -1,6 +1,7 @@
 use std::{fmt::Debug, pin::Pin, sync::Arc};
 
 use crate::{
+    actors::ActorResult,
     dimension::{Dimension, blocks::BlockState},
     inventory::ItemStack,
     player::Player,
@@ -76,7 +77,7 @@ pub trait Event {
     async fn dispatch_sync(self, bus: Arc<EventBus>);
 }
 
-pub type BoxedFuture = Pin<Box<dyn Future<Output = ()> + Send + 'static>>;
+pub type BoxedFuture = Pin<Box<dyn Future<Output = ActorResult<()>> + Send + 'static>>;
 
 #[derive(Debug, Clone)]
 pub struct DimensionCreateEvent {

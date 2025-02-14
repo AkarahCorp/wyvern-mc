@@ -1,5 +1,7 @@
 use std::{collections::HashMap, fmt::Debug};
 
+use crate::actors::{ActorError, ActorResult};
+
 use super::{Inventory, ItemStack};
 
 #[derive(Clone)]
@@ -38,11 +40,15 @@ impl Default for DataInventory {
 }
 
 impl Inventory for DataInventory {
-    async fn get_slot(&self, slot: usize) -> Option<ItemStack> {
-        self.slots.get(&slot).cloned()
+    async fn get_slot(&self, slot: usize) -> ActorResult<ItemStack> {
+        self.slots
+            .get(&slot)
+            .cloned()
+            .ok_or(ActorError::IndexOutOfBounds)
     }
 
-    async fn set_slot(&mut self, slot: usize, item: ItemStack) {
+    async fn set_slot(&mut self, slot: usize, item: ItemStack) -> ActorResult<()> {
         self.slots.insert(slot, item);
+        Ok(())
     }
 }

@@ -1,4 +1,4 @@
-use crate::inventory::Inventory;
+use crate::{actors::ActorResult, inventory::Inventory};
 
 use super::Player;
 
@@ -7,11 +7,15 @@ pub struct PlayerInventory {
 }
 
 impl Inventory for PlayerInventory {
-    async fn get_slot(&self, slot: usize) -> Option<crate::inventory::ItemStack> {
+    async fn get_slot(&self, slot: usize) -> ActorResult<crate::inventory::ItemStack> {
         self.player.get_inv_slot(slot).await
     }
 
-    async fn set_slot(&mut self, slot: usize, item: crate::inventory::ItemStack) {
+    async fn set_slot(
+        &mut self,
+        slot: usize,
+        item: crate::inventory::ItemStack,
+    ) -> ActorResult<()> {
         self.player.set_inv_slot(slot, item).await
     }
 }

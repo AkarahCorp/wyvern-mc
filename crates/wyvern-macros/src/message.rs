@@ -1,5 +1,4 @@
 use core::panic;
-use std::fmt::Debug;
 
 use proc_macro2::TokenStream;
 use quote::{ToTokens, quote};
@@ -15,7 +14,7 @@ struct MessageVariant {
     base_function: ImplItemFn,
 }
 
-impl Debug for MessageVariant {
+impl std::fmt::Debug for MessageVariant {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("MessageVariant")
             .field("enum_name", &self.enum_name.to_token_stream().to_string())
@@ -123,6 +122,16 @@ pub fn message(attr: TokenStream, item: TokenStream) -> TokenStream {
             #(#mapped_fns)*
         }
     };
+
+    // std::fs::write(
+    //     Path::new(&format!(
+    //         "./target/macros/message/{}",
+    //         target_type.to_token_stream().to_string().replace(" ", "")
+    //     )),
+    //     RustFmt::new().format_str(o.to_string()).unwrap(),
+    // )
+    // .unwrap();
+    // eprintln!("o: {}", RustFmt::new().format_str(o.to_string()).unwrap());
     o
 }
 
