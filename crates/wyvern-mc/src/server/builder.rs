@@ -42,7 +42,7 @@ impl ServerBuilder {
         }
     }
 
-    pub fn on_event<E: Event + 'static, F>(&mut self, f: fn(Arc<E>) -> F)
+    pub fn on_event<E: Event + 'static, F>(mut self, f: fn(Arc<E>) -> F) -> Self
     where
         F: Future<Output = ()> + Send + 'static,
     {
@@ -51,13 +51,16 @@ impl ServerBuilder {
         })
             as Box<dyn Fn(Arc<E>) -> Pin<Box<dyn Future<Output = ()> + Send>> + Send + Sync>;
         E::add_handler(&mut self.events, handler);
+
+        self
     }
 
-    pub fn modify_registries<F: FnOnce(&mut RegistryContainerBuilder)>(&mut self, f: F) {
-        f(&mut self.registries)
+    pub fn modify_registries<F: FnOnce(&mut RegistryContainerBuilder)>(mut self, f: F) -> Self {
+        f(&mut self.registries);
+        self
     }
 
-    pub async fn start(self) {
+    pub async fn run(self) {
         let chan = flume::bounded(512);
         let server = ServerData {
             connections: Vec::new(),
