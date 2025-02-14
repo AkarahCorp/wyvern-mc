@@ -7,7 +7,6 @@ pub mod events;
 pub mod future;
 pub mod inventory;
 pub mod player;
-pub mod proxy;
 pub mod runtime;
 pub mod server;
 pub mod values;

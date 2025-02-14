@@ -3,8 +3,8 @@ resolver = "3"
 members = ["examples", "crates/*"]
 
 [workspace.dependencies]
-# voxidian-protocol = { git = "https://github.com/LighthouseMC/VoxidianProtocol.git" }
-voxidian-protocol = { path = "../voxidian-protocol/" }
+voxidian-protocol = { git = "https://github.com/LighthouseMC/VoxidianProtocol.git" }
+# voxidian-protocol = { path = "../voxidian-protocol/" }
 tokio = { version = "1.42.0", features = ["full"] }
 wyvern-macros = { path = "./crates/wyvern-macros" }
 proc-macro2 = { version = "*" }

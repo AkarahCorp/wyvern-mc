@@ -150,8 +150,8 @@ impl ServerData {
                 server: snd_clone.clone(),
             });
         });
-        Runtime::spawn(self.handle_loops(snd.clone()));
-        Runtime::spawn(Self::networking_loop(snd));
+        Runtime::spawn(Self::networking_loop(snd.clone()));
+        self.handle_loops(snd).await;
     }
 
     pub async fn handle_loops(mut self, server: Server) {
