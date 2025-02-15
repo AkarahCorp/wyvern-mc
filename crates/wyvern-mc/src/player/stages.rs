@@ -379,7 +379,7 @@ impl ConnectionData {
                             .await;
 
                             log::debug!("Broadcasting this player info...");
-                            for player in this.connected_server.connections().await {
+                            for player in this.connected_server.connections().await? {
                                 let data = this.associated_data.clone();
                                 this.intertwine(async move || {
                                     let _ = player
@@ -399,7 +399,7 @@ impl ConnectionData {
 
                             log::debug!("All done!");
                             log::debug!("Sending over current player info...");
-                            for player in this.connected_server.connections().await {
+                            for player in this.connected_server.connections().await? {
                                 if player.sender.same_channel(&this.sender) {
                                     this.write_packet(PlayerInfoUpdateS2CPlayPacket {
                                         actions: vec![(this.associated_data.uuid, vec![

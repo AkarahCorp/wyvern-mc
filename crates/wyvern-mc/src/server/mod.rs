@@ -1,6 +1,6 @@
 use std::{
     net::{Ipv4Addr, SocketAddrV4},
-    sync::{Arc, Mutex},
+    sync::{Arc, Mutex, OnceLock},
     time::{Duration, Instant},
 };
 
@@ -28,6 +28,8 @@ pub use builder::*;
 pub mod dimensions;
 pub mod registries;
 
+static SERVER_INSTANCE: OnceLock<Server> = OnceLock::new();
+
 #[actor(Server, ServerMessage)]
 pub(crate) struct ServerData {
     pub(crate) connections: Vec<ConnectionWithSignal>,
@@ -40,6 +42,13 @@ pub(crate) struct ServerData {
 }
 
 impl Server {
+    pub fn get() -> ActorResult<Server> {
+        SERVER_INSTANCE
+            .get()
+            .ok_or(ActorError::ActorDoesNotExist)
+            .cloned()
+    }
+
     pub fn spawn_event<E: Event + Send + 'static>(&self, event: E) -> ActorResult<()> {
         let server = self.clone();
         Runtime::spawn(async move {
@@ -137,19 +146,21 @@ impl ServerData {
     }
 
     #[GetConnections]
-    pub async fn connections(&self) -> Vec<Player> {
-        self.connections.iter().map(|x| x.lower()).collect()
+    pub async fn connections(&self) -> ActorResult<Vec<Player>> {
+        Ok(self.connections.iter().map(|x| x.lower()).collect())
     }
 
     #[GetPlayers]
-    pub async fn players(&self) -> Vec<Player> {
+    pub async fn players(&self) -> ActorResult<Vec<Player>> {
         let mut vec = Vec::new();
         for conn in &self.connections {
-            if *conn.stage.lock().unwrap() == Stage::Play {
+            if *conn.stage.lock().unwrap() == Stage::Play
+                && conn.player.is_loaded().await == Ok(true)
+            {
                 vec.push(conn.lower());
             }
         }
-        vec
+        Ok(vec)
     }
 
     #[GetPlayerByUuid]
@@ -169,6 +180,10 @@ impl ServerData {
         let snd = Server {
             sender: self.sender.clone(),
         };
+
+        SERVER_INSTANCE.set(snd.clone()).unwrap_or_else(|_| {
+            log::error!("WyvernMC does not support running two servers at once. Bugs may occur.");
+        });
         let snd_clone = snd.clone();
         Runtime::spawn(async move {
             let _ = snd_clone.spawn_event(ServerStartEvent {

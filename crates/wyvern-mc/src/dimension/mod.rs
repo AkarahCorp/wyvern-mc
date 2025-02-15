@@ -93,26 +93,19 @@ impl DimensionData {
 
         let server = self.server.clone().unwrap();
         Runtime::spawn(async move {
-            for conn in server.connections().await {
+            for conn in server.players().await.unwrap_or_else(|_| Vec::new()) {
                 let block_state = block_state.clone();
                 let pos = position;
                 let conn = conn.clone();
 
-                let Ok(is_loaded) = conn.is_loaded().await else {
-                    continue;
-                };
-
-                if is_loaded {
-                    let _ = conn
-                        .write_packet(BlockUpdateS2CPlayPacket {
-                            pos: BlockPos::new(pos.x(), pos.y(), pos.z()),
-                            block: unsafe {
-                                RegEntry::new_unchecked(block_state.protocol_id() as usize)
-                            },
-                        })
-                        .await;
-                }
-                Runtime::yield_now().await;
+                let _ = conn
+                    .write_packet(BlockUpdateS2CPlayPacket {
+                        pos: BlockPos::new(pos.x(), pos.y(), pos.z()),
+                        block: unsafe {
+                            RegEntry::new_unchecked(block_state.protocol_id() as usize)
+                        },
+                    })
+                    .await;
             }
         });
         Runtime::yield_now().await;
@@ -262,7 +255,7 @@ impl DimensionData {
         let entry = self.entities.remove(&uuid);
 
         if let Some(entry) = entry {
-            for conn in self.server.clone().unwrap().connections().await {
+            for conn in self.server.as_ref().unwrap().connections().await? {
                 Runtime::spawn(async move {
                     let _ = conn
                         .write_packet(RemoveEntitiesS2CPlayPacket {

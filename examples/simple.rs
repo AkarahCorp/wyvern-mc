@@ -157,7 +157,7 @@ async fn dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
                     ]) + 1.0;
 
                     let new_pos = Vec3::new(x2, f64::floor(y * -16.0 + 8.0) as i32, z2);
-                    chunk.set_block_at(new_pos, BlockState::new(Blocks::BLACKSTONE));
+                    chunk.set_block_at(new_pos, BlockState::new(Blocks::GRASS_BLOCK));
                 }
             }
         })
@@ -178,7 +178,7 @@ async fn on_server_tick(event: Arc<ServerTickEvent>) -> ActorResult<()> {
         }
     }
 
-    for player in event.server.players().await {
+    for player in event.server.players().await? {
         if player.stage().await? == Stage::Play {
             player
                 .inventory()?
@@ -249,7 +249,8 @@ async fn on_break(event: Arc<BreakBlockEvent>) -> ActorResult<()> {
 }
 
 async fn on_chat(event: Arc<ChatMessageEvent>) -> ActorResult<()> {
-    for player in event.player.server().await?.players().await {
+    log::error!("Sending message...");
+    for player in Server::get()?.players().await? {
         player
             .send_message(format!(
                 "{}: {}",

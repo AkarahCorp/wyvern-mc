@@ -22,6 +22,7 @@ impl BlockState {
             block: id,
             state: Vec::new(),
         }
+        .make_valid()
     }
 
     pub(crate) fn insert_raw_property(&mut self, key: &str, value: &str) {
@@ -48,7 +49,7 @@ impl BlockState {
             id: self.block.into(),
             properties: self.state,
         };
-        underlying.make_valid().unwrap();
+        let _ = underlying.make_valid();
         BlockState {
             block: underlying.id.into(),
             state: underlying.properties,
