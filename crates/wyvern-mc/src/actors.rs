@@ -21,9 +21,10 @@ pub trait Actor {
 
 pub type ActorResult<T> = Result<T, ActorError>;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum ActorError {
     ActorDoesNotExist,
     ActorIsNotLoaded,
     IndexOutOfBounds,
+    BadRequest,
 }

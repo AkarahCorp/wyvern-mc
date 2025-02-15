@@ -5,8 +5,12 @@ use chunk::{Chunk, ChunkSection};
 use entity::{Entity, EntityData, EntityType};
 use flume::Sender;
 use voxidian_protocol::{
-    packet::s2c::play::{
-        AddEntityS2CPlayPacket, BlockUpdateS2CPlayPacket, RemoveEntitiesS2CPlayPacket,
+    packet::{
+        Stage,
+        s2c::play::{
+            AddEntityS2CPlayPacket, BlockUpdateS2CPlayPacket, EntityPositionSyncS2CPlayPacket,
+            RemoveEntitiesS2CPlayPacket,
+        },
     },
     registry::RegEntry,
     value::{
@@ -18,6 +22,7 @@ use voxidian_protocol::{
 use crate::{
     actors::{ActorError, ActorResult},
     events::ChunkLoadEvent,
+    player::Player,
     runtime::Runtime,
     server::Server,
     values::{Key, Vec2, Vec3},
@@ -53,12 +58,12 @@ impl Dimension {
 #[crate::message(Dimension, DimensionMessage)]
 impl DimensionData {
     #[GetName]
-    pub async fn get_name(&self) -> ActorResult<Key<Dimension>> {
+    pub async fn name(&self) -> ActorResult<Key<Dimension>> {
         Ok(self.name.clone().retype())
     }
 
     #[GetServer]
-    pub async fn get_server(&self) -> ActorResult<Server> {
+    pub async fn server(&self) -> ActorResult<Server> {
         self.server.clone().ok_or(ActorError::ActorIsNotLoaded)
     }
 
@@ -93,7 +98,7 @@ impl DimensionData {
                 let pos = position;
                 let conn = conn.clone();
 
-                let Ok(is_loaded) = conn.is_loaded_in_world().await else {
+                let Ok(is_loaded) = conn.is_loaded().await else {
                     continue;
                 };
 
@@ -115,7 +120,7 @@ impl DimensionData {
     }
 
     #[GetBlock]
-    pub async fn get_block_at(&mut self, position: Vec3<i32>) -> ActorResult<BlockState> {
+    pub async fn get_block(&mut self, position: Vec3<i32>) -> ActorResult<BlockState> {
         let chunk = Vec2::new(position.x() / 16, position.z() / 16);
         let pos_in_chunk = Vec3::new(position.x() % 16, position.y(), position.z() % 16);
 
@@ -126,7 +131,7 @@ impl DimensionData {
     }
 
     #[GetDimType]
-    pub async fn get_dimension_type(&mut self) -> ActorResult<Key<DimType>> {
+    pub async fn dimension_type(&mut self) -> ActorResult<Key<DimType>> {
         Ok(self.dim_type.clone())
     }
 
@@ -136,7 +141,7 @@ impl DimensionData {
     }
 
     #[GetAllEntities]
-    pub async fn get_all_entities(&self) -> ActorResult<Vec<Entity>> {
+    pub async fn entities(&self) -> ActorResult<Vec<Entity>> {
         Ok(self
             .entities
             .values()
@@ -151,7 +156,7 @@ impl DimensionData {
     }
 
     #[GetAllEntitiesAndHumans]
-    pub async fn get_all_entities_and_humans(&self) -> ActorResult<Vec<Entity>> {
+    pub async fn all_entities(&self) -> ActorResult<Vec<Entity>> {
         Ok(self
             .entities
             .values()
@@ -171,7 +176,7 @@ impl DimensionData {
             uuid = Uuid::new_v4();
         }
 
-        let id = self.server.clone().unwrap().get_entity_id().await?;
+        let id = self.server.clone().unwrap().new_entity_id().await?;
 
         self.entities.insert(uuid, EntityData {
             entity_type: entity_type.clone(),
@@ -182,29 +187,25 @@ impl DimensionData {
             metadata: EntityMetadata::new(),
         });
 
-        for conn in self.server.clone().unwrap().connections().await {
-            if let Ok(dim) = conn.get_dimension().await {
-                if dim.sender.same_channel(&self.sender) {
-                    conn.write_packet(AddEntityS2CPlayPacket {
-                        id: id.into(),
-                        uuid,
-                        kind: PtcEntityType::vanilla_registry()
-                            .get_entry(&entity_type.clone().into())
-                            .unwrap(),
-                        x: 0.0,
-                        y: 0.0,
-                        z: 0.0,
-                        pitch: Angle::of_deg(0.0),
-                        yaw: Angle::of_deg(0.0),
-                        head_yaw: Angle::of_deg(0.0),
-                        data: VarInt::from(0),
-                        vel_x: 0,
-                        vel_y: 0,
-                        vel_z: 0,
-                    })
-                    .await?;
-                }
-            };
+        for conn in self.players().await? {
+            conn.write_packet(AddEntityS2CPlayPacket {
+                id: id.into(),
+                uuid,
+                kind: PtcEntityType::vanilla_registry()
+                    .get_entry(&entity_type.clone().into())
+                    .unwrap(),
+                x: 0.0,
+                y: 0.0,
+                z: 0.0,
+                pitch: Angle::of_deg(0.0),
+                yaw: Angle::of_deg(0.0),
+                head_yaw: Angle::of_deg(0.0),
+                data: VarInt::from(0),
+                vel_x: 0,
+                vel_y: 0,
+                vel_z: 0,
+            })
+            .await?;
         }
 
         Ok(Entity {
@@ -215,8 +216,8 @@ impl DimensionData {
         })
     }
 
-    #[SpawnHuman]
-    pub(crate) async fn spawn_human(&mut self, uuid: Uuid, id: i32) -> ActorResult<Entity> {
+    #[SpawnPlayerEntity]
+    pub(crate) async fn spawn_player_entity(&mut self, uuid: Uuid, id: i32) -> ActorResult<Entity> {
         self.entities.insert(uuid, EntityData {
             entity_type: Key::constant("minecraft", "player"),
             uuid,
@@ -226,29 +227,26 @@ impl DimensionData {
             metadata: EntityMetadata::new(),
         });
 
-        for conn in self.server.clone().unwrap().connections().await {
-            if let Ok(dim) = conn.get_dimension().await {
-                if dim.sender.same_channel(&self.sender) && conn.uuid().await? != uuid {
-                    conn.write_packet(AddEntityS2CPlayPacket {
-                        id: id.into(),
-                        uuid,
-                        kind: PtcEntityType::vanilla_registry()
-                            .get_entry(&Identifier::new("minecraft", "player"))
-                            .unwrap(),
-                        x: 0.0,
-                        y: 0.0,
-                        z: 0.0,
-                        pitch: Angle::of_deg(0.0),
-                        yaw: Angle::of_deg(0.0),
-                        head_yaw: Angle::of_deg(0.0),
-                        data: VarInt::from(0),
-                        vel_x: 0,
-                        vel_y: 0,
-                        vel_z: 0,
-                    })
-                    .await?;
-                }
-            };
+        for conn in self.players().await? {
+            let _ = conn
+                .write_packet(AddEntityS2CPlayPacket {
+                    id: id.into(),
+                    uuid,
+                    kind: PtcEntityType::vanilla_registry()
+                        .get_entry(&Identifier::new("minecraft", "player"))
+                        .unwrap(),
+                    x: 0.0,
+                    y: 0.0,
+                    z: 0.0,
+                    pitch: Angle::of_deg(0.0),
+                    yaw: Angle::of_deg(0.0),
+                    head_yaw: Angle::of_deg(0.0),
+                    data: VarInt::from(0),
+                    vel_x: 0,
+                    vel_y: 0,
+                    vel_z: 0,
+                })
+                .await;
         }
 
         Ok(Entity {
@@ -278,28 +276,107 @@ impl DimensionData {
         Ok(())
     }
 
-    #[ManipulateEntity]
-    pub(crate) async fn manipulate_entity(
+    #[EntityId]
+    pub(crate) async fn entity_id(&mut self, uuid: Uuid) -> ActorResult<i32> {
+        self.entities
+            .get(&uuid)
+            .ok_or(ActorError::ActorDoesNotExist)
+            .map(|x| x.id)
+    }
+
+    #[EntityType]
+    pub(crate) async fn entity_type(&mut self, uuid: Uuid) -> ActorResult<Key<EntityType>> {
+        self.entities
+            .get(&uuid)
+            .ok_or(ActorError::ActorDoesNotExist)
+            .map(|x| x.entity_type.clone())
+    }
+
+    #[EntityPos]
+    pub(crate) async fn entity_pos(&mut self, uuid: Uuid) -> ActorResult<(Vec3<f64>, Vec2<f32>)> {
+        self.entities
+            .get(&uuid)
+            .ok_or(ActorError::ActorDoesNotExist)
+            .map(|x| (x.position, x.heading))
+    }
+
+    #[TeleportEntity]
+    pub(crate) async fn teleport_entity(
         &mut self,
         uuid: Uuid,
-        f: Box<dyn Fn(&mut EntityData) + Send + Sync>,
+        position: Vec3<f64>,
     ) -> ActorResult<()> {
         if let Some(entity) = self.entities.get_mut(&uuid) {
-            f(entity);
+            entity.position = position;
+            let entity = entity.clone();
+
+            for conn in self.players().await? {
+                let _ = conn
+                    .write_packet(EntityPositionSyncS2CPlayPacket {
+                        entity_id: entity.id.into(),
+                        x: entity.position.x(),
+                        y: entity.position.y(),
+                        z: entity.position.z(),
+                        vx: 0.0,
+                        vy: 0.0,
+                        vz: 0.0,
+                        yaw: entity.heading.x(),
+                        pitch: entity.heading.y(),
+                        on_ground: false,
+                    })
+                    .await;
+            }
         }
         Ok(())
     }
 
-    #[ReadEntity]
-    pub(crate) async fn read_entity(
-        &self,
+    #[RotateEntity]
+    pub(crate) async fn rotate_entity(
+        &mut self,
         uuid: Uuid,
-        f: Box<dyn Fn(&EntityData) + Send + Sync>,
+        heading: Vec2<f32>,
     ) -> ActorResult<()> {
-        if let Some(entity) = self.entities.get(&uuid) {
-            f(entity);
+        if let Some(entity) = self.entities.get_mut(&uuid) {
+            entity.heading = heading;
+            let entity = entity.clone();
+
+            for conn in self.players().await? {
+                let _ = conn
+                    .write_packet(EntityPositionSyncS2CPlayPacket {
+                        entity_id: entity.id.into(),
+                        x: entity.position.x(),
+                        y: entity.position.y(),
+                        z: entity.position.z(),
+                        vx: 0.0,
+                        vy: 0.0,
+                        vz: 0.0,
+                        yaw: entity.heading.x(),
+                        pitch: entity.heading.y(),
+                        on_ground: false,
+                    })
+                    .await;
+            }
         }
         Ok(())
+    }
+
+    #[GetPlayers]
+    pub async fn players(&mut self) -> ActorResult<Vec<Player>> {
+        let mut vec = Vec::new();
+        for entity in &mut self.entities {
+            if entity.1.entity_type == Key::constant("minecraft", "human") {
+                let player = self
+                    .server
+                    .as_ref()
+                    .ok_or(ActorError::ActorIsNotLoaded)?
+                    .player(*entity.0)
+                    .await?;
+                if player.stage().await == Ok(Stage::Play) {
+                    vec.push(player);
+                }
+            }
+        }
+        Ok(vec)
     }
 }
 

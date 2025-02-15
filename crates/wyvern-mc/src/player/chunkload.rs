@@ -52,7 +52,7 @@ impl ConnectionData {
         let dim_reg = &self.connected_server.registries().await?.dimension_types;
 
         let dim_type_entry = timeout!(
-            dimension.get_dimension_type().await,
+            dimension.dimension_type().await,
             Duration::from_millis(10),
             Result::Err(ActorError::ActorIsNotLoaded)
         )?;

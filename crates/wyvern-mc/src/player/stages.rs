@@ -125,7 +125,7 @@ impl ConnectionData {
                     C2SConfigPackets::FinishConfiguration(_packet) => {
                         *this.stage.lock().unwrap() = Stage::Play;
                         this.associated_data.entity_id =
-                            this.connected_server.get_entity_id().await?;
+                            this.connected_server.new_entity_id().await?;
                         this.write_packet(LoginS2CPlayPacket {
                             entity: this.associated_data.entity_id,
                             hardcore: false,
@@ -429,7 +429,7 @@ impl ConnectionData {
                                 .dimension
                                 .as_ref()
                                 .unwrap()
-                                .get_all_entities_and_humans()
+                                .all_entities()
                                 .await?
                             {
                                 let position = entity.position().await?;
@@ -463,7 +463,7 @@ impl ConnectionData {
                             let dim = this.associated_data.dimension.as_ref().unwrap().clone();
                             let data = this.associated_data.clone();
                             this.intertwine(async move || {
-                                let _ = dim.spawn_human(data.uuid, data.entity_id).await;
+                                let _ = dim.spawn_player_entity(data.uuid, data.entity_id).await;
                             })
                             .await;
                             log::debug!("All done!");

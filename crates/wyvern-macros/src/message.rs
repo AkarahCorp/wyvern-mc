@@ -196,11 +196,13 @@ fn create_fn_from_variant(variant: &MessageVariant) -> TokenStream {
         .map(|x| x.ident)
         .collect::<Vec<_>>();
 
+    let fn_vis = &variant.base_function.vis;
+
     let enum_type = variant.enum_name.clone();
     let enum_variant = variant.name.clone();
 
     let r = quote! {
-        pub async fn #name(&self, #(#param_names: #param_types),*) -> #rt {
+        #fn_vis async fn #name(&self, #(#param_names: #param_types),*) -> #rt {
             let (tx, mut rx) = flume::bounded(1);
             self.sender.send_async(#enum_type::#enum_variant(#(#param_names,)* tx)).await.unwrap();
             loop {

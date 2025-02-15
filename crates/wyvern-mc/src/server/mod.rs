@@ -14,7 +14,7 @@ use async_net::TcpListener;
 use dimensions::DimensionContainer;
 use flume::Sender;
 use registries::RegistryContainer;
-use voxidian_protocol::packet::Stage;
+use voxidian_protocol::{packet::Stage, value::Uuid};
 
 use crate::{
     dimension::{Dimension, DimensionData},
@@ -62,7 +62,7 @@ impl Server {
 #[message(Server, ServerMessage)]
 impl ServerData {
     #[NewEntityId]
-    pub async fn get_entity_id(&mut self) -> ActorResult<i32> {
+    pub async fn new_entity_id(&mut self) -> ActorResult<i32> {
         self.last_entity_id += 1;
         log::debug!("New entity id produced: {:?}", self.last_entity_id);
         Ok(self.last_entity_id)
@@ -98,7 +98,7 @@ impl ServerData {
     }
 
     #[GetAllDimensions]
-    pub async fn get_all_dimensions(&self) -> ActorResult<Vec<Dimension>> {
+    pub async fn dimensions(&self) -> ActorResult<Vec<Dimension>> {
         Ok(self.dimensions.dimensions().cloned().collect())
     }
 
@@ -142,7 +142,7 @@ impl ServerData {
     }
 
     #[GetPlayers]
-    pub async fn all_players(&self) -> Vec<Player> {
+    pub async fn players(&self) -> Vec<Player> {
         let mut vec = Vec::new();
         for conn in &self.connections {
             if *conn.stage.lock().unwrap() == Stage::Play {
@@ -150,6 +150,16 @@ impl ServerData {
             }
         }
         vec
+    }
+
+    #[GetPlayerByUuid]
+    pub async fn player(&self, player: Uuid) -> ActorResult<Player> {
+        for conn in &self.connections {
+            if conn.player.uuid().await == Ok(player) {
+                return Ok(conn.player.clone());
+            }
+        }
+        Err(ActorError::BadRequest)
     }
 }
 
