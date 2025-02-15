@@ -129,8 +129,12 @@ impl DimensionData {
     }
 
     #[SetChunkGenerator]
-    pub async fn set_chunk_generator(&mut self, function: fn(&mut Chunk, i32, i32)) {
+    pub async fn set_chunk_generator(
+        &mut self,
+        function: fn(&mut Chunk, i32, i32),
+    ) -> ActorResult<()> {
         self.chunk_generator = function;
+        Ok(())
     }
 
     #[GetAllEntities]

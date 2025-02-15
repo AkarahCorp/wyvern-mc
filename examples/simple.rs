@@ -161,7 +161,7 @@ async fn dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
                 }
             }
         })
-        .await;
+        .await?;
 
     Ok(())
 }

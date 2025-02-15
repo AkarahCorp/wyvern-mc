@@ -1,5 +1,5 @@
 use proc_macro2::TokenStream;
-use quote::quote;
+use quote::{ToTokens, quote};
 use syn::{ItemStruct, Type, parse::Parse, token::Comma};
 
 #[derive(Debug, Clone)]
@@ -36,7 +36,17 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
     let attr_actor_type = attr.actor_type;
     let attr_message_type = attr.message_type;
 
+    let weak_type = proc_macro2::Ident::new(
+        &format!("Weak{}", attr_actor_type.to_token_stream()),
+        proc_macro2::Span::call_site(),
+    );
     let o = quote! {
+
+        #[derive(Clone, Debug)]
+        pub struct #weak_type {
+            pub(crate) sender: flume::WeakSender<#attr_message_type>
+        }
+
         #[derive(Clone, Debug)]
         pub struct #attr_actor_type {
             pub(crate) sender: flume::Sender<#attr_message_type>
