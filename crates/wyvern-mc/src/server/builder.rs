@@ -68,7 +68,7 @@ impl ServerBuilder {
     }
 
     pub async fn run(self) {
-        let chan = flume::bounded(512);
+        let chan = flume::unbounded();
         let server = ServerData {
             connections: Vec::new(),
             registries: Arc::new(self.registries.into()),

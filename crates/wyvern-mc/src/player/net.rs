@@ -36,7 +36,7 @@ impl ConnectionData {
         stage: Arc<Mutex<Stage>>,
     ) -> ConnectionWithSignal {
         let (signal_tx, signal_rx) = flume::bounded(1);
-        let (data_tx, data_rx) = flume::bounded(512);
+        let (data_tx, data_rx) = flume::unbounded();
 
         Runtime::spawn(ConnectionData::execute_connection(
             stream,
@@ -74,7 +74,7 @@ impl ConnectionData {
                 compression: CompressionMode::None,
             },
             receiver,
-            sender: sender.clone(),
+            sender: sender.downgrade(),
             signal,
             stage,
             connected_server: server,
@@ -94,7 +94,7 @@ impl ConnectionData {
                 if let Some(dim) = self.associated_data.dimension {
                     let _ = dim.remove_entity(self.associated_data.uuid).await;
                 }
-                let _ = self.signal.send(ConnectionStoppedSignal);
+                let _ = self.signal.send_async(ConnectionStoppedSignal).await;
                 break;
             }
             self.handle_messages().await;

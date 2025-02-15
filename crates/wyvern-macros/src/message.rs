@@ -223,7 +223,10 @@ fn create_fn_from_variant(variant: &MessageVariant) -> TokenStream {
     let r = quote! {
         #fn_vis async fn #name(&self, #(#param_names: #param_types),*) -> #rt {
             let (tx, mut rx) = flume::bounded(1);
-            self.sender.send_async(#enum_type::#enum_variant(#(#param_names,)* tx)).await.unwrap();
+            match self.sender.send_async(#enum_type::#enum_variant(#(#param_names,)* tx)).await {
+                Ok(v) => {},
+                Err(e) => return Err(ActorError::ActorDoesNotExist)
+            }
             loop {
                 match rx.try_recv() {
                     Ok(v) => return v,
@@ -280,11 +283,17 @@ fn create_weak_fn_from_variant(variant: &MessageVariant) -> TokenStream {
         #fn_vis async fn #name(&self, #(#param_names: #param_types),*) -> #rt {
             let sender = self.sender.upgrade().ok_or(crate::actors::ActorError::ActorDoesNotExist)?;
             let (tx, mut rx) = flume::bounded(1);
-            sender.send_async(#enum_type::#enum_variant(#(#param_names,)* tx)).await.unwrap();
+            match sender.send_async(#enum_type::#enum_variant(#(#param_names,)* tx)).await {
+                Ok(v) => {},
+                Err(_) => return Err(ActorError::ActorDoesNotExist)
+            }
             loop {
                 match rx.try_recv() {
                     Ok(v) => return v,
-                    Err(e) => futures_lite::future::yield_now().await
+                    Err(e) => {
+                        log::error!("Yielding @ {:?}", line!());
+                        crate::runtime::Runtime::yield_now().await;
+                    }
                 };
             };
         }
@@ -316,7 +325,7 @@ fn create_match_arm_from_variant(variant: &MessageVariant) -> TokenStream {
     let r = quote! {
         #enum_type::#enum_variant(#(#param_names,)* tx) => {
             let r = self.#name(#(#param_names,)*).await;
-            let _ = tx.send(r);
+            let _ = tx.send_async(r).await;
         }
     };
     r

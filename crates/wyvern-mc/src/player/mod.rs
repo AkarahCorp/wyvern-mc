@@ -6,7 +6,7 @@ use std::{
 
 use async_net::TcpStream;
 use data::PlayerData;
-use flume::{Receiver, Sender};
+use flume::{Receiver, Sender, WeakSender};
 use inventory::PlayerInventory;
 use net::ConnectionStoppedSignal;
 use voxidian_protocol::{
@@ -50,7 +50,7 @@ pub(crate) struct ConnectionData {
     pub(crate) connected_server: Server,
     pub(crate) stage: Arc<Mutex<Stage>>,
     pub(crate) associated_data: PlayerData,
-    pub(crate) sender: Sender<PlayerMessage>,
+    pub(crate) sender: WeakSender<PlayerMessage>,
 }
 
 #[message(Player, PlayerMessage)]

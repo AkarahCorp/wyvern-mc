@@ -383,7 +383,7 @@ impl DimensionData {
         server: Server,
         dim_type: Key<DimType>,
     ) -> DimensionData {
-        let chan = flume::bounded(512);
+        let chan = flume::unbounded();
         DimensionData {
             name,
             chunks: HashMap::new(),

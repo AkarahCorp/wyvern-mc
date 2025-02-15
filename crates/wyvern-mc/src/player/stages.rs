@@ -257,12 +257,12 @@ impl ConnectionData {
                         this.associated_data.is_loaded = true;
                     }
                     C2SPlayPackets::ChatCommand(packet) => {
-                        this.connected_server.spawn_event(PlayerCommandEvent {
-                            player: Player {
-                                sender: this.sender.clone(),
-                            },
-                            command: packet.command,
-                        })?;
+                        if let Some(sender) = this.sender.upgrade() {
+                            this.connected_server.spawn_event(PlayerCommandEvent {
+                                player: Player { sender },
+                                command: packet.command,
+                            })?;
+                        }
                     }
                     C2SPlayPackets::PlayerAction(packet) => {
                         log::warn!("{:?}", packet);
@@ -284,12 +284,12 @@ impl ConnectionData {
                                         BlockState::new(Key::constant("minecraft", "air")),
                                     )
                                     .await?;
-                                this.connected_server.spawn_event(BreakBlockEvent {
-                                    player: Player {
-                                        sender: this.sender.clone(),
-                                    },
-                                    position: block,
-                                })?;
+                                if let Some(sender) = this.sender.upgrade() {
+                                    this.connected_server.spawn_event(BreakBlockEvent {
+                                        player: Player { sender },
+                                        position: block,
+                                    })?;
+                                }
                             }
                             PlayerStatus::DropItemStack => {
                                 let item = this
@@ -300,12 +300,12 @@ impl ConnectionData {
                                     ItemStack::air(),
                                 )
                                 .await?;
-                                this.connected_server.spawn_event(DropItemEvent {
-                                    player: Player {
-                                        sender: this.sender.clone(),
-                                    },
-                                    item,
-                                })?;
+                                if let Some(sender) = this.sender.upgrade() {
+                                    this.connected_server.spawn_event(DropItemEvent {
+                                        player: Player { sender },
+                                        item,
+                                    })?;
+                                }
                             }
                             PlayerStatus::DropItem => {
                                 let item = this
@@ -316,20 +316,20 @@ impl ConnectionData {
                                     ItemStack::air(),
                                 )
                                 .await?;
-                                this.connected_server.spawn_event(DropItemEvent {
-                                    player: Player {
-                                        sender: this.sender.clone(),
-                                    },
-                                    item,
-                                })?;
+                                if let Some(sender) = this.sender.upgrade() {
+                                    this.connected_server.spawn_event(DropItemEvent {
+                                        player: Player { sender },
+                                        item,
+                                    })?;
+                                }
                             }
                             PlayerStatus::FinishUsingItem => {}
                             PlayerStatus::SwapItems => {
-                                this.connected_server.spawn_event(SwapHandsEvent {
-                                    player: Player {
-                                        sender: this.sender.clone(),
-                                    },
-                                })?;
+                                if let Some(sender) = this.sender.upgrade() {
+                                    this.connected_server.spawn_event(SwapHandsEvent {
+                                        player: Player { sender },
+                                    })?;
+                                }
                             }
                         }
                     }
@@ -340,12 +340,12 @@ impl ConnectionData {
                             let key = Key::<Dimension>::constant("null", "null");
                             let token = Token::new(Key::<Dimension>::constant("null", "null"));
                             let token_copy = token.clone();
-                            this.connected_server.spawn_event(PlayerJoinEvent {
-                                player: Player {
-                                    sender: this.sender.clone(),
-                                },
-                                new_dimension: token_copy,
-                            })?;
+                            if let Some(sender) = this.sender.upgrade() {
+                                this.connected_server.spawn_event(PlayerJoinEvent {
+                                    player: Player { sender },
+                                    new_dimension: token_copy,
+                                })?;
+                            }
 
                             loop {
                                 Runtime::yield_now().await;
@@ -400,7 +400,10 @@ impl ConnectionData {
                             log::debug!("All done!");
                             log::debug!("Sending over current player info...");
                             for player in this.connected_server.connections().await? {
-                                if player.sender.same_channel(&this.sender) {
+                                let Some(sender) = this.sender.upgrade() else {
+                                    continue;
+                                };
+                                if player.sender.same_channel(&sender) {
                                     this.write_packet(PlayerInfoUpdateS2CPlayPacket {
                                         actions: vec![(this.associated_data.uuid, vec![
                                             PlayerActionEntry::AddPlayer {
@@ -481,13 +484,13 @@ impl ConnectionData {
 
                         this.send_chunks().await?;
 
-                        this.connected_server.spawn_event(PlayerMoveEvent {
-                            player: Player {
-                                sender: this.sender.clone(),
-                            },
-                            new_position: this.associated_data.last_position,
-                            new_direction: this.associated_data.last_direction,
-                        })?;
+                        if let Some(sender) = this.sender.upgrade() {
+                            this.connected_server.spawn_event(PlayerMoveEvent {
+                                player: Player { sender },
+                                new_position: this.associated_data.last_position,
+                                new_direction: this.associated_data.last_direction,
+                            })?;
+                        }
 
                         this.associated_data
                             .dimension
@@ -529,13 +532,13 @@ impl ConnectionData {
 
                         this.send_chunks().await?;
 
-                        this.connected_server.spawn_event(PlayerMoveEvent {
-                            player: Player {
-                                sender: this.sender.clone(),
-                            },
-                            new_position: this.associated_data.last_position,
-                            new_direction: this.associated_data.last_direction,
-                        })?;
+                        if let Some(sender) = this.sender.upgrade() {
+                            this.connected_server.spawn_event(PlayerMoveEvent {
+                                player: Player { sender },
+                                new_position: this.associated_data.last_position,
+                                new_direction: this.associated_data.last_direction,
+                            })?;
+                        }
                     }
                     C2SPlayPackets::MovePlayerRot(packet) => {
                         this.associated_data.last_direction = this
@@ -544,13 +547,13 @@ impl ConnectionData {
                             .with_x(packet.pitch)
                             .with_y(packet.yaw);
 
-                        this.connected_server.spawn_event(PlayerMoveEvent {
-                            player: Player {
-                                sender: this.sender.clone(),
-                            },
-                            new_position: this.associated_data.last_position,
-                            new_direction: this.associated_data.last_direction,
-                        })?;
+                        if let Some(sender) = this.sender.upgrade() {
+                            this.connected_server.spawn_event(PlayerMoveEvent {
+                                player: Player { sender },
+                                new_position: this.associated_data.last_position,
+                                new_direction: this.associated_data.last_direction,
+                            })?;
+                        }
 
                         this.associated_data
                             .dimension
@@ -584,12 +587,12 @@ impl ConnectionData {
                     C2SPlayPackets::SetCarriedItem(packet) => {
                         this.associated_data.held_slot = packet.slot + 36;
 
-                        this.connected_server.spawn_event(ChangeHeldSlotEvent {
-                            player: Player {
-                                sender: this.sender.clone(),
-                            },
-                            slot: packet.slot + 36,
-                        })?;
+                        if let Some(sender) = this.sender.upgrade() {
+                            this.connected_server.spawn_event(ChangeHeldSlotEvent {
+                                player: Player { sender },
+                                slot: packet.slot + 36,
+                            })?;
+                        }
                     }
                     C2SPlayPackets::UseItemOn(packet) => {
                         let face = match packet.face {
@@ -619,21 +622,21 @@ impl ConnectionData {
                             .set_block(final_pos, state.clone())
                             .await?;
 
-                        this.connected_server.spawn_event(PlaceBlockEvent {
-                            player: Player {
-                                sender: this.sender.clone(),
-                            },
-                            position: final_pos,
-                            block: state,
-                        })?;
+                        if let Some(sender) = this.sender.upgrade() {
+                            this.connected_server.spawn_event(PlaceBlockEvent {
+                                player: Player { sender },
+                                position: final_pos,
+                                block: state,
+                            })?;
+                        }
                     }
                     C2SPlayPackets::Chat(packet) => {
-                        this.connected_server.spawn_event(ChatMessageEvent {
-                            player: Player {
-                                sender: this.sender.clone(),
-                            },
-                            message: packet.message,
-                        })?;
+                        if let Some(sender) = this.sender.upgrade() {
+                            this.connected_server.spawn_event(ChatMessageEvent {
+                                player: Player { sender },
+                                message: packet.message,
+                            })?;
+                        }
                     }
                     packet => {
                         log::warn!(
