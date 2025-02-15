@@ -28,7 +28,7 @@ impl Default for ServerBuilder {
 }
 
 impl ServerBuilder {
-    pub fn new() -> ServerBuilder {
+    pub(crate) fn new() -> ServerBuilder {
         ServerBuilder {
             events: EventBus::default(),
             registries: RegistryContainerBuilder {
@@ -45,7 +45,7 @@ impl ServerBuilder {
         }
     }
 
-    pub fn on_event<E: Event + 'static, F>(mut self, f: fn(Arc<E>) -> F) -> Self
+    pub fn event<E: Event + 'static, F>(mut self, f: fn(Arc<E>) -> F) -> Self
     where
         F: Future<Output = ActorResult<()>> + Send + 'static,
     {
@@ -62,7 +62,7 @@ impl ServerBuilder {
         self
     }
 
-    pub fn modify_registries<F: FnOnce(&mut RegistryContainerBuilder)>(mut self, f: F) -> Self {
+    pub fn registries<F: FnOnce(&mut RegistryContainerBuilder)>(mut self, f: F) -> Self {
         f(&mut self.registries);
         self
     }

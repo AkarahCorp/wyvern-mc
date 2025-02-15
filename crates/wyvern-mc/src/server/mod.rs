@@ -212,3 +212,9 @@ impl ServerData {
         }
     }
 }
+
+impl Server {
+    pub fn builder() -> ServerBuilder {
+        ServerBuilder::new()
+    }
+}

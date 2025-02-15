@@ -21,7 +21,7 @@ use wyvern_mc::{
     inventory::{Inventory, ItemComponents, ItemStack},
     key,
     runtime::Runtime,
-    server::ServerBuilder,
+    server::Server,
     values::{
         Key, Vec3,
         regval::{PaintingVariant, WolfVariant},
@@ -49,17 +49,17 @@ fn main() {
 }
 
 async fn main_rt() {
-    ServerBuilder::new()
-        .on_event(on_server_start)
-        .on_event(on_server_tick)
-        .on_event(dim_init)
-        .on_event(on_command)
-        .on_event(on_drop_item)
-        .on_event(on_place)
-        .on_event(on_break)
-        .on_event(on_chat)
-        .on_event(on_join)
-        .modify_registries(|registries| {
+    Server::builder()
+        .event(on_server_start)
+        .event(on_server_tick)
+        .event(dim_init)
+        .event(on_command)
+        .event(on_drop_item)
+        .event(on_place)
+        .event(on_break)
+        .event(on_chat)
+        .event(on_join)
+        .registries(|registries| {
             registries.wolf_variant(Key::new("minecraft", "pale"), WolfVariant {
                 angry_texture: Key::empty(),
                 wild_texture: Key::empty(),
