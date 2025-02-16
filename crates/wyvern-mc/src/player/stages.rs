@@ -576,8 +576,7 @@ impl ConnectionData {
                     }
                     C2SPlayPackets::ChunkBatchReceived(_packet) => {}
                     C2SPlayPackets::SetCreativeModeSlot(packet) => {
-                        let item = ITEM_REGISTRY.lookup(&packet.new_item.id).unwrap();
-                        let stack = ItemStack::new(item.id.clone().into());
+                        let stack = ItemStack::from(packet.new_item);
 
                         this.associated_data
                             .inventory
