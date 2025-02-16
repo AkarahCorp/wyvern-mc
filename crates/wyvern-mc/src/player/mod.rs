@@ -10,9 +10,10 @@ use flume::{Receiver, Sender, WeakSender};
 use inventory::PlayerInventory;
 use net::ConnectionStoppedSignal;
 use voxidian_protocol::{
+    mojang::auth_verify::MojAuthProperty,
     packet::{
         PacketBuf, PacketEncode, PrefixedPacketEncode, Stage,
-        processing::PacketProcessing,
+        processing::{PacketProcessing, PrivateKey, PublicKey},
         s2c::play::{
             AddEntityS2CPlayPacket, ContainerSetSlotS2CPlayPacket, ForgetLevelChunkS2CPlayPacket,
             GameEvent, GameEventS2CPlayPacket, Gamemode, OpenScreenS2CPlayPacket,
@@ -51,6 +52,10 @@ pub(crate) struct ConnectionData {
     pub(crate) stage: Arc<Mutex<Stage>>,
     pub(crate) associated_data: PlayerData,
     pub(crate) sender: WeakSender<PlayerMessage>,
+    pub(crate) public_key: Option<PublicKey>,
+    pub(crate) private_key: Option<PrivateKey>,
+    pub(crate) verify_token: Vec<u8>,
+    pub(crate) props: Vec<MojAuthProperty>,
 }
 
 #[message(Player, PlayerMessage)]
@@ -73,7 +78,8 @@ impl ConnectionData {
 
     #[SendPacketBuf]
     pub(crate) async fn send_packet_buf(&mut self, buf: PacketBuf) -> ActorResult<()> {
-        self.bytes_to_send.extend(buf.iter());
+        let cipherdata = self.packet_processing.encode_encrypt(buf).unwrap();
+        self.bytes_to_send.extend(cipherdata.as_slice());
         Ok(())
     }
 
@@ -337,7 +343,8 @@ impl Player {
         let mut new_buf = PacketBuf::new();
         new_buf.write_u8s(len_buf.as_slice());
         new_buf.write_u8s(buf.as_slice());
-        self.send_packet_buf(new_buf).await?;
+
+        self.send_packet_buf(buf).await?;
 
         Ok(())
     }
@@ -359,8 +366,11 @@ impl ConnectionData {
             .encode(&mut len_buf)
             .unwrap();
 
-        self.bytes_to_send.extend(len_buf);
-        self.bytes_to_send.extend(buf);
+        let mut new_buf = PacketBuf::new();
+        new_buf.write_u8s(len_buf.as_slice());
+        new_buf.write_u8s(buf.as_slice());
+
+        self.send_packet_buf(buf).await.unwrap();
     }
 }
 

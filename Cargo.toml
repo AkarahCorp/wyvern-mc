@@ -18,6 +18,6 @@ env_logger = { version = "*" }
 flume = { version = "*", features = ["async"] }
 async-net = { version = "*" }
 async-io = { version = "*" }
-
+rand = { version = "*" }
 [profile.release]
 debug = true

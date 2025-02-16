@@ -13,6 +13,6 @@ flume = { workspace = true }
 async-net = { workspace = true }
 async-io = { workspace = true }
 tokio = { workspace = true, optional = true }
-
+rand = { workspace = true }
 [features]
 rt-tokio = ["dep:tokio"]

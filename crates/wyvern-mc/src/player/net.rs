@@ -16,10 +16,8 @@ use flume::{Receiver, Sender};
 use futures_lite::{AsyncReadExt, AsyncWriteExt};
 use futures_util::future::Either;
 use voxidian_protocol::packet::{
-    DecodeError, PrefixedPacketDecode, Stage,
-    c2s::handshake::C2SHandshakePackets,
-    processing::{CompressionMode, PacketProcessing, SecretCipher},
-    s2c::play::KeepAliveS2CPlayPacket,
+    DecodeError, PrefixedPacketDecode, Stage, c2s::handshake::C2SHandshakePackets,
+    processing::PacketProcessing, s2c::play::KeepAliveS2CPlayPacket,
 };
 
 use crate::{player::PlayerMessage, server::Server};
@@ -69,16 +67,17 @@ impl ConnectionData {
             addr,
             received_bytes: VecDeque::new(),
             bytes_to_send: Vec::new(),
-            packet_processing: PacketProcessing {
-                secret_cipher: SecretCipher::NONE,
-                compression: CompressionMode::None,
-            },
+            packet_processing: PacketProcessing::NONE,
             receiver,
             sender: sender.downgrade(),
             signal,
             stage,
             connected_server: server,
             associated_data: PlayerData::default(),
+            private_key: None,
+            verify_token: Vec::new(),
+            public_key: None,
+            props: Vec::new(),
         };
 
         conn.event_loop().await;
