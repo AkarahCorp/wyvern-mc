@@ -29,7 +29,7 @@ use voxidian_protocol::{
         },
     },
     registry::RegEntry,
-    value::{Angle, Identifier, LengthPrefixHashMap, Text, TextComponent, VarInt},
+    value::{Angle, Identifier, LengthPrefixHashMap, ProfileProperty, Text, TextComponent, VarInt},
 };
 
 use crate::{
@@ -473,13 +473,23 @@ impl ConnectionData {
                             log::debug!("Broadcasting this player info...");
                             for player in this.connected_server.connections().await? {
                                 let data = this.associated_data.clone();
+                                let props = this
+                                    .props
+                                    .iter()
+                                    .map(|x| ProfileProperty {
+                                        name: x.name.clone(),
+                                        value: x.value.clone(),
+                                        signature: Some(x.sig.clone()),
+                                    })
+                                    .collect::<Vec<_>>()
+                                    .into();
                                 this.intertwine(async move || {
                                     let _ = player
                                         .write_packet(PlayerInfoUpdateS2CPlayPacket {
                                             actions: vec![(data.uuid, vec![
                                                 PlayerActionEntry::AddPlayer {
                                                     name: data.username.clone(),
-                                                    properties: vec![].into(),
+                                                    properties: props,
                                                 },
                                                 PlayerActionEntry::Listed(true),
                                             ])],
@@ -495,12 +505,22 @@ impl ConnectionData {
                                 let Some(sender) = this.sender.upgrade() else {
                                     continue;
                                 };
+
                                 if player.sender.same_channel(&sender) {
                                     this.write_packet(PlayerInfoUpdateS2CPlayPacket {
                                         actions: vec![(this.associated_data.uuid, vec![
                                             PlayerActionEntry::AddPlayer {
                                                 name: this.associated_data.username.clone(),
-                                                properties: vec![].into(),
+                                                properties: this
+                                                    .props
+                                                    .iter()
+                                                    .map(|x| ProfileProperty {
+                                                        name: x.name.clone(),
+                                                        value: x.value.clone(),
+                                                        signature: Some(x.sig.clone()),
+                                                    })
+                                                    .collect::<Vec<_>>()
+                                                    .into(),
                                             },
                                         ])],
                                     })
@@ -510,7 +530,7 @@ impl ConnectionData {
                                         actions: vec![(player.uuid().await?, vec![
                                             PlayerActionEntry::AddPlayer {
                                                 name: player.username().await?,
-                                                properties: vec![].into(),
+                                                properties: player.auth_props().await?.into(),
                                             },
                                         ])],
                                     })

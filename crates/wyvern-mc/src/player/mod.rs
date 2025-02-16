@@ -21,7 +21,7 @@ use voxidian_protocol::{
             ScreenWindowKind, SystemChatS2CPlayPacket, TeleportFlags,
         },
     },
-    value::{Angle, Text, TextComponent, Uuid, VarInt},
+    value::{Angle, ProfileProperty, Text, TextComponent, Uuid, VarInt},
 };
 use wyvern_macros::{actor, message};
 
@@ -94,6 +94,19 @@ impl ConnectionData {
             .dimension
             .clone()
             .ok_or(ActorError::ActorIsNotLoaded)
+    }
+
+    #[MojAuthProps]
+    pub async fn auth_props(&self) -> ActorResult<Vec<ProfileProperty>> {
+        Ok(self
+            .props
+            .iter()
+            .map(|x| ProfileProperty {
+                name: x.name.clone(),
+                value: x.value.clone(),
+                signature: Some(x.sig.clone()),
+            })
+            .collect::<Vec<_>>())
     }
 
     #[ChangeDimension]
