@@ -34,7 +34,7 @@ use crate::{
         BreakBlockEvent, ChangeHeldSlotEvent, ChatMessageEvent, DropItemEvent, PlaceBlockEvent,
         PlayerCommandEvent, PlayerJoinEvent, PlayerMoveEvent, SwapHandsEvent,
     },
-    inventory::{ITEM_REGISTRY, Inventory, ItemStack},
+    inventory::{Inventory, ItemStack},
     runtime::Runtime,
     values::{Key, Vec3, cell::Token},
 };

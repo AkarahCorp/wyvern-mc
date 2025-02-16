@@ -20,17 +20,20 @@ impl ComponentRegistry<ItemStack> for ItemComponents {}
 pub struct MaxDamageComponentType;
 impl ComponentKind<ItemStack, ItemComponents, u32> for MaxDamageComponentType {
     fn insert_component(&self, holder: &mut ItemStack, value: u32) {
-        holder.components.insert(
+        holder.added_components.insert(
             DataComponentTypes::MaxDamage,
             DataComponents::MaxDamage(MaxDamage {
                 amount: (value as i32).into(),
             }),
         );
+        holder
+            .removed_components
+            .remove(&DataComponentTypes::MaxDamage);
     }
 
     fn get_component(&self, holder: &ItemStack) -> Option<u32> {
         holder
-            .components
+            .added_components
             .get(&DataComponentTypes::MaxDamage)
             .map(|value| {
                 let DataComponents::MaxDamage(value) = value else {
@@ -43,17 +46,20 @@ impl ComponentKind<ItemStack, ItemComponents, u32> for MaxDamageComponentType {
 pub struct DamageComponentType;
 impl ComponentKind<ItemStack, ItemComponents, u32> for DamageComponentType {
     fn insert_component(&self, holder: &mut ItemStack, value: u32) {
-        holder.components.insert(
+        holder.added_components.insert(
             DataComponentTypes::Damage,
             DataComponents::Damage(Damage {
                 damage: (value as i32).into(),
             }),
         );
+        holder
+            .removed_components
+            .remove(&DataComponentTypes::Damage);
     }
 
     fn get_component(&self, holder: &ItemStack) -> Option<u32> {
         holder
-            .components
+            .added_components
             .get(&DataComponentTypes::Damage)
             .map(|value| {
                 let DataComponents::Damage(value) = value else {
@@ -67,17 +73,20 @@ impl ComponentKind<ItemStack, ItemComponents, u32> for DamageComponentType {
 pub struct ItemModelComponentType;
 impl ComponentKind<ItemStack, ItemComponents, Key<Texture>> for ItemModelComponentType {
     fn insert_component(&self, holder: &mut ItemStack, value: Key<Texture>) {
-        holder.components.insert(
+        holder.added_components.insert(
             DataComponentTypes::ItemModel,
             DataComponents::ItemModel(ItemModel {
                 asset: value.into(),
             }),
         );
+        holder
+            .removed_components
+            .remove(&DataComponentTypes::ItemModel);
     }
 
     fn get_component(&self, holder: &ItemStack) -> Option<Key<Texture>> {
         holder
-            .components
+            .added_components
             .get(&DataComponentTypes::ItemModel)
             .map(|value| {
                 let DataComponents::ItemModel(value) = value else {
