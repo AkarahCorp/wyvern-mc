@@ -14,7 +14,7 @@ use voxidian_protocol::{
             login::LoginFinishedS2CLoginPacket,
             play::{
                 AddEntityS2CPlayPacket, ContainerSlotGroup, DisconnectS2CPlayPacket, GameEvent,
-                GameEventS2CPlayPacket, Gamemode, LoginS2CPlayPacket, PlayerActionEntry,
+                GameEventS2CPlayPacket, Gamemode, Hand, LoginS2CPlayPacket, PlayerActionEntry,
                 PlayerInfoUpdateS2CPlayPacket, PlayerPositionS2CPlayPacket,
                 PongResponseS2CPlayPacket, TeleportFlags,
             },
@@ -34,7 +34,7 @@ use crate::{
     dimension::{Dimension, blocks::BlockState},
     events::{
         BreakBlockEvent, ChangeHeldSlotEvent, ChatMessageEvent, DropItemEvent, PlaceBlockEvent,
-        PlayerCommandEvent, PlayerJoinEvent, PlayerMoveEvent, SwapHandsEvent,
+        PlayerCommandEvent, PlayerJoinEvent, PlayerMoveEvent, RightClickEvent, SwapHandsEvent,
     },
     inventory::{Inventory, ItemComponents, ItemStack},
     runtime::Runtime,
@@ -595,6 +595,15 @@ impl ConnectionData {
                             })?;
                         }
                     }
+                    C2SPlayPackets::UseItem(packet) => {
+                        if packet.hand == Hand::Mainhand {
+                            if let Some(sender) = this.sender.upgrade() {
+                                this.connected_server.spawn_event(RightClickEvent {
+                                    player: Player { sender },
+                                })?;
+                            }
+                        }
+                    }
                     C2SPlayPackets::UseItemOn(packet) => {
                         let face = match packet.face {
                             BlockFace::Down => Vec3::new(0, -1, 0),
@@ -641,11 +650,17 @@ impl ConnectionData {
                         }
 
                         if let Some(sender) = this.sender.upgrade() {
-                            this.connected_server.spawn_event(PlaceBlockEvent {
-                                player: Player { sender },
-                                position: final_pos,
-                                block: state,
-                            })?;
+                            if state.id_is_valid() {
+                                this.connected_server.spawn_event(PlaceBlockEvent {
+                                    player: Player { sender },
+                                    position: final_pos,
+                                    block: state,
+                                })?;
+                            } else {
+                                this.connected_server.spawn_event(RightClickEvent {
+                                    player: Player { sender },
+                                })?;
+                            }
                         }
                     }
                     C2SPlayPackets::Chat(packet) => {

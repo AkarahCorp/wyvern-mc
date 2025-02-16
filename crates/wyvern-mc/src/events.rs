@@ -62,6 +62,7 @@ event_bus! {
     on_drop_item: DropItemEvent
     on_block_break: BreakBlockEvent
     on_chat: ChatMessageEvent
+    on_right_click: RightClickEvent
 }
 
 impl Debug for EventBus {
@@ -138,6 +139,11 @@ pub struct PlaceBlockEvent {
 pub struct DropItemEvent {
     pub player: Player,
     pub item: ItemStack,
+}
+
+#[derive(Debug, Clone)]
+pub struct RightClickEvent {
+    pub player: Player,
 }
 
 #[derive(Debug, Clone)]
