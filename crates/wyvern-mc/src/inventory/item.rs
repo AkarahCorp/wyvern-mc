@@ -66,4 +66,19 @@ impl From<ItemStack> for SlotData {
     }
 }
 
+impl From<SlotData> for ItemStack {
+    fn from(value: SlotData) -> Self {
+        let mut components = HashMap::new();
+        for component in value.components {
+            components.insert(component.as_type(), component);
+        }
+
+        ItemStack {
+            id: ITEM_REGISTRY.lookup(&value.id).unwrap().id.clone().into(),
+            count: value.count.as_i32() as u16,
+            components,
+        }
+    }
+}
+
 impl ComponentHolder<ItemComponents> for ItemStack {}
