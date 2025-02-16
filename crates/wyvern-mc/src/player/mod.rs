@@ -15,9 +15,9 @@ use voxidian_protocol::{
         processing::PacketProcessing,
         s2c::play::{
             AddEntityS2CPlayPacket, ContainerSetSlotS2CPlayPacket, ForgetLevelChunkS2CPlayPacket,
-            GameEvent, GameEventS2CPlayPacket, Gamemode, PlayerPositionS2CPlayPacket,
-            PlayerRotationS2CPlayPacket, RespawnS2CPlayPacket, SystemChatS2CPlayPacket,
-            TeleportFlags,
+            GameEvent, GameEventS2CPlayPacket, Gamemode, OpenScreenS2CPlayPacket,
+            PlayerPositionS2CPlayPacket, PlayerRotationS2CPlayPacket, RespawnS2CPlayPacket,
+            ScreenWindowKind, SystemChatS2CPlayPacket, TeleportFlags,
         },
     },
     value::{Angle, Text, TextComponent, Uuid, VarInt},
@@ -27,7 +27,7 @@ use wyvern_macros::{actor, message};
 use crate::{
     actors::{ActorError, ActorResult},
     dimension::Dimension,
-    inventory::{Inventory, ItemStack},
+    inventory::{DataInventory, Inventory, ItemStack},
     server::Server,
     values::{Vec2, Vec3},
 };
@@ -200,13 +200,31 @@ impl ConnectionData {
         let slot = self
             .associated_data
             .screen
-            .map(|x| x.container_slot_count())
+            .as_ref()
+            .map(|(x, _)| x.container_slot_count())
             .unwrap_or(0)
             + slot;
         self.associated_data.inventory.set_slot(slot, copy).await?;
 
+        let slot = if self.associated_data.screen.is_some() {
+            (slot as i32) - 9
+        } else {
+            slot as i32
+        };
+
+        if slot < 0 {
+            return Err(ActorError::IndexOutOfBounds);
+        }
+
+        let window_id = self
+            .associated_data
+            .screen
+            .as_ref()
+            .map(|_| self.associated_data.window_id as i32)
+            .unwrap_or(0);
+
         let packet = ContainerSetSlotS2CPlayPacket {
-            window_id: VarInt::new(self.associated_data.window_id.unwrap_or(0) as i32),
+            window_id: VarInt::new(window_id),
             state_id: VarInt::new(1),
             slot: slot as u16,
             slot_data: item.into(),
@@ -241,6 +259,7 @@ impl ConnectionData {
         .await;
         Ok(())
     }
+
     #[SendActionBar]
     pub async fn send_action_bar(&mut self, message: String) -> ActorResult<()> {
         let mut text = Text::new();
@@ -251,6 +270,54 @@ impl ConnectionData {
         })
         .await;
         Ok(())
+    }
+
+    #[OpenScreen]
+    pub async fn open_screen(&mut self, kind: ScreenWindowKind) -> ActorResult<()> {
+        let id = if self.associated_data.window_id > 100 {
+            self.associated_data.window_id = 1;
+            1
+        } else {
+            self.associated_data.window_id += 1;
+            self.associated_data.window_id
+        };
+        self.write_packet(OpenScreenS2CPlayPacket {
+            window: VarInt::new(id as i32),
+            title: Text::new().to_nbt(),
+            kind,
+        })
+        .await;
+        self.associated_data.screen = Some((
+            kind,
+            DataInventory::new_filled(kind.container_slot_count(), ItemStack::air),
+        ));
+        Ok(())
+    }
+
+    #[SetScreenSlot]
+    pub async fn set_screen_slot(&mut self, slot: usize, item: ItemStack) -> ActorResult<()> {
+        let Some(inventory) = self.associated_data.screen.as_mut().map(|x| &mut x.1) else {
+            return Err(ActorError::BadRequest);
+        };
+        inventory.set_slot(slot, item.clone()).await?;
+
+        self.write_packet(ContainerSetSlotS2CPlayPacket {
+            window_id: VarInt::new(self.associated_data.window_id as i32),
+            state_id: VarInt::new(0),
+            slot: slot as u16,
+            slot_data: item.into(),
+        })
+        .await;
+
+        Ok(())
+    }
+
+    #[GetScreenSlot]
+    pub async fn get_screen_slot(&mut self, slot: usize) -> ActorResult<ItemStack> {
+        let Some(inventory) = self.associated_data.screen.as_mut().map(|x| &mut x.1) else {
+            return Err(ActorError::BadRequest);
+        };
+        inventory.get_slot(slot).await
     }
 }
 

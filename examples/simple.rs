@@ -3,7 +3,7 @@ use std::sync::{Arc, LazyLock};
 use noise::{NoiseFn, Simplex};
 use tokio::runtime::Builder;
 use voxidian_protocol::{
-    packet::Stage,
+    packet::s2c::play::ScreenWindowKind,
     value::{DimEffects, DimMonsterSpawnLightLevel, DimType},
 };
 use wyvern_mc::{
@@ -136,6 +136,26 @@ async fn on_command(event: Arc<PlayerCommandEvent>) -> ActorResult<()> {
         event.player.set_dimension(dimension).await?;
     }
 
+    if event.command == "openscreen" {
+        event
+            .player
+            .open_screen(ScreenWindowKind::Generic9x5)
+            .await?;
+
+        Runtime::yield_now().await;
+        Runtime::yield_now().await;
+        Runtime::yield_now().await;
+
+        event
+            .player
+            .set_screen_slot(0, ItemStack::new(key![minecraft:diamond]))
+            .await?;
+        event
+            .player
+            .set_screen_slot(1, ItemStack::new(key![minecraft:iron_block]))
+            .await?;
+    }
+
     Ok(())
 }
 
@@ -179,35 +199,15 @@ async fn on_server_tick(event: Arc<ServerTickEvent>) -> ActorResult<()> {
     }
 
     for player in event.server.players().await? {
-        if player.stage().await? == Stage::Play {
-            player
-                .inventory()?
-                .set_slot(
-                    36,
-                    ItemStack::new(Key::new("minecraft", "stone"))
-                        .with(&ItemComponents::MAX_DAMAGE, 10)
-                        .with(&ItemComponents::DAMAGE, 1)
-                        .with(
-                            &ItemComponents::ITEM_MODEL,
-                            Key::constant("minecraft", "stone"),
-                        ),
-                )
-                .await?;
-
-            player
-                .inventory()?
-                .set_slot(
-                    37,
-                    ItemStack::new(Key::new("minecraft", "diamond_sword"))
-                        .with(&ItemComponents::MAX_DAMAGE, 20)
-                        .with(&ItemComponents::DAMAGE, 6)
-                        .with(
-                            &ItemComponents::ITEM_MODEL,
-                            Key::constant("minecraft", "diamond_sword"),
-                        ),
-                )
-                .await?;
-        }
+        player
+            .inventory()?
+            .set_slot(
+                38,
+                ItemStack::new(Key::new("minecraft", "netherite_axe"))
+                    .with(&ItemComponents::MAX_DAMAGE, 1500)
+                    .with(&ItemComponents::DAMAGE, 1),
+            )
+            .await?;
     }
 
     Ok(())
@@ -249,7 +249,6 @@ async fn on_break(event: Arc<BreakBlockEvent>) -> ActorResult<()> {
 }
 
 async fn on_chat(event: Arc<ChatMessageEvent>) -> ActorResult<()> {
-    log::error!("Sending message...");
     for player in Server::get()?.players().await? {
         player
             .send_message(format!(
@@ -264,5 +263,35 @@ async fn on_chat(event: Arc<ChatMessageEvent>) -> ActorResult<()> {
 
 async fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
     event.new_dimension.set(key!(example:root));
+
+    event
+        .player
+        .inventory()?
+        .set_slot(
+            36,
+            ItemStack::new(Key::new("minecraft", "stone"))
+                .with(&ItemComponents::MAX_DAMAGE, 10)
+                .with(&ItemComponents::DAMAGE, 1)
+                .with(
+                    &ItemComponents::ITEM_MODEL,
+                    Key::constant("minecraft", "stone"),
+                ),
+        )
+        .await?;
+
+    event
+        .player
+        .inventory()?
+        .set_slot(
+            37,
+            ItemStack::new(Key::new("minecraft", "diamond_sword"))
+                .with(&ItemComponents::MAX_DAMAGE, 20)
+                .with(&ItemComponents::DAMAGE, 6)
+                .with(
+                    &ItemComponents::ITEM_MODEL,
+                    Key::constant("minecraft", "diamond_sword"),
+                ),
+        )
+        .await?;
     Ok(())
 }

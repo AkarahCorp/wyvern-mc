@@ -291,7 +291,6 @@ fn create_weak_fn_from_variant(variant: &MessageVariant) -> TokenStream {
                 match rx.try_recv() {
                     Ok(v) => return v,
                     Err(e) => {
-                        log::error!("Yielding @ {:?}", line!());
                         crate::runtime::Runtime::yield_now().await;
                     }
                 };

@@ -10,12 +10,24 @@ use super::ItemStack;
 pub struct ItemComponents;
 
 impl ItemComponents {
+    pub const ITEM_COUNT: ItemCountComponentType = ItemCountComponentType;
     pub const MAX_DAMAGE: MaxDamageComponentType = MaxDamageComponentType;
     pub const DAMAGE: DamageComponentType = DamageComponentType;
     pub const ITEM_MODEL: ItemModelComponentType = ItemModelComponentType;
 }
 
 impl ComponentRegistry<ItemStack> for ItemComponents {}
+
+pub struct ItemCountComponentType;
+impl ComponentKind<ItemStack, ItemComponents, u16> for ItemCountComponentType {
+    fn insert_component(&self, holder: &mut ItemStack, value: u16) {
+        holder.count = value;
+    }
+
+    fn get_component(&self, holder: &ItemStack) -> Option<u16> {
+        Some(holder.count)
+    }
+}
 
 pub struct MaxDamageComponentType;
 impl ComponentKind<ItemStack, ItemComponents, u32> for MaxDamageComponentType {

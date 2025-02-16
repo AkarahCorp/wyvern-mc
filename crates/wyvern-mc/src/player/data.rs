@@ -31,9 +31,11 @@ pub struct PlayerData {
     pub(crate) last_sent_keep_alive: Instant,
 
     pub(crate) inventory: DataInventory,
-    pub(crate) screen: Option<ScreenWindowKind>,
-    pub(crate) window_id: Option<i8>,
+    pub(crate) screen: Option<(ScreenWindowKind, DataInventory)>,
+    pub(crate) window_id: i8,
     pub(crate) held_slot: i16,
+
+    pub(crate) cursor_item: ItemStack,
 }
 
 impl Default for PlayerData {
@@ -64,9 +66,12 @@ impl Default for PlayerData {
             last_sent_keep_alive: Instant::now(),
 
             inventory: DataInventory::new_filled(36, ItemStack::air),
+
             screen: None,
-            window_id: None,
             held_slot: 36,
+
+            cursor_item: ItemStack::air(),
+            window_id: 0,
         }
     }
 }

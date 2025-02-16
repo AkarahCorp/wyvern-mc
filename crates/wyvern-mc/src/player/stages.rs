@@ -13,9 +13,10 @@ use voxidian_protocol::{
             },
             login::LoginFinishedS2CLoginPacket,
             play::{
-                AddEntityS2CPlayPacket, DisconnectS2CPlayPacket, GameEvent, GameEventS2CPlayPacket,
-                Gamemode, LoginS2CPlayPacket, PlayerActionEntry, PlayerInfoUpdateS2CPlayPacket,
-                PlayerPositionS2CPlayPacket, PongResponseS2CPlayPacket, TeleportFlags,
+                AddEntityS2CPlayPacket, ContainerSlotGroup, DisconnectS2CPlayPacket, GameEvent,
+                GameEventS2CPlayPacket, Gamemode, LoginS2CPlayPacket, PlayerActionEntry,
+                PlayerInfoUpdateS2CPlayPacket, PlayerPositionS2CPlayPacket,
+                PongResponseS2CPlayPacket, TeleportFlags,
             },
             status::{
                 PongResponseS2CStatusPacket, StatusResponse, StatusResponsePlayers,
@@ -29,12 +30,13 @@ use voxidian_protocol::{
 
 use crate::{
     actors::{Actor, ActorError, ActorResult},
+    components::ComponentHolder,
     dimension::{Dimension, blocks::BlockState},
     events::{
         BreakBlockEvent, ChangeHeldSlotEvent, ChatMessageEvent, DropItemEvent, PlaceBlockEvent,
         PlayerCommandEvent, PlayerJoinEvent, PlayerMoveEvent, SwapHandsEvent,
     },
-    inventory::{Inventory, ItemStack},
+    inventory::{Inventory, ItemComponents, ItemStack},
     runtime::Runtime,
     values::{Key, Vec3, cell::Token},
 };
@@ -613,6 +615,7 @@ impl ConnectionData {
                             .inventory
                             .get_slot(this.associated_data.held_slot as usize)
                             .await?;
+
                         let state = BlockState::new(held.kind().retype());
                         this.associated_data
                             .dimension
@@ -620,6 +623,22 @@ impl ConnectionData {
                             .unwrap()
                             .set_block(final_pos, state.clone())
                             .await?;
+
+                        let item_count = held.get(&ItemComponents::ITEM_COUNT).unwrap();
+                        if item_count <= 1 {
+                            this.associated_data
+                                .inventory
+                                .set_slot(this.associated_data.held_slot as usize, ItemStack::air())
+                                .await?;
+                        } else {
+                            this.associated_data
+                                .inventory
+                                .set_slot(
+                                    this.associated_data.held_slot as usize,
+                                    held.with(&ItemComponents::ITEM_COUNT, item_count - 1),
+                                )
+                                .await?;
+                        }
 
                         if let Some(sender) = this.sender.upgrade() {
                             this.connected_server.spawn_event(PlaceBlockEvent {
@@ -636,6 +655,45 @@ impl ConnectionData {
                                 message: packet.message,
                             })?;
                         }
+                    }
+                    C2SPlayPackets::ContainerClick(packet) => {
+                        this.associated_data.cursor_item = packet.cursor_item.into();
+
+                        if let Some((screen, open_inventory)) = &mut this.associated_data.screen {
+                            for slot in packet.changed_slots.iter() {
+                                match screen.get_slot_index_group(slot.slot as usize).unwrap() {
+                                    ContainerSlotGroup::PlayerHotbar(hotbar) => {
+                                        this.associated_data
+                                            .inventory
+                                            .set_slot(36 + hotbar, slot.data.clone().into())
+                                            .await?;
+                                    }
+                                    ContainerSlotGroup::PlayerUpper(upper) => {
+                                        this.associated_data
+                                            .inventory
+                                            .set_slot(9 + upper, slot.data.clone().into())
+                                            .await?;
+                                    }
+                                    ContainerSlotGroup::Container(slot_idx) => {
+                                        open_inventory
+                                            .set_slot(slot_idx, slot.data.clone().into())
+                                            .await?;
+                                    }
+                                    _ => todo!(),
+                                }
+                            }
+                        } else {
+                            for slot in packet.changed_slots.iter() {
+                                this.associated_data
+                                    .inventory
+                                    .set_slot(slot.slot as usize, slot.data.clone().into())
+                                    .await?;
+                            }
+                        }
+                    }
+                    C2SPlayPackets::ContainerClose(_) => {
+                        this.associated_data.cursor_item = ItemStack::air();
+                        this.associated_data.screen = None;
                     }
                     packet => {
                         log::warn!(

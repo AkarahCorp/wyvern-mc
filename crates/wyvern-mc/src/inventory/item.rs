@@ -16,8 +16,8 @@ pub struct ItemType;
 
 #[derive(Debug, Clone)]
 pub struct ItemStack {
-    id: Key<ItemType>,
-    count: u16,
+    pub(crate) id: Key<ItemType>,
+    pub(crate) count: u16,
     pub(crate) added_components: HashMap<DataComponentTypes, DataComponents>,
     pub(crate) removed_components: HashSet<DataComponentTypes>,
 }
