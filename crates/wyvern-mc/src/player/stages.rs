@@ -1,3 +1,5 @@
+use std::sync::atomic::Ordering;
+
 use voxidian_protocol::{
     mojang::auth_verify::{MojAuth, MojAuthError},
     packet::{
@@ -346,7 +348,7 @@ impl ConnectionData {
 
                 match packet {
                     C2SPlayPackets::PlayerLoaded(_packet) => {
-                        this.associated_data.is_loaded = true;
+                        this.is_loaded.store(true, Ordering::Release);
                     }
                     C2SPlayPackets::ChatCommand(packet) => {
                         if let Some(sender) = this.sender.upgrade() {
@@ -642,8 +644,6 @@ impl ConnectionData {
                             .rotate(this.associated_data.last_direction)
                             .await?;
 
-                        this.send_chunks().await?;
-
                         if let Some(sender) = this.sender.upgrade() {
                             this.connected_server.spawn_event(PlayerMoveEvent {
                                 player: Player { sender },
@@ -651,6 +651,8 @@ impl ConnectionData {
                                 new_direction: this.associated_data.last_direction,
                             })?;
                         }
+
+                        this.send_chunks().await?;
                     }
                     C2SPlayPackets::MovePlayerRot(packet) => {
                         this.associated_data.last_direction = this

@@ -1,6 +1,9 @@
 use std::{
     net::{Ipv4Addr, SocketAddrV4},
-    sync::{Arc, Mutex, OnceLock},
+    sync::{
+        Arc, Mutex, OnceLock,
+        atomic::{AtomicBool, Ordering},
+    },
     time::{Duration, Instant},
 };
 
@@ -151,12 +154,14 @@ impl ServerData {
     }
 
     #[GetPlayers]
-    pub async fn players(&self) -> ActorResult<Vec<Player>> {
+    pub async fn players(&mut self) -> ActorResult<Vec<Player>> {
         let mut vec = Vec::new();
+
         for conn in &self.connections {
-            if *conn.stage.lock().unwrap() == Stage::Play
-                && conn.player.is_loaded().await == Ok(true)
-            {
+            let stage = *conn.stage.lock().unwrap() == Stage::Play;
+            let loaded = conn.is_loaded.load(Ordering::Acquire);
+
+            if stage && loaded {
                 vec.push(conn.lower());
             }
         }
@@ -200,7 +205,6 @@ impl ServerData {
                 .retain_mut(|connection| connection._signal.try_recv().is_err());
 
             self.handle_messages().await;
-
             let dur = Instant::now().duration_since(self.last_tick);
             if dur > Duration::from_millis(50) {
                 self.last_tick = Instant::now();
@@ -224,11 +228,13 @@ impl ServerData {
                 Ok((stream, addr)) => {
                     log::info!("Accepted new client: {:?}", addr);
                     let stage = Arc::new(Mutex::new(Stage::Handshake));
+                    let is_loaded = Arc::new(AtomicBool::new(false));
                     let signal = ConnectionData::connection_channel(
                         stream,
                         addr.ip(),
                         server.clone(),
                         stage,
+                        is_loaded,
                     );
                     let _ = server.spawn_connection_internal(signal).await;
                 }

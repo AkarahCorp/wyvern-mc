@@ -3,7 +3,7 @@ use std::{
     fmt::Debug,
     io::ErrorKind,
     net::IpAddr,
-    sync::{Arc, Mutex},
+    sync::{Arc, Mutex, atomic::AtomicBool},
     time::{Duration, Instant},
 };
 
@@ -32,6 +32,7 @@ impl ConnectionData {
         addr: IpAddr,
         server: Server,
         stage: Arc<Mutex<Stage>>,
+        is_loaded: Arc<AtomicBool>,
     ) -> ConnectionWithSignal {
         let (signal_tx, signal_rx) = flume::bounded(1);
         let (data_tx, data_rx) = flume::unbounded();
@@ -44,15 +45,18 @@ impl ConnectionData {
             signal_tx,
             server,
             stage.clone(),
+            is_loaded.clone(),
         ));
 
         ConnectionWithSignal {
             player: Player { sender: data_tx },
             _signal: signal_rx,
             stage,
+            is_loaded,
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub async fn execute_connection(
         stream: TcpStream,
         addr: IpAddr,
@@ -61,6 +65,7 @@ impl ConnectionData {
         signal: Sender<ConnectionStoppedSignal>,
         server: Server,
         stage: Arc<Mutex<Stage>>,
+        is_loaded: Arc<AtomicBool>,
     ) {
         let conn = ConnectionData {
             stream,
@@ -78,6 +83,7 @@ impl ConnectionData {
             verify_token: Vec::new(),
             public_key: None,
             props: Vec::new(),
+            is_loaded,
         };
 
         conn.event_loop().await;

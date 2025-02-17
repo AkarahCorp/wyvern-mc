@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{sync::Mutex, time::Duration};
 
 use async_io::Timer;
 use futures_lite::FutureExt;
@@ -11,7 +11,7 @@ use voxidian_protocol::{
 };
 
 use crate::{
-    actors::{ActorError, ActorResult},
+    actors::{Actor, ActorError, ActorResult},
     timeout,
     values::{Vec2, Vec3},
 };
@@ -20,7 +20,7 @@ use super::ConnectionData;
 
 impl ConnectionData {
     pub async fn send_chunks(&mut self) -> ActorResult<()> {
-        let Some(dimension) = &self.associated_data.dimension else {
+        let Some(dimension) = &self.associated_data.dimension.clone() else {
             return Err(ActorError::ActorIsNotLoaded);
         };
 
@@ -49,7 +49,19 @@ impl ConnectionData {
             .copied()
             .collect::<Vec<_>>();
 
-        let dim_reg = &self.connected_server.registries().await?.dimension_types;
+        let dim_reg = Mutex::new(None);
+        let server = self.connected_server.clone();
+        self.intertwine(async || {
+            let dr = server
+                .registries()
+                .await
+                .map_err(|_| ActorError::ActorIsNotLoaded);
+            *dim_reg.lock().unwrap() = Some(dr);
+        })
+        .await;
+        let dim_reg = dim_reg.into_inner().unwrap().unwrap()?;
+
+        let dim_reg = &dim_reg.dimension_types;
 
         let dim_type_entry = timeout!(
             dimension.dimension_type().await,

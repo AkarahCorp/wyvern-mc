@@ -1,7 +1,10 @@
 use std::{
     collections::VecDeque,
     net::IpAddr,
-    sync::{Arc, Mutex},
+    sync::{
+        Arc, Mutex,
+        atomic::{AtomicBool, Ordering},
+    },
 };
 
 use async_net::TcpStream;
@@ -56,6 +59,7 @@ pub(crate) struct ConnectionData {
     pub(crate) private_key: Option<PrivateKey>,
     pub(crate) verify_token: Vec<u8>,
     pub(crate) props: Vec<MojAuthProperty>,
+    pub(crate) is_loaded: Arc<AtomicBool>,
 }
 
 #[message(Player, PlayerMessage)]
@@ -73,7 +77,7 @@ impl ConnectionData {
 
     #[IsLoaded]
     pub async fn is_loaded(&self) -> ActorResult<bool> {
-        Ok(self.associated_data.is_loaded)
+        Ok(self.is_loaded.load(Ordering::Acquire))
     }
 
     #[SendPacketBuf]
@@ -392,6 +396,7 @@ pub struct ConnectionWithSignal {
     pub(crate) player: Player,
     pub(crate) _signal: Receiver<ConnectionStoppedSignal>,
     pub(crate) stage: Arc<Mutex<Stage>>,
+    pub(crate) is_loaded: Arc<AtomicBool>,
 }
 
 impl ConnectionWithSignal {

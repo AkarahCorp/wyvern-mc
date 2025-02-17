@@ -61,7 +61,6 @@ impl From<ItemStack> for SlotData {
         for component in value.removed_components {
             removed_components.push(component);
         }
-        log::debug!("components: {:?}", components);
         SlotData {
             id: ITEM_REGISTRY.get_entry(&value.id.into()).unwrap(),
             count: (value.count as i32).into(),

@@ -25,7 +25,6 @@ pub struct PlayerData {
     pub(crate) render_distance: i32,
 
     pub(crate) input_flags: InputFlags,
-    pub(crate) is_loaded: bool,
     pub(crate) entity_id: i32,
 
     pub(crate) last_sent_keep_alive: Instant,
@@ -61,7 +60,6 @@ impl Default for PlayerData {
                 sneak: false,
                 sprint: false,
             },
-            is_loaded: false,
             entity_id: 0,
             last_sent_keep_alive: Instant::now(),
 
