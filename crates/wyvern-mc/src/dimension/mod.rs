@@ -407,7 +407,7 @@ impl DimensionData {
                 .unwrap();
 
             let min_sections = dim_type.min_y / 16;
-            let max_sections = dim_type.max_y / 16;
+            let max_sections = (dim_type.min_y + dim_type.height as i32) / 16;
 
             let mut chunk = Chunk::new(min_sections, max_sections);
             (self.chunk_generator)(&mut chunk, pos.x(), pos.y());

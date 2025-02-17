@@ -81,7 +81,6 @@ async fn main_rt() {
                 bed_works: true,
                 respawn_anchor_works: true,
                 min_y: -32,
-                max_y: 32,
                 logical_height: 64,
                 height: 64,
                 infiniburn: "#minecraft:overworld_infiniburn".to_string(),

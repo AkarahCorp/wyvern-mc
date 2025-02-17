@@ -97,7 +97,7 @@ impl ConnectionData {
             let chunk_z = pos.y();
 
             let mut sections = Vec::new();
-            for y in (dim_type.min_y..dim_type.max_y).step_by(16) {
+            for y in (dim_type.min_y..(dim_type.min_y + dim_type.height as i32)).step_by(16) {
                 let pos = Vec3::new(chunk_x, y, chunk_z);
                 let chunk = timeout!(
                     dimension.get_chunk_section(pos).await,
