@@ -7,8 +7,17 @@ pub trait ComponentHolder<R: ComponentRegistry<Self>>: Sized {
         component.insert_component(self, value);
     }
 
+    fn unset<C: ComponentKind<Self, R, V>, V>(&mut self, component: &C) {
+        component.unset_component(self);
+    }
+
     fn with<C: ComponentKind<Self, R, V>, V>(mut self, component: &C, value: V) -> Self {
         component.insert_component(&mut self, value);
+        self
+    }
+
+    fn without<C: ComponentKind<Self, R, V>, V>(mut self, component: &C) -> Self {
+        component.unset_component(&mut self);
         self
     }
 }
@@ -18,6 +27,7 @@ pub trait ComponentRegistry<H: ComponentHolder<Self>>: Sized {}
 pub trait ComponentKind<H: ComponentHolder<R>, R: ComponentRegistry<H>, V> {
     fn insert_component(&self, holder: &mut H, value: V);
     fn get_component(&self, holder: &H) -> Option<V>;
+    fn unset_component(&self, holder: &mut H);
 }
 
 #[cfg(test)]
@@ -52,6 +62,8 @@ mod tests {
         fn get_component(&self, holder: &Entity) -> Option<String> {
             Some(holder.name.clone())
         }
+
+        fn unset_component(&self, _holder: &mut Entity) {}
     }
 
     struct EntityKind;
@@ -64,6 +76,8 @@ mod tests {
         fn get_component(&self, holder: &Entity) -> Option<Key<EntityType>> {
             Some(holder.kind.clone())
         }
+
+        fn unset_component(&self, _holder: &mut Entity) {}
     }
 
     #[test]

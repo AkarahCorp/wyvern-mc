@@ -27,6 +27,8 @@ impl ComponentKind<ItemStack, ItemComponents, u16> for ItemCountComponentType {
     fn get_component(&self, holder: &ItemStack) -> Option<u16> {
         Some(holder.count)
     }
+
+    fn unset_component(&self, _holder: &mut ItemStack) {}
 }
 
 pub struct MaxDamageComponentType;
@@ -54,6 +56,15 @@ impl ComponentKind<ItemStack, ItemComponents, u32> for MaxDamageComponentType {
                 value.amount.as_i32() as u32
             })
     }
+
+    fn unset_component(&self, holder: &mut ItemStack) {
+        holder
+            .removed_components
+            .insert(DataComponentTypes::MaxDamage);
+        holder
+            .added_components
+            .remove(&DataComponentTypes::MaxDamage);
+    }
 }
 pub struct DamageComponentType;
 impl ComponentKind<ItemStack, ItemComponents, u32> for DamageComponentType {
@@ -79,6 +90,11 @@ impl ComponentKind<ItemStack, ItemComponents, u32> for DamageComponentType {
                 };
                 value.damage.as_i32() as u32
             })
+    }
+
+    fn unset_component(&self, holder: &mut ItemStack) {
+        holder.removed_components.insert(DataComponentTypes::Damage);
+        holder.added_components.remove(&DataComponentTypes::Damage);
     }
 }
 
@@ -106,5 +122,14 @@ impl ComponentKind<ItemStack, ItemComponents, Key<Texture>> for ItemModelCompone
                 };
                 value.asset.clone().into()
             })
+    }
+
+    fn unset_component(&self, holder: &mut ItemStack) {
+        holder
+            .removed_components
+            .insert(DataComponentTypes::ItemModel);
+        holder
+            .added_components
+            .remove(&DataComponentTypes::ItemModel);
     }
 }

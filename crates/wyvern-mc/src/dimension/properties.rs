@@ -38,6 +38,10 @@ impl<T: FromStr + ToString> ComponentKind<BlockState, BlockComponents, T> for St
     fn get_component(&self, holder: &BlockState) -> Option<T> {
         T::from_str(&holder.state.iter().find(|x| x.0 == self.name)?.1).ok()
     }
+
+    fn unset_component(&self, holder: &mut BlockState) {
+        holder.state.retain(|x| x.0 != self.name);
+    }
 }
 
 pub struct BlockComponents;
