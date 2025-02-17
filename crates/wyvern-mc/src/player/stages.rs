@@ -540,14 +540,6 @@ impl ConnectionData {
                                 }
                             }
 
-                            log::debug!("Spawning human...");
-                            let dim = this.associated_data.dimension.as_ref().unwrap().clone();
-                            let data = this.associated_data.clone();
-                            this.intertwine(async move || {
-                                let _ = dim.spawn_player_entity(data.uuid, data.entity_id).await;
-                            })
-                            .await;
-
                             log::debug!("Sending all entities...");
                             for entity in this
                                 .associated_data
@@ -586,6 +578,14 @@ impl ConnectionData {
 
                             log::debug!("All done!");
                         }
+
+                        log::debug!("Spawning human...");
+                        let dim = this.associated_data.dimension.as_ref().unwrap().clone();
+                        let data = this.associated_data.clone();
+                        this.intertwine(async move || {
+                            let _ = dim.spawn_player_entity(data.uuid, data.entity_id).await;
+                        })
+                        .await;
 
                         this.send_chunks().await?;
                     }
