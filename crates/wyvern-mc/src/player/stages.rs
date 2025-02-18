@@ -607,13 +607,7 @@ impl ConnectionData {
                             })?;
                         }
 
-                        this.associated_data
-                            .dimension
-                            .as_ref()
-                            .unwrap()
-                            .get_entity(this.associated_data.uuid)
-                            .teleport(this.associated_data.last_position)
-                            .await?;
+                        this.update_self_entity().await?;
                     }
                     C2SPlayPackets::MovePlayerPosRot(packet) => {
                         this.associated_data.last_position = this
@@ -629,21 +623,7 @@ impl ConnectionData {
                             .with_x(packet.pitch)
                             .with_y(packet.yaw);
 
-                        this.associated_data
-                            .dimension
-                            .as_ref()
-                            .unwrap()
-                            .get_entity(this.associated_data.uuid)
-                            .teleport(this.associated_data.last_position)
-                            .await?;
-
-                        this.associated_data
-                            .dimension
-                            .as_ref()
-                            .unwrap()
-                            .get_entity(this.associated_data.uuid)
-                            .rotate(this.associated_data.last_direction)
-                            .await?;
+                        this.update_self_entity().await?;
 
                         if let Some(sender) = this.sender.upgrade() {
                             this.connected_server.spawn_event(PlayerMoveEvent {
@@ -670,13 +650,7 @@ impl ConnectionData {
                             })?;
                         }
 
-                        this.associated_data
-                            .dimension
-                            .as_ref()
-                            .unwrap()
-                            .get_entity(this.associated_data.uuid)
-                            .rotate(this.associated_data.last_direction)
-                            .await?;
+                        this.update_self_entity().await?;
                     }
                     C2SPlayPackets::ClientInformation(packet) => {
                         this.associated_data.render_distance = packet.info.view_distance as i32;

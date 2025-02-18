@@ -187,6 +187,7 @@ async fn dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
 
 async fn on_server_tick(event: Arc<ServerTickEvent>) -> ActorResult<()> {
     for dim in event.server.dimensions().await? {
+        log::debug!("Dim players: {:?}", dim.players().await);
         for mut entity in dim.entities().await? {
             let new_pos = Vec3::new(
                 rand::random::<f64>() * 128.0,

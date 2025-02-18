@@ -32,6 +32,7 @@ use crate::{
     actors::{ActorError, ActorResult},
     dimension::Dimension,
     inventory::{DataInventory, Inventory, ItemStack},
+    runtime::Runtime,
     server::Server,
     values::{Vec2, Vec3},
 };
@@ -388,6 +389,20 @@ impl ConnectionData {
         new_buf.write_u8s(buf.as_slice());
 
         self.send_packet_buf(buf).await.unwrap();
+    }
+
+    pub async fn update_self_entity(&mut self) -> ActorResult<()> {
+        let dim = self.associated_data.dimension.clone().unwrap();
+        let pos = self.associated_data.last_position;
+        let dir = self.associated_data.last_direction;
+        let uuid = self.associated_data.uuid;
+
+        Runtime::spawn(async move {
+            let _ = dim.get_entity(uuid).teleport(pos).await;
+            let _ = dim.get_entity(uuid).rotate(dir).await;
+        });
+
+        Ok(())
     }
 }
 

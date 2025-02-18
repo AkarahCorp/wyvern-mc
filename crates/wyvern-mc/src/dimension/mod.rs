@@ -237,25 +237,27 @@ impl DimensionData {
 
         Runtime::spawn(async move {
             for conn in dim.players().await.unwrap_or_else(|_| Vec::new()) {
-                let _ = conn
-                    .write_packet(AddEntityS2CPlayPacket {
-                        id: id.into(),
-                        uuid,
-                        kind: PtcEntityType::vanilla_registry()
-                            .get_entry(&Identifier::new("minecraft", "player"))
-                            .unwrap(),
-                        x: 0.0,
-                        y: 0.0,
-                        z: 0.0,
-                        pitch: Angle::of_deg(0.0),
-                        yaw: Angle::of_deg(0.0),
-                        head_yaw: Angle::of_deg(0.0),
-                        data: VarInt::from(0),
-                        vel_x: 0,
-                        vel_y: 0,
-                        vel_z: 0,
-                    })
-                    .await;
+                if conn.uuid().await.unwrap_or_else(|_| Uuid::new_v4()) != uuid {
+                    let _ = conn
+                        .write_packet(AddEntityS2CPlayPacket {
+                            id: id.into(),
+                            uuid,
+                            kind: PtcEntityType::vanilla_registry()
+                                .get_entry(&Identifier::new("minecraft", "player"))
+                                .unwrap(),
+                            x: 0.0,
+                            y: 0.0,
+                            z: 0.0,
+                            pitch: Angle::of_deg(0.0),
+                            yaw: Angle::of_deg(0.0),
+                            head_yaw: Angle::of_deg(0.0),
+                            data: VarInt::from(0),
+                            vel_x: 0,
+                            vel_y: 0,
+                            vel_z: 0,
+                        })
+                        .await;
+                }
             }
         });
 
@@ -326,22 +328,30 @@ impl DimensionData {
             entity.position = position;
             let entity = entity.clone();
 
-            for conn in self.players().await? {
-                let _ = conn
-                    .write_packet(EntityPositionSyncS2CPlayPacket {
-                        entity_id: entity.id.into(),
-                        x: entity.position.x(),
-                        y: entity.position.y(),
-                        z: entity.position.z(),
-                        vx: 0.0,
-                        vy: 0.0,
-                        vz: 0.0,
-                        yaw: entity.heading.x(),
-                        pitch: entity.heading.y(),
-                        on_ground: false,
-                    })
-                    .await;
-            }
+            let dim = Dimension {
+                sender: self.sender.clone(),
+            };
+
+            Runtime::spawn(async move {
+                for conn in dim.players().await.unwrap() {
+                    if conn.uuid().await.unwrap_or_else(|_| Uuid::new_v4()) != entity.uuid {
+                        let _ = conn
+                            .write_packet(EntityPositionSyncS2CPlayPacket {
+                                entity_id: entity.id.into(),
+                                x: entity.position.x(),
+                                y: entity.position.y(),
+                                z: entity.position.z(),
+                                vx: 0.0,
+                                vy: 0.0,
+                                vz: 0.0,
+                                yaw: entity.heading.x(),
+                                pitch: entity.heading.y(),
+                                on_ground: false,
+                            })
+                            .await;
+                    }
+                }
+            });
         }
         Ok(())
     }
@@ -361,20 +371,22 @@ impl DimensionData {
 
             Runtime::spawn(async move {
                 for conn in dim.players().await.unwrap() {
-                    let _ = conn
-                        .write_packet(EntityPositionSyncS2CPlayPacket {
-                            entity_id: entity.id.into(),
-                            x: entity.position.x(),
-                            y: entity.position.y(),
-                            z: entity.position.z(),
-                            vx: 0.0,
-                            vy: 0.0,
-                            vz: 0.0,
-                            yaw: entity.heading.x(),
-                            pitch: entity.heading.y(),
-                            on_ground: false,
-                        })
-                        .await;
+                    if conn.uuid().await.unwrap_or_else(|_| Uuid::new_v4()) != entity.uuid {
+                        let _ = conn
+                            .write_packet(EntityPositionSyncS2CPlayPacket {
+                                entity_id: entity.id.into(),
+                                x: entity.position.x(),
+                                y: entity.position.y(),
+                                z: entity.position.z(),
+                                vx: 0.0,
+                                vy: 0.0,
+                                vz: 0.0,
+                                yaw: entity.heading.x(),
+                                pitch: entity.heading.y(),
+                                on_ground: false,
+                            })
+                            .await;
+                    }
                 }
             });
         }
@@ -385,7 +397,7 @@ impl DimensionData {
     pub async fn players(&mut self) -> ActorResult<Vec<Player>> {
         let mut vec = Vec::new();
         for entity in &mut self.entities {
-            if entity.1.entity_type == Key::constant("minecraft", "human") {
+            if entity.1.entity_type == Key::constant("minecraft", "player") {
                 let player = self
                     .server
                     .as_ref()
