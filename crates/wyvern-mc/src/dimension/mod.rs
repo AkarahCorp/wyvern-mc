@@ -184,26 +184,33 @@ impl DimensionData {
             metadata: EntityMetadata::new(),
         });
 
-        for conn in self.players().await? {
-            conn.write_packet(AddEntityS2CPlayPacket {
-                id: id.into(),
-                uuid,
-                kind: PtcEntityType::vanilla_registry()
-                    .get_entry(&entity_type.clone().into())
-                    .unwrap(),
-                x: 0.0,
-                y: 0.0,
-                z: 0.0,
-                pitch: Angle::of_deg(0.0),
-                yaw: Angle::of_deg(0.0),
-                head_yaw: Angle::of_deg(0.0),
-                data: VarInt::from(0),
-                vel_x: 0,
-                vel_y: 0,
-                vel_z: 0,
-            })
-            .await?;
-        }
+        let dim = Dimension {
+            sender: self.sender.clone(),
+        };
+
+        Runtime::spawn(async move {
+            for conn in dim.players().await.unwrap_or_else(|_| Vec::new()) {
+                let _ = conn
+                    .write_packet(AddEntityS2CPlayPacket {
+                        id: id.into(),
+                        uuid,
+                        kind: PtcEntityType::vanilla_registry()
+                            .get_entry(&entity_type.clone().into())
+                            .unwrap(),
+                        x: 0.0,
+                        y: 0.0,
+                        z: 0.0,
+                        pitch: Angle::of_deg(0.0),
+                        yaw: Angle::of_deg(0.0),
+                        head_yaw: Angle::of_deg(0.0),
+                        data: VarInt::from(0),
+                        vel_x: 0,
+                        vel_y: 0,
+                        vel_z: 0,
+                    })
+                    .await;
+            }
+        });
 
         Ok(Entity {
             dimension: Dimension {
@@ -224,27 +231,33 @@ impl DimensionData {
             metadata: EntityMetadata::new(),
         });
 
-        for conn in self.players().await? {
-            let _ = conn
-                .write_packet(AddEntityS2CPlayPacket {
-                    id: id.into(),
-                    uuid,
-                    kind: PtcEntityType::vanilla_registry()
-                        .get_entry(&Identifier::new("minecraft", "player"))
-                        .unwrap(),
-                    x: 0.0,
-                    y: 0.0,
-                    z: 0.0,
-                    pitch: Angle::of_deg(0.0),
-                    yaw: Angle::of_deg(0.0),
-                    head_yaw: Angle::of_deg(0.0),
-                    data: VarInt::from(0),
-                    vel_x: 0,
-                    vel_y: 0,
-                    vel_z: 0,
-                })
-                .await;
-        }
+        let dim = Dimension {
+            sender: self.sender.clone(),
+        };
+
+        Runtime::spawn(async move {
+            for conn in dim.players().await.unwrap_or_else(|_| Vec::new()) {
+                let _ = conn
+                    .write_packet(AddEntityS2CPlayPacket {
+                        id: id.into(),
+                        uuid,
+                        kind: PtcEntityType::vanilla_registry()
+                            .get_entry(&Identifier::new("minecraft", "player"))
+                            .unwrap(),
+                        x: 0.0,
+                        y: 0.0,
+                        z: 0.0,
+                        pitch: Angle::of_deg(0.0),
+                        yaw: Angle::of_deg(0.0),
+                        head_yaw: Angle::of_deg(0.0),
+                        data: VarInt::from(0),
+                        vel_x: 0,
+                        vel_y: 0,
+                        vel_z: 0,
+                    })
+                    .await;
+            }
+        });
 
         Ok(Entity {
             dimension: Dimension {
@@ -259,15 +272,21 @@ impl DimensionData {
         let entry = self.entities.remove(&uuid);
 
         if let Some(entry) = entry {
-            for conn in self.server.as_ref().unwrap().connections().await? {
-                Runtime::spawn(async move {
+            let server = self
+                .server
+                .as_ref()
+                .ok_or(ActorError::ActorDoesNotExist)?
+                .clone();
+
+            Runtime::spawn(async move {
+                for conn in server.connections().await.unwrap() {
                     let _ = conn
                         .write_packet(RemoveEntitiesS2CPlayPacket {
                             entities: vec![VarInt::new(entry.id)].into(),
                         })
                         .await;
-                });
-            }
+                }
+            });
         };
 
         Ok(())
@@ -336,23 +355,28 @@ impl DimensionData {
         if let Some(entity) = self.entities.get_mut(&uuid) {
             entity.heading = heading;
             let entity = entity.clone();
+            let dim = Dimension {
+                sender: self.sender.clone(),
+            };
 
-            for conn in self.players().await? {
-                let _ = conn
-                    .write_packet(EntityPositionSyncS2CPlayPacket {
-                        entity_id: entity.id.into(),
-                        x: entity.position.x(),
-                        y: entity.position.y(),
-                        z: entity.position.z(),
-                        vx: 0.0,
-                        vy: 0.0,
-                        vz: 0.0,
-                        yaw: entity.heading.x(),
-                        pitch: entity.heading.y(),
-                        on_ground: false,
-                    })
-                    .await;
-            }
+            Runtime::spawn(async move {
+                for conn in dim.players().await.unwrap() {
+                    let _ = conn
+                        .write_packet(EntityPositionSyncS2CPlayPacket {
+                            entity_id: entity.id.into(),
+                            x: entity.position.x(),
+                            y: entity.position.y(),
+                            z: entity.position.z(),
+                            vx: 0.0,
+                            vy: 0.0,
+                            vz: 0.0,
+                            yaw: entity.heading.x(),
+                            pitch: entity.heading.y(),
+                            on_ground: false,
+                        })
+                        .await;
+                }
+            });
         }
         Ok(())
     }
