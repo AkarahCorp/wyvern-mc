@@ -39,7 +39,7 @@ fn main() {
     );
 
     let rt = Builder::new_multi_thread()
-        .worker_threads(std::thread::available_parallelism().unwrap().into())
+        .worker_threads(4)
         .enable_io()
         .enable_time()
         .build()

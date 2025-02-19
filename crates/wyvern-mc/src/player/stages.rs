@@ -713,12 +713,16 @@ impl ConnectionData {
                             .await?;
 
                         let state = BlockState::new(held.kind().retype());
-                        this.associated_data
+                        let state_clone = state.clone();
+                        let dim = this
+                            .associated_data
                             .dimension
                             .as_ref()
-                            .unwrap()
-                            .set_block(final_pos, state.clone())
-                            .await?;
+                            .ok_or(ActorError::ActorIsNotLoaded)?
+                            .clone();
+                        Runtime::spawn(async move {
+                            let _ = dim.set_block(final_pos, state_clone).await;
+                        });
 
                         let item_count = held.get(&ItemComponents::ITEM_COUNT).unwrap();
                         if item_count <= 1 {
