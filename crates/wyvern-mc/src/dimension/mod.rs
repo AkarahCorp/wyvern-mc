@@ -58,16 +58,19 @@ impl Dimension {
 #[crate::message(Dimension, DimensionMessage)]
 impl DimensionData {
     #[GetName]
+    #[doc = "Get the name of this dimension."]
     pub async fn name(&self) -> ActorResult<Key<Dimension>> {
         Ok(self.name.clone().retype())
     }
 
     #[GetServer]
+    #[doc = "Get the server this Dimension is running under."]
     pub async fn server(&self) -> ActorResult<Server> {
         self.server.clone().ok_or(ActorError::ActorIsNotLoaded)
     }
 
     #[GetChunkSection]
+    #[doc = "Returns a copy of the 16x16x16 chunk section at the provided coordinates."]
     pub async fn get_chunk_section(&mut self, position: Vec3<i32>) -> ActorResult<ChunkSection> {
         let chunk_pos = Vec2::new(position.x(), position.z());
         self.try_initialize_chunk(&chunk_pos).await?;
@@ -78,6 +81,7 @@ impl DimensionData {
     }
 
     #[SetBlock]
+    #[doc = "Sets a block in this dimension at the given coordinates to the provided block state."]
     pub async fn set_block(
         &mut self,
         position: Vec3<i32>,
@@ -113,6 +117,7 @@ impl DimensionData {
     }
 
     #[GetBlock]
+    #[doc = "Returns a copy of the block state at the provided coordinates."]
     pub async fn get_block(&mut self, position: Vec3<i32>) -> ActorResult<BlockState> {
         let chunk = Vec2::new(position.x() / 16, position.z() / 16);
         let pos_in_chunk = Vec3::new(position.x() % 16, position.y(), position.z() % 16);
@@ -124,11 +129,13 @@ impl DimensionData {
     }
 
     #[GetDimType]
+    #[doc = "Returns the Dimension Type value of this Dimension."]
     pub async fn dimension_type(&mut self) -> ActorResult<Key<DimType>> {
         Ok(self.dim_type.clone())
     }
 
     #[SetChunkGenerator]
+    #[doc = "Overrides the function that will be called whenever a new Chunk is generated. The default chunk generator is a no-op."]
     pub async fn set_chunk_generator(
         &mut self,
         function: fn(&mut Chunk, i32, i32),
@@ -138,6 +145,7 @@ impl DimensionData {
     }
 
     #[GetAllEntities]
+    #[doc = "Returns a handle to all of the entities present in this dimension."]
     pub async fn entities(&self) -> ActorResult<Vec<Entity>> {
         Ok(self
             .entities
@@ -153,6 +161,7 @@ impl DimensionData {
     }
 
     #[GetAllEntitiesAndHumans]
+    #[doc = "Returns a handle to all of the entities present in this dimension, including human entities."]
     pub async fn all_entities(&self) -> ActorResult<Vec<Entity>> {
         Ok(self
             .entities
@@ -167,6 +176,7 @@ impl DimensionData {
     }
 
     #[SpawnEntity]
+    #[doc = "Spawns a new entity in the dimension with the given type, returning a handle to the entity."]
     pub async fn spawn_entity(&mut self, entity_type: Key<EntityType>) -> ActorResult<Entity> {
         let mut uuid = Uuid::new_v4();
         while self.entities.contains_key(&uuid) {
@@ -394,6 +404,7 @@ impl DimensionData {
     }
 
     #[GetPlayers]
+    #[doc = "Returns a handle to all players present in this dimension."]
     pub async fn players(&mut self) -> ActorResult<Vec<Player>> {
         let mut vec = Vec::new();
         for entity in &mut self.entities {

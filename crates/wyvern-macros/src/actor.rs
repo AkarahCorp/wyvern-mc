@@ -40,18 +40,24 @@ pub fn actor(attr: TokenStream, item: TokenStream) -> TokenStream {
         &format!("Weak{}", attr_actor_type.to_token_stream()),
         proc_macro2::Span::call_site(),
     );
+
+    let attributes = strct.attrs;
+
     let o = quote! {
 
         #[derive(Clone, Debug)]
+        #(#attributes)*
         pub struct #weak_type {
             pub(crate) sender: flume::WeakSender<#attr_message_type>
         }
 
         #[derive(Clone, Debug)]
+        #(#attributes)*
         pub struct #attr_actor_type {
             pub(crate) sender: flume::Sender<#attr_message_type>
         }
 
+        #(#attributes)*
         pub(crate) struct #strct_type {
             #(#fields),*,
             pub(crate) receiver: flume::Receiver<#attr_message_type>

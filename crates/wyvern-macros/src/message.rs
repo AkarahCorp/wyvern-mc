@@ -63,12 +63,13 @@ pub fn message(attr: TokenStream, item: TokenStream) -> TokenStream {
         if !path.segments.len() == 1 {
             return quote! { compile_error!("All function items must have a #[Variant] attribute"); };
         }
+
         let name = path.segments.get(0).unwrap().ident.clone();
 
         let parameters = function.sig.inputs.iter().cloned().collect::<Vec<_>>();
         let returns = function.sig.output.clone();
 
-        function.attrs.clear();
+        function.attrs.remove(0);
         message_variants.push(MessageVariant {
             enum_name: attr.message_type.clone(),
             name,
@@ -215,12 +216,16 @@ fn create_fn_from_variant(variant: &MessageVariant) -> TokenStream {
         .map(|x| x.ident)
         .collect::<Vec<_>>();
 
+    let doc_attr_opt = variant.base_function.attrs.first();
+    let doc_attr = doc_attr_opt.iter();
+
     let fn_vis = &variant.base_function.vis;
 
     let enum_type = variant.enum_name.clone();
     let enum_variant = variant.name.clone();
 
     let r = quote! {
+        #(#doc_attr)*
         #fn_vis async fn #name(&self, #(#param_names: #param_types),*) -> #rt {
             let (tx, mut rx) = flume::bounded(1);
             match self.sender.send_async(#enum_type::#enum_variant(#(#param_names,)* tx)).await {
@@ -272,6 +277,9 @@ fn create_weak_fn_from_variant(variant: &MessageVariant) -> TokenStream {
         .map(|x| x.ident)
         .collect::<Vec<_>>();
 
+    let doc_attr_opt = variant.base_function.attrs.get(1);
+    let doc_attr = doc_attr_opt.iter();
+
     let fn_vis = &variant.base_function.vis;
 
     let enum_type = variant.enum_name.clone();
@@ -280,6 +288,7 @@ fn create_weak_fn_from_variant(variant: &MessageVariant) -> TokenStream {
     assert!(rt.to_token_stream().to_string().contains("ActorResult"));
 
     let r = quote! {
+        #(#doc_attr)*
         #fn_vis async fn #name(&self, #(#param_names: #param_types),*) -> #rt {
             let sender = self.sender.upgrade().ok_or(crate::actors::ActorError::ActorDoesNotExist)?;
             let (tx, mut rx) = flume::bounded(1);

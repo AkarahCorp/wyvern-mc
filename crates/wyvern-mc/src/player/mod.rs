@@ -20,8 +20,8 @@ use voxidian_protocol::{
         s2c::play::{
             AddEntityS2CPlayPacket, ContainerSetSlotS2CPlayPacket, ForgetLevelChunkS2CPlayPacket,
             GameEvent, GameEventS2CPlayPacket, Gamemode, OpenScreenS2CPlayPacket,
-            PlayerPositionS2CPlayPacket, PlayerRotationS2CPlayPacket, RespawnS2CPlayPacket,
-            ScreenWindowKind, SystemChatS2CPlayPacket, TeleportFlags,
+            PlayerPositionS2CPlayPacket, PlayerRotationS2CPlayPacket, RespawnDataKept,
+            RespawnS2CPlayPacket, ScreenWindowKind, SystemChatS2CPlayPacket, TeleportFlags,
         },
     },
     value::{Angle, ProfileProperty, Text, TextComponent, Uuid, VarInt},
@@ -146,7 +146,10 @@ impl ConnectionData {
             death_loc: None,
             portal_cooldown: VarInt::from(0),
             sea_level: VarInt::from(0),
-            data_kept: 0,
+            data_kept: RespawnDataKept {
+                keep_attributes: true,
+                keep_metadata: true,
+            },
         })
         .await;
         self.write_packet(GameEventS2CPlayPacket {
