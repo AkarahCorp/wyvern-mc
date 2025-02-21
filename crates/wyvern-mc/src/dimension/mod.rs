@@ -105,9 +105,7 @@ impl DimensionData {
                 let _ = conn
                     .write_packet(BlockUpdateS2CPlayPacket {
                         pos: BlockPos::new(pos.x(), pos.y(), pos.z()),
-                        block: unsafe {
-                            RegEntry::new_unchecked(block_state.protocol_id() as usize)
-                        },
+                        block: unsafe { RegEntry::new_unchecked(block_state.protocol_id() as u32) },
                     })
                     .await;
             }

@@ -174,9 +174,15 @@ async fn dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
                         (x2 + (x * 16)) as f64 / 100.0,
                         (z2 + (z * 16)) as f64 / 100.0,
                     ]) + 1.0;
+                    let y = f64::floor(y * -16.0 + 8.0) as i32;
 
-                    let new_pos = Vec3::new(x2, f64::floor(y * -16.0 + 8.0) as i32, z2);
+                    let new_pos = Vec3::new(x2, y, z2);
                     chunk.set_block_at(new_pos, BlockState::new(Blocks::GRASS_BLOCK));
+
+                    for y in -32..y {
+                        let new_pos = Vec3::new(x2, y, z2);
+                        chunk.set_block_at(new_pos, BlockState::new(Blocks::DIRT));
+                    }
                 }
             }
         })

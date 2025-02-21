@@ -105,7 +105,7 @@ impl ChunkSection {
         let old_block = self.blocks[pos.x()][pos.y()][pos.z()];
 
         let new_block: RegEntry<BlockState> =
-            unsafe { RegEntry::new_unchecked(block.clone().protocol_id() as usize) };
+            unsafe { RegEntry::new_unchecked(block.clone().protocol_id() as u32) };
 
         if old_block.id() == 0 && new_block.id() != 0 {
             self.block_count += 1;
@@ -135,7 +135,7 @@ impl ChunkSection {
                     // SAFETY: This is safe since the underlying memory isn't initialized and writable.
                     arr[idx] = unsafe {
                         MaybeUninit::new(RegEntry::new_unchecked(
-                            self.blocks[x][y][z].block_state as usize,
+                            self.blocks[x][y][z].block_state as u32,
                         ))
                     };
                     idx += 1;

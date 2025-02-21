@@ -1,4 +1,7 @@
-use std::{sync::Mutex, time::Duration};
+use std::{
+    sync::Mutex,
+    time::{Duration, Instant},
+};
 
 use async_io::Timer;
 use futures_lite::FutureExt;
@@ -96,6 +99,7 @@ impl ConnectionData {
             let chunk_x = pos.x();
             let chunk_z = pos.y();
 
+            let start = Instant::now();
             let mut sections = Vec::new();
             for y in (dim_type.min_y..(dim_type.min_y + dim_type.height as i32)).step_by(16) {
                 let pos = Vec3::new(chunk_x, y, chunk_z);
@@ -106,6 +110,13 @@ impl ConnectionData {
                 )?;
                 sections.push(chunk.as_protocol_section());
             }
+            let end = Instant::now();
+
+            log::error!(
+                "Fetching a chunk of height {:?} took {:?}",
+                dim_type.height,
+                end - start
+            );
 
             let packet = LevelChunkWithLightS2CPlayPacket {
                 chunk_x,
