@@ -27,6 +27,10 @@ impl BlockState {
         .make_valid()
     }
 
+    pub fn name(&self) -> &Key<Block> {
+        &self.block
+    }
+
     pub(crate) fn insert_raw_property(&mut self, key: &str, value: &str) {
         if let Some(index) = self.state.iter().map(|x| &x.0).position(|x| x == key) {
             self.state.remove(index);

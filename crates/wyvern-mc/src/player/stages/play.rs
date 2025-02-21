@@ -18,7 +18,8 @@ use crate::{
     dimension::{Dimension, blocks::BlockState},
     events::{
         BreakBlockEvent, ChangeHeldSlotEvent, ChatMessageEvent, DropItemEvent, PlaceBlockEvent,
-        PlayerCommandEvent, PlayerJoinEvent, PlayerMoveEvent, RightClickEvent, SwapHandsEvent,
+        PlayerCommandEvent, PlayerJoinEvent, PlayerMoveEvent, RightClickEvent,
+        StartBreakBlockEvent, SwapHandsEvent,
     },
     inventory::{Inventory, ItemComponents, ItemStack},
     player::{ConnectionData, Player},
@@ -50,15 +51,19 @@ impl ConnectionData {
                     }
                     C2SPlayPackets::PlayerAction(packet) => {
                         log::warn!("{:?}", packet);
+                        let block =
+                            Vec3::new(packet.location.x, packet.location.y, packet.location.z);
                         match packet.status {
-                            PlayerStatus::StartedDigging => {}
+                            PlayerStatus::StartedDigging => {
+                                if let Some(sender) = this.sender.upgrade() {
+                                    this.connected_server.spawn_event(StartBreakBlockEvent {
+                                        player: Player { sender },
+                                        position: block,
+                                    })?;
+                                }
+                            }
                             PlayerStatus::CancelledDigging => {}
                             PlayerStatus::FinishedDigging => {
-                                let block = Vec3::new(
-                                    packet.location.x,
-                                    packet.location.y,
-                                    packet.location.z,
-                                );
                                 this.associated_data
                                     .dimension
                                     .as_ref()

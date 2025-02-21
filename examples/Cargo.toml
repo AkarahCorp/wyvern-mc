@@ -19,3 +19,7 @@ path = "./simple.rs"
 [[example]]
 name = "clicker"
 path = "./clicker.rs"
+
+[[example]]
+name = "game_of_life"
+path = "./game_of_life.rs"

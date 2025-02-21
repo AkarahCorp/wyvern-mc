@@ -57,6 +57,7 @@ event_bus! {
     on_command: PlayerCommandEvent
     on_server_start: ServerStartEvent
     on_place_block: PlaceBlockEvent
+    start_break_block: StartBreakBlockEvent
     on_change_held_slot: ChangeHeldSlotEvent
     on_swap_hands: SwapHandsEvent
     on_drop_item: DropItemEvent
