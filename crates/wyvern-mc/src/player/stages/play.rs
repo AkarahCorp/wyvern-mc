@@ -127,7 +127,7 @@ impl ConnectionData {
                             this.connect_to_new_dimension().await?;
                         }
 
-                        this.send_chunks().await?;
+                        this.send_chunks();
                     }
                     C2SPlayPackets::MovePlayerPos(packet) => {
                         this.associated_data.last_position = this
@@ -137,7 +137,7 @@ impl ConnectionData {
                             .with_y(packet.y)
                             .with_z(packet.z);
 
-                        this.send_chunks().await?;
+                        this.send_chunks();
 
                         if let Some(sender) = this.sender.upgrade() {
                             this.connected_server.spawn_event(PlayerMoveEvent {
@@ -173,7 +173,7 @@ impl ConnectionData {
                             })?;
                         }
 
-                        this.send_chunks().await?;
+                        this.send_chunks();
                     }
                     C2SPlayPackets::MovePlayerRot(packet) => {
                         this.associated_data.last_direction = this

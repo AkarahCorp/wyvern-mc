@@ -253,7 +253,7 @@ impl ConnectionData {
         let packet = ContainerSetSlotS2CPlayPacket {
             window_id: VarInt::new(window_id),
             state_id: VarInt::new(1),
-            slot: slot as u16,
+            slot: slot as i16,
             slot_data: item.into(),
         };
         self.write_packet(packet).await;
@@ -331,7 +331,7 @@ impl ConnectionData {
         self.write_packet(ContainerSetSlotS2CPlayPacket {
             window_id: VarInt::new(self.associated_data.window_id as i32),
             state_id: VarInt::new(0),
-            slot: slot as u16,
+            slot: slot as i16,
             slot_data: item.into(),
         })
         .await;

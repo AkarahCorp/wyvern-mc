@@ -171,7 +171,9 @@ impl ServerData {
     #[GetPlayerByUuid]
     pub async fn player(&self, player: Uuid) -> ActorResult<Player> {
         for conn in &self.connections {
-            if conn.player.uuid().await == Ok(player) {
+            if conn.player.uuid().await == Ok(player)
+                && conn.player.stage().await == Ok(Stage::Play)
+            {
                 return Ok(conn.player.clone());
             }
         }

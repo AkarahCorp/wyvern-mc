@@ -27,6 +27,8 @@ static IS_RUNNING: AtomicBool = AtomicBool::new(false);
 
 #[tokio::main]
 async fn main() {
+    env_logger::init();
+
     Runtime::tokio();
     Server::builder()
         .event(on_server_start)

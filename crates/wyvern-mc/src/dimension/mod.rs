@@ -5,12 +5,9 @@ use chunk::{Chunk, ChunkSection};
 use entity::{Entity, EntityData, EntityType};
 use flume::Sender;
 use voxidian_protocol::{
-    packet::{
-        Stage,
-        s2c::play::{
-            AddEntityS2CPlayPacket, BlockUpdateS2CPlayPacket, EntityPositionSyncS2CPlayPacket,
-            RemoveEntitiesS2CPlayPacket,
-        },
+    packet::s2c::play::{
+        AddEntityS2CPlayPacket, BlockUpdateS2CPlayPacket, EntityPositionSyncS2CPlayPacket,
+        RemoveEntitiesS2CPlayPacket,
     },
     registry::RegEntry,
     value::{
@@ -22,7 +19,6 @@ use voxidian_protocol::{
 use crate::{
     actors::{ActorError, ActorResult},
     events::ChunkLoadEvent,
-    player::Player,
     runtime::Runtime,
     server::Server,
     values::{Key, Vec2, Vec3},
@@ -198,6 +194,7 @@ impl DimensionData {
 
         Runtime::spawn(async move {
             for conn in dim.players().await.unwrap_or_else(|_| Vec::new()) {
+                let conn = dim.server().await.unwrap().player(conn).await.unwrap();
                 let _ = conn
                     .write_packet(AddEntityS2CPlayPacket {
                         id: id.into(),
@@ -245,7 +242,8 @@ impl DimensionData {
 
         Runtime::spawn(async move {
             for conn in dim.players().await.unwrap_or_else(|_| Vec::new()) {
-                if conn.uuid().await.unwrap_or_else(|_| Uuid::new_v4()) != uuid {
+                if conn != uuid {
+                    let conn = dim.server().await.unwrap().player(conn).await.unwrap();
                     let _ = conn
                         .write_packet(AddEntityS2CPlayPacket {
                             id: id.into(),
@@ -342,7 +340,8 @@ impl DimensionData {
 
             Runtime::spawn(async move {
                 for conn in dim.players().await.unwrap() {
-                    if conn.uuid().await.unwrap_or_else(|_| Uuid::new_v4()) != entity.uuid {
+                    if conn != entity.uuid {
+                        let conn = dim.server().await.unwrap().player(conn).await.unwrap();
                         let _ = conn
                             .write_packet(EntityPositionSyncS2CPlayPacket {
                                 entity_id: entity.id.into(),
@@ -379,7 +378,8 @@ impl DimensionData {
 
             Runtime::spawn(async move {
                 for conn in dim.players().await.unwrap() {
-                    if conn.uuid().await.unwrap_or_else(|_| Uuid::new_v4()) != entity.uuid {
+                    if conn != entity.uuid {
+                        let conn = dim.server().await.unwrap().player(conn).await.unwrap();
                         let _ = conn
                             .write_packet(EntityPositionSyncS2CPlayPacket {
                                 entity_id: entity.id.into(),
@@ -402,20 +402,12 @@ impl DimensionData {
     }
 
     #[GetPlayers]
-    #[doc = "Returns a handle to all players present in this dimension."]
-    pub async fn players(&mut self) -> ActorResult<Vec<Player>> {
+    #[doc = "Returns the UUID for all players present in this dimension."]
+    pub async fn players(&mut self) -> ActorResult<Vec<Uuid>> {
         let mut vec = Vec::new();
         for entity in &mut self.entities {
             if entity.1.entity_type == Key::constant("minecraft", "player") {
-                let player = self
-                    .server
-                    .as_ref()
-                    .ok_or(ActorError::ActorIsNotLoaded)?
-                    .player(*entity.0)
-                    .await?;
-                if player.stage().await == Ok(Stage::Play) {
-                    vec.push(player);
-                }
+                vec.push(entity.1.uuid);
             }
         }
         Ok(vec)
