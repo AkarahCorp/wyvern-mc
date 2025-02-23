@@ -59,16 +59,6 @@ impl Server {
         });
         Ok(())
     }
-
-    pub async fn spawn_event_blocking<E: Event + Send + 'static>(
-        &self,
-        event: E,
-    ) -> ActorResult<()> {
-        let server = self.clone();
-        let bus = server.event_bus().await?;
-        event.dispatch(bus);
-        Ok(())
-    }
 }
 
 #[message(Server, ServerMessage)]
