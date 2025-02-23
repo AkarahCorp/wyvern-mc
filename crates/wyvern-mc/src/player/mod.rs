@@ -394,7 +394,7 @@ impl ConnectionData {
         self.send_packet_buf(buf).await.unwrap();
     }
 
-    pub async fn update_self_entity(&mut self) -> ActorResult<()> {
+    pub fn update_self_entity(&mut self) {
         let dim = self.associated_data.dimension.clone().unwrap();
         let pos = self.associated_data.last_position;
         let dir = self.associated_data.last_direction;
@@ -404,8 +404,6 @@ impl ConnectionData {
             let _ = dim.get_entity(uuid).teleport(pos).await;
             let _ = dim.get_entity(uuid).rotate(dir).await;
         });
-
-        Ok(())
     }
 }
 

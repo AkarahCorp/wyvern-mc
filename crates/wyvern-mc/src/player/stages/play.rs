@@ -147,7 +147,7 @@ impl ConnectionData {
                             })?;
                         }
 
-                        this.update_self_entity().await?;
+                        this.update_self_entity();
                     }
                     C2SPlayPackets::MovePlayerPosRot(packet) => {
                         this.associated_data.last_position = this
@@ -163,7 +163,7 @@ impl ConnectionData {
                             .with_x(packet.pitch)
                             .with_y(packet.yaw);
 
-                        this.update_self_entity().await?;
+                        this.update_self_entity();
 
                         if let Some(sender) = this.sender.upgrade() {
                             this.connected_server.spawn_event(PlayerMoveEvent {
@@ -190,7 +190,7 @@ impl ConnectionData {
                             })?;
                         }
 
-                        this.update_self_entity().await?;
+                        this.update_self_entity();
                     }
                     C2SPlayPackets::ClientInformation(packet) => {
                         this.associated_data.render_distance = packet.info.view_distance as i32;
