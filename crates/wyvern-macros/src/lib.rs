@@ -23,3 +23,8 @@ pub fn generate_entity_types(input: TokenStream) -> TokenStream {
 pub fn generate_blocks_types(input: TokenStream) -> TokenStream {
     registries::blocks(input.into()).into()
 }
+
+#[proc_macro]
+pub fn generate_sounds_types(input: TokenStream) -> TokenStream {
+    registries::sounds(input.into()).into()
+}

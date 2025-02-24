@@ -20,8 +20,8 @@ use wyvern_mc::{
     },
 };
 
-const MAX_X: usize = 20;
-const MAX_Z: usize = 20;
+const MAX_X: usize = 50;
+const MAX_Z: usize = 50;
 
 static IS_RUNNING: AtomicBool = AtomicBool::new(false);
 

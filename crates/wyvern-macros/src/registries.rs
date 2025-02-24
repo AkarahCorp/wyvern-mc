@@ -1,6 +1,6 @@
 use proc_macro2::TokenStream;
 use quote::quote;
-use voxidian_protocol::value::{BlockState, EntityType, Identifier};
+use voxidian_protocol::value::{BlockState, EntityType, Identifier, SoundEvent};
 
 pub fn entities(_item: TokenStream) -> TokenStream {
     let entities: Vec<TokenStream> = EntityType::vanilla_registry()
@@ -50,5 +50,34 @@ fn block_to_tokens(id: &Identifier) -> TokenStream {
 
     quote! {
         pub const #fn_name_ident: Key<Block> = Key::constant(#namespace, #path);
+    }
+}
+
+pub fn sounds(_item: TokenStream) -> TokenStream {
+    let mut sounds: Vec<Identifier> = SoundEvent::vanilla_registry()
+        .keys()
+        .cloned()
+        .map(|x| Identifier::new(x.namespace.to_lowercase(), x.path.to_lowercase()))
+        .collect::<Vec<_>>();
+    sounds.dedup();
+    let blocks = sounds.iter().map(sound_to_tokens);
+
+    quote! {
+        impl Sounds {
+            #(#blocks)*
+        }
+    }
+}
+
+fn sound_to_tokens(id: &Identifier) -> TokenStream {
+    let path = &id.path;
+    let namespace = &id.namespace;
+    let fn_name_ident = proc_macro2::Ident::new(
+        &path.to_uppercase().replace(".", "_"),
+        proc_macro2::Span::call_site(),
+    );
+
+    quote! {
+        pub const #fn_name_ident: Sound = Sound { name: Key::constant(#namespace, #path), pitch: 1.0, volume: 1.0, category: SoundCategory::Master };
     }
 }

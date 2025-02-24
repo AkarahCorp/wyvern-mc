@@ -407,7 +407,7 @@ impl ConnectionData {
                 .map(|x| ProfileProperty {
                     name: x.name.clone(),
                     value: x.value.clone(),
-                    signature: Some(x.sig.clone()),
+                    sig: Some(x.sig.clone()),
                 })
                 .collect::<Vec<_>>()
                 .into();
@@ -417,7 +417,7 @@ impl ConnectionData {
                         actions: vec![(data.uuid, vec![
                             PlayerActionEntry::AddPlayer {
                                 name: data.username.clone(),
-                                properties: props,
+                                props,
                             },
                             PlayerActionEntry::Listed(true),
                         ])],
@@ -439,13 +439,13 @@ impl ConnectionData {
                     actions: vec![(self.associated_data.uuid, vec![
                         PlayerActionEntry::AddPlayer {
                             name: self.associated_data.username.clone(),
-                            properties: self
+                            props: self
                                 .props
                                 .iter()
                                 .map(|x| ProfileProperty {
                                     name: x.name.clone(),
                                     value: x.value.clone(),
-                                    signature: Some(x.sig.clone()),
+                                    sig: Some(x.sig.clone()),
                                 })
                                 .collect::<Vec<_>>()
                                 .into(),
@@ -457,7 +457,7 @@ impl ConnectionData {
                 self.write_packet(PlayerInfoUpdateS2CPlayPacket {
                     actions: vec![(player.uuid().await?, vec![PlayerActionEntry::AddPlayer {
                         name: player.username().await?,
-                        properties: player.auth_props().await?.into(),
+                        props: player.auth_props().await?.into(),
                     }])],
                 })
                 .await;

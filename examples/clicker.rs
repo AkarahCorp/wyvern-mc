@@ -19,7 +19,7 @@ use wyvern_mc::{
     runtime::Runtime,
     server::Server,
     values::{
-        Key, Uuid, Vec3,
+        Key, SoundCategory, Sounds, Uuid, Vec3,
         regval::{PaintingVariant, WolfVariant},
     },
 };
@@ -28,6 +28,8 @@ static COUNTER: LazyLock<Mutex<HashMap<Uuid, i32>>> = LazyLock::new(|| Mutex::ne
 
 #[tokio::main]
 async fn main() {
+    env_logger::init();
+
     Runtime::tokio();
     Server::builder()
         .event(on_server_start)
@@ -130,10 +132,23 @@ async fn on_tick(event: Arc<ServerTickEvent>) -> ActorResult<()> {
 
 async fn on_right_click(event: Arc<RightClickEvent>) -> ActorResult<()> {
     let uuid = event.player.uuid().await?;
-    let mut counter = COUNTER.lock().unwrap();
-    if let Some(number) = counter.get_mut(&uuid) {
-        *number += 1;
-    };
+    {
+        let mut counter = COUNTER.lock().unwrap();
+        if let Some(number) = counter.get_mut(&uuid) {
+            *number += 1;
+        };
+    }
+
+    event
+        .player
+        .play_sound(
+            Sounds::BLOCK_AMETHYST_CLUSTER_BREAK
+                .pitch(1.5)
+                .volume(0.7)
+                .category(SoundCategory::Master),
+        )
+        .await?;
+
     Ok(())
 }
 

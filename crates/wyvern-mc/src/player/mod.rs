@@ -21,7 +21,8 @@ use voxidian_protocol::{
             AddEntityS2CPlayPacket, ContainerSetSlotS2CPlayPacket, ForgetLevelChunkS2CPlayPacket,
             GameEvent, GameEventS2CPlayPacket, Gamemode, OpenScreenS2CPlayPacket,
             PlayerPositionS2CPlayPacket, PlayerRotationS2CPlayPacket, RespawnDataKept,
-            RespawnS2CPlayPacket, ScreenWindowKind, SystemChatS2CPlayPacket, TeleportFlags,
+            RespawnS2CPlayPacket, ScreenWindowKind, SoundCategory, SoundEntityS2CPlayPacket,
+            SystemChatS2CPlayPacket, TeleportFlags,
         },
     },
     value::{Angle, ProfileProperty, Text, TextComponent, Uuid, VarInt},
@@ -34,7 +35,7 @@ use crate::{
     inventory::{DataInventory, Inventory, ItemStack},
     runtime::Runtime,
     server::Server,
-    values::{Vec2, Vec3},
+    values::{Sound, Vec2, Vec3},
 };
 
 pub mod chunkload;
@@ -109,7 +110,7 @@ impl ConnectionData {
             .map(|x| ProfileProperty {
                 name: x.name.clone(),
                 value: x.value.clone(),
-                signature: Some(x.sig.clone()),
+                sig: Some(x.sig.clone()),
             })
             .collect::<Vec<_>>())
     }
@@ -345,6 +346,20 @@ impl ConnectionData {
             return Err(ActorError::BadRequest);
         };
         inventory.get_slot(slot).await
+    }
+
+    #[PlaySound]
+    pub async fn play_sound(&mut self, sound: Sound) -> ActorResult<()> {
+        self.write_packet(SoundEntityS2CPlayPacket {
+            sound: sound.clone().into(),
+            category: SoundCategory::Master,
+            entity: self.associated_data.entity_id.into(),
+            volume: sound.volume,
+            pitch: sound.pitch,
+            seed: 0,
+        })
+        .await;
+        Ok(())
     }
 }
 

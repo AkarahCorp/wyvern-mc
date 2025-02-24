@@ -9,5 +9,7 @@ pub mod resource;
 pub use registry::*;
 pub mod cell;
 pub mod nbt;
+mod sound;
+pub use sound::*;
 
 pub use voxidian_protocol::value::Uuid;
