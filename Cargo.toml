@@ -5,6 +5,7 @@ members = ["examples", "crates/*"]
 [workspace.dependencies]
 # voxidian-protocol = { git = "https://github.com/LighthouseMC/VoxidianProtocol.git" }
 voxidian-protocol = { path = "../voxidian-protocol/" }
+datafix = { git = "https://github.com/akarahdev/datafix.git" }
 tokio = { version = "1.42.0", features = ["full"] }
 wyvern-macros = { path = "./crates/wyvern-macros" }
 proc-macro2 = { version = "*" }

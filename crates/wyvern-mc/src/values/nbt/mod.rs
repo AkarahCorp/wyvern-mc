@@ -1,3 +1,6 @@
+mod ops;
+pub use ops::*;
+
 use std::collections::HashMap;
 
 use voxidian_protocol::value::NbtCompound as PtcNbtCompound;
@@ -156,6 +159,10 @@ impl NbtArray {
             Err(value)
         }
     }
+
+    pub fn iter(&self) -> impl Iterator<Item = Nbt> {
+        self.inner.iter().cloned()
+    }
 }
 
 impl Default for NbtArray {
@@ -174,6 +181,14 @@ impl NbtCompound {
         NbtCompound {
             inner: HashMap::new(),
         }
+    }
+
+    pub fn get(&self, key: impl Into<String>) -> Option<&Nbt> {
+        self.inner.get(&key.into())
+    }
+
+    pub fn get_mut(&mut self, key: impl Into<String>) -> Option<&mut Nbt> {
+        self.inner.get_mut(&key.into())
     }
 
     pub fn set(&mut self, key: impl Into<String>, value: Nbt) {

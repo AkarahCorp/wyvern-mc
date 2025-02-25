@@ -1,3 +1,5 @@
+use datafix::serialization::{CodecAdapters, CodecOps, DefaultCodec};
+
 #[derive(PartialEq, Eq, Hash, Copy, Clone, Debug)]
 pub struct Vec1<T: Copy> {
     inner: [T; 1],
@@ -29,6 +31,15 @@ impl<T: Copy> Vec1<T> {
     }
 }
 
+impl<T: Copy + Default + DefaultCodec<OT, O>, OT, O: CodecOps<OT>> DefaultCodec<OT, O> for Vec1<T> {
+    fn codec() -> impl datafix::serialization::Codec<Self, OT, O> {
+        T::codec().list_of().xmap(
+            |vec| Vec1::new(*vec.first().unwrap_or(&T::default())),
+            |vec1| Vec::from([vec1.x()]),
+        )
+    }
+}
+
 impl<T: Copy> Vec2<T> {
     pub fn new(x: T, y: T) -> Self {
         Vec2 { inner: [x, y] }
@@ -52,6 +63,20 @@ impl<T: Copy> Vec2<T> {
         let mut new = *self;
         unsafe { *new.inner.get_unchecked_mut(1) = value }
         new
+    }
+}
+
+impl<T: Copy + Default + DefaultCodec<OT, O>, OT, O: CodecOps<OT>> DefaultCodec<OT, O> for Vec2<T> {
+    fn codec() -> impl datafix::serialization::Codec<Self, OT, O> {
+        T::codec().list_of().xmap(
+            |vec| {
+                Vec2::new(
+                    *vec.first().unwrap_or(&T::default()),
+                    *vec.get(1).unwrap_or(&T::default()),
+                )
+            },
+            |vec2| Vec::from([vec2.x(), vec2.y()]),
+        )
     }
 }
 
@@ -88,5 +113,20 @@ impl<T: Copy> Vec3<T> {
         let mut new = *self;
         unsafe { *new.inner.get_unchecked_mut(2) = value }
         new
+    }
+}
+
+impl<T: Copy + Default + DefaultCodec<OT, O>, OT, O: CodecOps<OT>> DefaultCodec<OT, O> for Vec3<T> {
+    fn codec() -> impl datafix::serialization::Codec<Self, OT, O> {
+        T::codec().list_of().xmap(
+            |vec| {
+                Vec3::new(
+                    *vec.first().unwrap_or(&T::default()),
+                    *vec.get(1).unwrap_or(&T::default()),
+                    *vec.get(2).unwrap_or(&T::default()),
+                )
+            },
+            |vec3| Vec::from([vec3.x(), vec3.y(), vec3.z()]),
+        )
     }
 }

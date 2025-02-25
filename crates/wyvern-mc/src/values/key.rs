@@ -1,5 +1,6 @@
 use std::{borrow::Cow, fmt::Debug, hash::Hash, marker::PhantomData};
 
+use datafix::serialization::{CodecAdapters, CodecOps, DefaultCodec};
 use voxidian_protocol::value::Identifier;
 
 pub struct Key<T> {
@@ -46,6 +47,14 @@ impl<T> Key<T> {
 
     pub fn path(&self) -> &str {
         &self.path
+    }
+
+    pub fn from_string(string: &String) -> Key<T> {
+        Identifier::from(string).into()
+    }
+
+    pub fn into_string(&self) -> String {
+        Identifier::from(self.clone()).to_string()
     }
 }
 
@@ -97,4 +106,10 @@ macro_rules! key {
     ($namespace:ident:$path:ident) => {
         Key::constant(stringify!($namespace), stringify!($path));
     };
+}
+
+impl<T, OT, O: CodecOps<OT>> DefaultCodec<OT, O> for Key<T> {
+    fn codec() -> impl datafix::serialization::Codec<Self, OT, O> {
+        String::codec().xmap(Key::from_string, Key::into_string)
+    }
 }
