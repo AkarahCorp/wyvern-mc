@@ -25,7 +25,7 @@ use voxidian_protocol::{
             SystemChatS2CPlayPacket, TeleportFlags,
         },
     },
-    value::{Angle, ProfileProperty, Text, TextComponent, Uuid, VarInt},
+    value::{Angle, ProfileProperty, Text as PtcText, TextComponent, Uuid, VarInt},
 };
 use wyvern_macros::{actor, message};
 
@@ -35,7 +35,7 @@ use crate::{
     inventory::{DataInventory, Inventory, ItemStack},
     runtime::Runtime,
     server::Server,
-    values::{Sound, Vec2, Vec3},
+    values::{Sound, Text, Vec2, Vec3},
 };
 
 pub mod chunkload;
@@ -277,11 +277,12 @@ impl ConnectionData {
     }
 
     #[SendMessage]
-    pub async fn send_message(&mut self, message: String) -> ActorResult<()> {
-        let mut text = Text::new();
-        text.push(TextComponent::of_literal(message));
+    pub(crate) async fn send_message_component(
+        &mut self,
+        message: TextComponent,
+    ) -> ActorResult<()> {
         self.write_packet(SystemChatS2CPlayPacket {
-            content: text.to_nbt(),
+            content: PtcText::from(message).to_nbt(),
             is_actionbar: false,
         })
         .await;
@@ -289,11 +290,9 @@ impl ConnectionData {
     }
 
     #[SendActionBar]
-    pub async fn send_action_bar(&mut self, message: String) -> ActorResult<()> {
-        let mut text = Text::new();
-        text.push(TextComponent::of_literal(message));
+    pub async fn send_action_bar_component(&mut self, message: TextComponent) -> ActorResult<()> {
         self.write_packet(SystemChatS2CPlayPacket {
-            content: text.to_nbt(),
+            content: PtcText::from(message).to_nbt(),
             is_actionbar: true,
         })
         .await;
@@ -311,7 +310,7 @@ impl ConnectionData {
         };
         self.write_packet(OpenScreenS2CPlayPacket {
             window: VarInt::new(id as i32),
-            title: Text::new().to_nbt(),
+            title: PtcText::new().to_nbt(),
             kind,
         })
         .await;
@@ -389,6 +388,14 @@ impl Player {
         Ok(PlayerInventory {
             player: self.clone(),
         })
+    }
+
+    pub async fn send_message(&self, text: impl Text) -> ActorResult<()> {
+        self.send_message_component(text.into()).await
+    }
+
+    pub async fn send_action_bar(&self, text: impl Text) -> ActorResult<()> {
+        self.send_action_bar_component(text.into()).await
     }
 }
 

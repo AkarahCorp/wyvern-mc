@@ -19,7 +19,7 @@ use wyvern_mc::{
     runtime::Runtime,
     server::Server,
     values::{
-        Key, SoundCategory, Sounds, Uuid, Vec3,
+        Key, SoundCategory, Sounds, Texts, Uuid, Vec3,
         regval::{PaintingVariant, WolfVariant},
     },
 };
@@ -124,7 +124,7 @@ async fn on_tick(event: Arc<ServerTickEvent>) -> ActorResult<()> {
         };
 
         player
-            .send_action_bar(format!("Clicks: {:?}", count))
+            .send_action_bar(Texts::literal(format!("Clicks: {:?}", count)))
             .await?;
     }
     Ok(())

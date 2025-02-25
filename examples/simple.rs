@@ -23,7 +23,7 @@ use wyvern_mc::{
     runtime::Runtime,
     server::Server,
     values::{
-        Key, Vec3,
+        Key, Text, TextColor, Texts, Vec3,
         regval::{PaintingVariant, WolfVariant},
     },
 };
@@ -232,7 +232,7 @@ async fn on_server_start(event: Arc<ServerStartEvent>) -> ActorResult<()> {
 async fn on_drop_item(event: Arc<DropItemEvent>) -> ActorResult<()> {
     event
         .player
-        .send_message("You dropped an item, wow!".to_string())
+        .send_message(Texts::literal("You dropped an item, wow!"))
         .await?;
 
     Ok(())
@@ -241,7 +241,7 @@ async fn on_drop_item(event: Arc<DropItemEvent>) -> ActorResult<()> {
 async fn on_place(event: Arc<PlaceBlockEvent>) -> ActorResult<()> {
     event
         .player
-        .send_message("You placed an item, wow!".to_string())
+        .send_message(Texts::literal("You placed an item, wow!"))
         .await?;
     Ok(())
 }
@@ -249,7 +249,7 @@ async fn on_place(event: Arc<PlaceBlockEvent>) -> ActorResult<()> {
 async fn on_break(event: Arc<BreakBlockEvent>) -> ActorResult<()> {
     event
         .player
-        .send_message("You broke an item, wow!".to_string())
+        .send_message(Texts::literal("You broke an item, wow!"))
         .await?;
     Ok(())
 }
@@ -257,11 +257,14 @@ async fn on_break(event: Arc<BreakBlockEvent>) -> ActorResult<()> {
 async fn on_chat(event: Arc<ChatMessageEvent>) -> ActorResult<()> {
     for player in Server::get()?.players().await? {
         player
-            .send_message(format!(
-                "{}: {}",
-                event.player.username().await?,
-                event.message
-            ))
+            .send_message(
+                Texts::literal(format!(
+                    "{}: {}",
+                    event.player.username().await?,
+                    event.message
+                ))
+                .with_color(TextColor::new(0, 255, 0)),
+            )
             .await?;
     }
     Ok(())

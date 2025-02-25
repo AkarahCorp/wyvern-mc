@@ -11,5 +11,7 @@ pub mod cell;
 pub mod nbt;
 mod sound;
 pub use sound::*;
+mod text;
+pub use text::*;
 
 pub use voxidian_protocol::value::Uuid;
