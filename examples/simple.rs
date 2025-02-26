@@ -5,11 +5,10 @@ use tokio::runtime::Builder;
 use voxidian_protocol::packet::s2c::play::ScreenWindowKind;
 use wyvern_mc::{
     actors::ActorResult,
-    components::ComponentHolder,
     dimension::{
         blocks::{BlockState, Blocks},
         chunk::Chunk,
-        properties::BlockComponents,
+        properties::BlockProperties,
     },
     events::{
         BreakBlockEvent, ChatMessageEvent, DimensionCreateEvent, DropItemEvent, PlaceBlockEvent,
@@ -84,7 +83,7 @@ async fn on_command(event: Arc<PlayerCommandEvent>) -> ActorResult<()> {
         let event = event.clone();
         Runtime::spawn(async move {
             let state = BlockState::new(Key::new("minecraft", "grass_block"))
-                .with(&BlockComponents::SNOWY, false);
+                .with_property(BlockProperties::SNOWY, false);
             let dim = event.player.dimension().await.unwrap();
             for x in 1..100 {
                 for y in 1..10 {
@@ -191,8 +190,8 @@ async fn on_server_tick(event: Arc<ServerTickEvent>) -> ActorResult<()> {
             .set_slot(
                 38,
                 ItemStack::new(Key::new("minecraft", "netherite_axe"))
-                    .with(&ItemComponents::MAX_DAMAGE, 1500)
-                    .with(&ItemComponents::DAMAGE, 1),
+                    .with(ItemComponents::MAX_DAMAGE, 1500)
+                    .with(ItemComponents::DAMAGE, 1),
             )
             .await?;
     }
@@ -260,10 +259,10 @@ async fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
         .set_slot(
             36,
             ItemStack::new(Key::new("minecraft", "stone"))
-                .with(&ItemComponents::MAX_DAMAGE, 10)
-                .with(&ItemComponents::DAMAGE, 1)
+                .with(ItemComponents::MAX_DAMAGE, 10)
+                .with(ItemComponents::DAMAGE, 1)
                 .with(
-                    &ItemComponents::ITEM_MODEL,
+                    ItemComponents::ITEM_MODEL,
                     Key::constant("minecraft", "stone"),
                 ),
         )
@@ -275,10 +274,10 @@ async fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
         .set_slot(
             37,
             ItemStack::new(Key::new("minecraft", "diamond_sword"))
-                .with(&ItemComponents::MAX_DAMAGE, 20)
-                .with(&ItemComponents::DAMAGE, 6)
+                .with(ItemComponents::MAX_DAMAGE, 20)
+                .with(ItemComponents::DAMAGE, 6)
                 .with(
-                    &ItemComponents::ITEM_MODEL,
+                    ItemComponents::ITEM_MODEL,
                     Key::constant("minecraft", "diamond_sword"),
                 ),
         )

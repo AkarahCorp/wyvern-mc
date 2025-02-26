@@ -14,7 +14,6 @@ use voxidian_protocol::{
 
 use crate::{
     actors::{Actor, ActorError, ActorResult},
-    components::ComponentHolder,
     dimension::{Dimension, blocks::BlockState},
     events::{
         BreakBlockEvent, ChangeHeldSlotEvent, ChatMessageEvent, DropItemEvent, PlaceBlockEvent,
@@ -264,7 +263,7 @@ impl ConnectionData {
                             let _ = dim.set_block(final_pos, state_clone).await;
                         });
 
-                        let item_count = held.get(&ItemComponents::ITEM_COUNT).unwrap();
+                        let item_count = held.get(ItemComponents::ITEM_COUNT).unwrap();
                         if item_count <= 1 {
                             this.associated_data
                                 .inventory
@@ -275,7 +274,7 @@ impl ConnectionData {
                                 .inventory
                                 .set_slot(
                                     this.associated_data.held_slot as usize,
-                                    held.with(&ItemComponents::ITEM_COUNT, item_count - 1),
+                                    held.with(ItemComponents::ITEM_COUNT, item_count - 1),
                                 )
                                 .await?;
                         }

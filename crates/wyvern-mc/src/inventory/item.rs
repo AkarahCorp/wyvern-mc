@@ -8,9 +8,9 @@ use voxidian_protocol::{
     value::{DataComponentTypes, DataComponents, Item, SlotData},
 };
 
-use crate::{components::ComponentHolder, values::Key};
+use crate::values::Key;
 
-use super::ItemComponents;
+use super::Component;
 
 pub struct ItemType;
 
@@ -39,6 +39,15 @@ impl ItemStack {
             added_components: HashMap::new(),
             removed_components: HashSet::new(),
         }
+    }
+
+    pub fn with<C: Component<ItemStack, V>, V>(mut self, component: C, value: V) -> Self {
+        component.insert_component(&mut self, value);
+        self
+    }
+
+    pub fn get<C: Component<ItemStack, V>, V>(&self, component: C) -> Option<V> {
+        component.get_component(self)
     }
 
     pub fn kind(&self) -> Key<ItemType> {
@@ -90,5 +99,3 @@ impl From<SlotData> for ItemStack {
         }
     }
 }
-
-impl ComponentHolder<ItemComponents> for ItemStack {}

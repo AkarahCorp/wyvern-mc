@@ -295,7 +295,10 @@ impl ConnectionData {
     }
 
     #[SendActionBar]
-    pub async fn send_action_bar_component(&mut self, message: TextComponent) -> ActorResult<()> {
+    pub(crate) async fn send_action_bar_component(
+        &mut self,
+        message: TextComponent,
+    ) -> ActorResult<()> {
         self.write_packet(SystemChatS2CPlayPacket {
             content: PtcText::from(message).to_nbt(),
             is_actionbar: true,

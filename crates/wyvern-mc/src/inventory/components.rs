@@ -1,11 +1,14 @@
 use voxidian_protocol::value::{Damage, DataComponentTypes, DataComponents, ItemModel, MaxDamage};
 
-use crate::{
-    components::{ComponentKind, ComponentRegistry},
-    values::{Key, resource::Texture},
-};
+use crate::values::{Key, resource::Texture};
 
 use super::ItemStack;
+
+pub trait Component<H, V> {
+    fn insert_component(&self, holder: &mut H, value: V);
+    fn get_component(&self, holder: &H) -> Option<V>;
+    fn unset_component(&self, holder: &mut H);
+}
 
 pub struct ItemComponents;
 
@@ -16,10 +19,8 @@ impl ItemComponents {
     pub const ITEM_MODEL: ItemModelComponentType = ItemModelComponentType;
 }
 
-impl ComponentRegistry<ItemStack> for ItemComponents {}
-
 pub struct ItemCountComponentType;
-impl ComponentKind<ItemStack, ItemComponents, u16> for ItemCountComponentType {
+impl Component<ItemStack, u16> for ItemCountComponentType {
     fn insert_component(&self, holder: &mut ItemStack, value: u16) {
         holder.count = value;
     }
@@ -32,7 +33,7 @@ impl ComponentKind<ItemStack, ItemComponents, u16> for ItemCountComponentType {
 }
 
 pub struct MaxDamageComponentType;
-impl ComponentKind<ItemStack, ItemComponents, u32> for MaxDamageComponentType {
+impl Component<ItemStack, u32> for MaxDamageComponentType {
     fn insert_component(&self, holder: &mut ItemStack, value: u32) {
         holder.added_components.insert(
             DataComponentTypes::MaxDamage,
@@ -67,7 +68,7 @@ impl ComponentKind<ItemStack, ItemComponents, u32> for MaxDamageComponentType {
     }
 }
 pub struct DamageComponentType;
-impl ComponentKind<ItemStack, ItemComponents, u32> for DamageComponentType {
+impl Component<ItemStack, u32> for DamageComponentType {
     fn insert_component(&self, holder: &mut ItemStack, value: u32) {
         holder.added_components.insert(
             DataComponentTypes::Damage,
@@ -99,7 +100,7 @@ impl ComponentKind<ItemStack, ItemComponents, u32> for DamageComponentType {
 }
 
 pub struct ItemModelComponentType;
-impl ComponentKind<ItemStack, ItemComponents, Key<Texture>> for ItemModelComponentType {
+impl Component<ItemStack, Key<Texture>> for ItemModelComponentType {
     fn insert_component(&self, holder: &mut ItemStack, value: Key<Texture>) {
         holder.added_components.insert(
             DataComponentTypes::ItemModel,

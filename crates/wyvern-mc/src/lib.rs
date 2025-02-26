@@ -2,7 +2,6 @@
 #![allow(clippy::type_complexity)]
 
 pub mod actors;
-pub mod components;
 pub mod dimension;
 pub mod events;
 pub mod future;

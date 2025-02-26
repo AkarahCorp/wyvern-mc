@@ -1,9 +1,5 @@
 use std::{marker::PhantomData, str::FromStr};
 
-use crate::components::{ComponentKind, ComponentRegistry};
-
-use super::blocks::BlockState;
-
 #[allow(dead_code)]
 pub struct StateProperty<T: FromStr + ToString> {
     pub(crate) name: &'static str,
@@ -30,23 +26,9 @@ impl<T: FromStr + ToString> StateProperty<T> {
     }
 }
 
-impl<T: FromStr + ToString> ComponentKind<BlockState, BlockComponents, T> for StateProperty<T> {
-    fn insert_component(&self, holder: &mut BlockState, value: T) {
-        holder.insert_raw_property(self.name, &value.to_string());
-    }
+pub struct BlockProperties;
 
-    fn get_component(&self, holder: &BlockState) -> Option<T> {
-        T::from_str(&holder.state.iter().find(|x| x.0 == self.name)?.1).ok()
-    }
-
-    fn unset_component(&self, holder: &mut BlockState) {
-        holder.state.retain(|x| x.0 != self.name);
-    }
-}
-
-pub struct BlockComponents;
-
-impl BlockComponents {
+impl BlockProperties {
     pub const AGE: StateProperty<u8> = StateProperty::new_restrict("age", |x| *x <= 15);
     pub const SNOWY: StateProperty<bool> = StateProperty::new("snowy");
     pub const FACING: StateProperty<BlockDirection> = StateProperty::new("facing");
@@ -62,8 +44,6 @@ impl BlockComponents {
     pub const POWERED: StateProperty<bool> = StateProperty::new("powered");
     pub const FURNACE_LIT: StateProperty<bool> = StateProperty::new("bool");
 }
-
-impl ComponentRegistry<BlockState> for BlockComponents {}
 
 macro_rules! make_enum {
     (
