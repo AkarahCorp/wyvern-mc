@@ -11,8 +11,7 @@ use voxidian_protocol::{
     },
     registry::RegEntry,
     value::{
-        Angle, BlockPos, DimType, EntityMetadata, EntityType as PtcEntityType, Identifier, Uuid,
-        VarInt,
+        Angle, BlockPos, EntityMetadata, EntityType as PtcEntityType, Identifier, Uuid, VarInt,
     },
 };
 
@@ -21,7 +20,7 @@ use crate::{
     events::ChunkLoadEvent,
     runtime::Runtime,
     server::Server,
-    values::{Key, Vec2, Vec3},
+    values::{Key, Vec2, Vec3, regval::DimensionType},
 };
 
 pub mod blocks;
@@ -38,7 +37,7 @@ pub struct DimensionData {
     pub(crate) entities: HashMap<Uuid, EntityData>,
     pub(crate) server: Option<Server>,
     pub(crate) sender: Sender<DimensionMessage>,
-    pub(crate) dim_type: Key<DimType>,
+    pub(crate) dim_type: Key<DimensionType>,
     pub(crate) chunk_generator: fn(&mut Chunk, i32, i32),
 }
 
@@ -124,7 +123,7 @@ impl DimensionData {
 
     #[GetDimType]
     #[doc = "Returns the Dimension Type value of this Dimension."]
-    pub async fn dimension_type(&mut self) -> ActorResult<Key<DimType>> {
+    pub async fn dimension_type(&mut self) -> ActorResult<Key<DimensionType>> {
         Ok(self.dim_type.clone())
     }
 
@@ -418,7 +417,7 @@ impl DimensionData {
     pub(crate) fn new(
         name: Key<DimensionData>,
         server: Server,
-        dim_type: Key<DimType>,
+        dim_type: Key<DimensionType>,
     ) -> DimensionData {
         let chan = flume::unbounded();
         DimensionData {

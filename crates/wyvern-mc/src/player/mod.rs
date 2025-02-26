@@ -25,6 +25,7 @@ use voxidian_protocol::{
             SystemChatS2CPlayPacket, TeleportFlags,
         },
     },
+    registry::RegEntry,
     value::{Angle, ProfileProperty, Text as PtcText, TextComponent, Uuid, VarInt},
 };
 use wyvern_macros::{actor, message};
@@ -131,13 +132,17 @@ impl ConnectionData {
         self.associated_data.last_direction = Vec2::new(0.0, 0.0);
 
         self.write_packet(RespawnS2CPlayPacket {
-            dim: self
-                .connected_server
-                .registries()
-                .await?
-                .dimension_types
-                .get_entry(dimension.dimension_type().await?)
-                .unwrap(),
+            dim: unsafe {
+                RegEntry::new_unchecked(
+                    self.connected_server
+                        .registries()
+                        .await?
+                        .dimension_types
+                        .get_entry(dimension.dimension_type().await?)
+                        .unwrap()
+                        .id(),
+                )
+            },
             dim_name: dimension.name().await?.into(),
             seed: 0,
             gamemode: Gamemode::Survival,

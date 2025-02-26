@@ -1,11 +1,11 @@
 use voxidian_protocol::value::{
-    Biome, DamageType, DimType, EntityType, PaintingVariant as PtcPaintingVariant,
+    Biome, DamageType, EntityType, PaintingVariant as PtcPaintingVariant,
     WolfVariant as PtcWolfVariant,
 };
 
 use crate::values::{
     Key, Registry,
-    regval::{PaintingVariant, WolfVariant},
+    regval::{DimensionType, PaintingVariant, WolfVariant},
 };
 
 #[allow(dead_code)]
@@ -14,7 +14,7 @@ pub struct RegistryContainer {
     pub(crate) biomes: Registry<Biome>,
     pub(crate) wolf_variants: Registry<PtcWolfVariant>,
     pub(crate) painting_variants: Registry<PtcPaintingVariant>,
-    pub(crate) dimension_types: Registry<DimType>,
+    pub(crate) dimension_types: Registry<DimensionType>,
     pub(crate) entity_types: Registry<EntityType>,
 }
 
@@ -29,7 +29,7 @@ pub struct RegistryContainerBuilder {
     pub(crate) biomes: Registry<Biome>,
     pub(crate) wolf_variants: Registry<PtcWolfVariant>,
     pub(crate) painting_variants: Registry<PtcPaintingVariant>,
-    pub(crate) dimension_types: Registry<DimType>,
+    pub(crate) dimension_types: Registry<DimensionType>,
     pub(crate) entity_types: Registry<EntityType>,
 }
 
@@ -55,7 +55,7 @@ impl RegistryContainerBuilder {
         self.painting_variants.insert(key.retype(), value.into());
     }
 
-    pub fn dimension_type(&mut self, key: Key<DimType>, value: DimType) {
+    pub fn dimension_type(&mut self, key: Key<DimensionType>, value: DimensionType) {
         self.dimension_types.insert(key, value);
     }
 }

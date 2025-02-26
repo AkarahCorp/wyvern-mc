@@ -75,7 +75,10 @@ impl ConnectionData {
 
                 let (min_y, max_y, height) = {
                     let registries = server.registries().await.unwrap();
-                    let dim_type = registries.dimension_types.get(dim_type_entry).unwrap();
+                    let dim_type = registries
+                        .dimension_types
+                        .get(dim_type_entry.retype())
+                        .unwrap();
 
                     let min_y = dim_type.min_y;
                     let max_y = dim_type.min_y + dim_type.height as i32;

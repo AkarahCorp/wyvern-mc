@@ -3,7 +3,6 @@ use std::sync::{
     atomic::{AtomicBool, Ordering},
 };
 
-use voxidian_protocol::value::{DimEffects, DimMonsterSpawnLightLevel, DimType};
 use wyvern_mc::{
     actors::ActorResult,
     dimension::blocks::{BlockState, Blocks},
@@ -16,7 +15,7 @@ use wyvern_mc::{
     server::Server,
     values::{
         Key, Vec3,
-        regval::{PaintingVariant, WolfVariant},
+        regval::{DimensionType, PaintingVariant, WolfVariant},
     },
 };
 
@@ -48,26 +47,10 @@ async fn main() {
                 width: 1,
                 height: 1,
             });
-            registries.dimension_type(Key::new("minecraft", "overworld"), DimType {
-                fixed_time: None,
-                has_skylight: true,
-                has_ceiling: false,
-                ultrawarm: false,
-                natural: true,
-                coordinate_scale: 1.0,
-                bed_works: true,
-                respawn_anchor_works: true,
-                min_y: -32,
-                logical_height: 64,
-                height: 64,
-                infiniburn: "#minecraft:overworld_infiniburn".to_string(),
-                effects: DimEffects::Overworld,
-                ambient_light: 15.0,
-                piglin_safe: false,
-                has_raids: true,
-                monster_spawn_light_level: DimMonsterSpawnLightLevel::Constant(0),
-                monster_spawn_block_light_limit: 0,
-            });
+            registries.dimension_type(
+                Key::new("minecraft", "overworld"),
+                DimensionType::default().min_y(0).height(16),
+            );
         })
         .run()
         .await;
