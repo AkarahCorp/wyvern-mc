@@ -28,6 +28,7 @@ async fn main() {
     env_logger::init();
 
     Runtime::tokio();
+    
     Server::builder()
         .event(on_server_start)
         .event(on_dim_init)
