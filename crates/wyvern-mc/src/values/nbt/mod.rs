@@ -183,6 +183,10 @@ impl NbtCompound {
         }
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.inner.is_empty()
+    }
+
     pub fn get(&self, key: impl Into<String>) -> Option<&Nbt> {
         self.inner.get(&key.into())
     }

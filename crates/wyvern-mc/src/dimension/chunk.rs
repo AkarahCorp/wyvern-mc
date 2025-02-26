@@ -1,4 +1,4 @@
-use std::mem::MaybeUninit;
+use std::{collections::HashMap, mem::MaybeUninit};
 
 use voxidian_protocol::{
     registry::RegEntry,
@@ -8,7 +8,7 @@ use voxidian_protocol::{
     },
 };
 
-use crate::values::Vec3;
+use crate::values::{Vec3, nbt::NbtCompound};
 
 use super::blocks::BlockState;
 
@@ -69,21 +69,17 @@ impl Chunk {
 pub(crate) struct ChunkSection {
     block_count: i16,
     blocks: [[[ChunkBlock; 16]; 16]; 16],
+    block_meta: HashMap<Vec3<usize>, NbtCompound>,
 }
 
 #[derive(Clone, Debug, Copy)]
 pub(crate) struct ChunkBlock {
     block_state: u16,
-    #[allow(unused)]
-    block_meta: u16,
 }
 
 impl ChunkBlock {
     pub fn air() -> ChunkBlock {
-        ChunkBlock {
-            block_state: 0,
-            block_meta: 0,
-        }
+        ChunkBlock { block_state: 0 }
     }
 
     pub fn id(&self) -> u16 {
@@ -98,6 +94,7 @@ impl ChunkSection {
             blocks: std::array::from_fn(|_| {
                 std::array::from_fn(|_| std::array::from_fn(|_| ChunkBlock::air()))
             }),
+            block_meta: HashMap::new(),
         }
     }
 
@@ -115,8 +112,10 @@ impl ChunkSection {
 
         self.blocks[pos.x()][pos.y()][pos.z()] = ChunkBlock {
             block_state: new_block.id() as u16,
-            block_meta: 0,
         };
+        if !block.custom_data.is_empty() {
+            self.block_meta.insert(pos, block.custom_data);
+        }
     }
 
     pub fn get_block_at(&mut self, pos: Vec3<usize>) -> BlockState {

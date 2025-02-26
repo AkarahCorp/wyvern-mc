@@ -116,6 +116,12 @@ impl<T: Copy> Vec3<T> {
     }
 }
 
+impl Vec3<f64> {
+    pub fn floor(&self) -> Vec3<i32> {
+        Vec3::new(self.x() as i32, self.y() as i32, self.z() as i32)
+    }
+}
+
 impl<T: Copy + Default + DefaultCodec<OT, O>, OT, O: CodecOps<OT>> DefaultCodec<OT, O> for Vec3<T> {
     fn codec() -> impl datafix::serialization::Codec<Self, OT, O> {
         T::codec().list_of().xmap(
