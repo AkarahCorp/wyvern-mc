@@ -24,7 +24,7 @@ impl From<WolfVariant> for PtcWolfVariant {
     }
 }
 
-impl<OT, O: CodecOps<OT>> DefaultCodec<OT, O> for WolfVariant {
+impl<OT: Clone, O: CodecOps<OT>> DefaultCodec<OT, O> for WolfVariant {
     fn codec() -> impl datafix::serialization::Codec<Self, OT, O> {
         MapCodecBuilder::new()
             .field(Key::codec().field_of("angry", |w: &WolfVariant| &w.angry_texture))

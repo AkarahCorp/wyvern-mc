@@ -1,6 +1,6 @@
 use datafix::{
-    result::DataError,
-    serialization::{CodecOps, ListView, MapView},
+    result::{DataError, DataResult},
+    serialization::{CodecOps, ListView, ListViewMut, MapView, MapViewMut},
 };
 
 use super::{Nbt, NbtArray, NbtCompound};
@@ -119,7 +119,7 @@ impl CodecOps<Nbt> for NbtOps {
 
     fn get_list(
         &self,
-        value: &mut Nbt,
+        value: &Nbt,
     ) -> datafix::result::DataResult<impl datafix::serialization::ListView<Nbt>> {
         if let Nbt::Array(_) = value {
             Ok(NbtListView { value })
@@ -130,7 +130,7 @@ impl CodecOps<Nbt> for NbtOps {
 
     fn get_map(
         &self,
-        value: &mut Nbt,
+        value: &Nbt,
     ) -> datafix::result::DataResult<impl datafix::serialization::MapView<Nbt>> {
         if let Nbt::Compound(_) = value {
             Ok(NbtCompoundView { value })
@@ -146,20 +146,59 @@ impl CodecOps<Nbt> for NbtOps {
             Err(DataError::unexpected_type("unit"))
         }
     }
+
+    fn get_list_mut(&self, value: &mut Nbt) -> DataResult<impl ListViewMut<Nbt>> {
+        if let Nbt::Array(_) = value {
+            Ok(NbtListViewMut { value })
+        } else {
+            Err(DataError::unexpected_type("list"))
+        }
+    }
+
+    fn get_map_mut(&self, value: &mut Nbt) -> DataResult<impl MapViewMut<Nbt>> {
+        if let Nbt::Compound(_) = value {
+            Ok(NbtCompoundViewMut { value })
+        } else {
+            Err(DataError::unexpected_type("compound"))
+        }
+    }
 }
 
 pub struct NbtCompoundView<'a> {
-    value: &'a mut Nbt,
+    value: &'a Nbt,
 }
 
 impl MapView<Nbt> for NbtCompoundView<'_> {
-    fn get(&mut self, name: &str) -> datafix::result::DataResult<&mut Nbt> {
+    fn get(&self, name: &str) -> DataResult<&Nbt> {
         let Nbt::Compound(compound) = self.value else {
             return Err(DataError::unexpected_type("compound"));
         };
-        compound.get_mut(name).ok_or(DataError::key_not_found(name))
+        compound.get(name).ok_or(DataError::key_not_found(name))
     }
 
+    fn keys(&self) -> Vec<String> {
+        todo!()
+    }
+}
+
+pub struct NbtCompoundViewMut<'a> {
+    value: &'a mut Nbt,
+}
+
+impl MapView<Nbt> for NbtCompoundViewMut<'_> {
+    fn get(&self, name: &str) -> DataResult<&Nbt> {
+        let Nbt::Compound(compound) = &self.value else {
+            return Err(DataError::unexpected_type("compound"));
+        };
+        compound.get(name).ok_or(DataError::key_not_found(name))
+    }
+
+    fn keys(&self) -> Vec<String> {
+        todo!()
+    }
+}
+
+impl MapViewMut<Nbt> for NbtCompoundViewMut<'_> {
     fn set(&mut self, name: &str, value: Nbt) {
         let Nbt::Compound(compound) = self.value else {
             return;
@@ -171,30 +210,26 @@ impl MapView<Nbt> for NbtCompoundView<'_> {
         todo!()
     }
 
-    fn keys(&self) -> Vec<String> {
-        todo!()
+    fn get_mut(&mut self, name: &str) -> DataResult<&mut Nbt> {
+        let Nbt::Compound(compound) = self.value else {
+            return Err(DataError::unexpected_type("compound"));
+        };
+        compound.get_mut(name).ok_or(DataError::key_not_found(name))
     }
 }
 
 pub struct NbtListView<'a> {
-    value: &'a mut Nbt,
+    value: &'a Nbt,
 }
 
 impl ListView<Nbt> for NbtListView<'_> {
-    fn append(&mut self, value: Nbt) {
-        let Nbt::Array(list) = self.value else {
-            return;
-        };
-        list.inner.push(value)
-    }
-
-    fn get(&mut self, index: usize) -> datafix::result::DataResult<&mut Nbt> {
+    fn get(&self, index: usize) -> DataResult<&Nbt> {
         let Nbt::Array(list) = self.value else {
             return Err(DataError::unexpected_type("list"));
         };
         let len = list.inner.len();
         list.inner
-            .get_mut(index)
+            .get(index)
             .ok_or(DataError::list_index_out_of_bounds(index, len))
     }
 
@@ -203,5 +238,28 @@ impl ListView<Nbt> for NbtListView<'_> {
             return Vec::new().into_iter();
         };
         list.inner.clone().into_iter()
+    }
+}
+
+pub struct NbtListViewMut<'a> {
+    value: &'a mut Nbt,
+}
+
+impl ListViewMut<Nbt> for NbtListViewMut<'_> {
+    fn append(&mut self, value: Nbt) {
+        let Nbt::Array(list) = self.value else {
+            return;
+        };
+        list.inner.push(value)
+    }
+
+    fn get_mut(&mut self, index: usize) -> DataResult<&mut Nbt> {
+        let Nbt::Array(list) = self.value else {
+            return Err(DataError::unexpected_type("list"));
+        };
+        let len = list.inner.len();
+        list.inner
+            .get_mut(index)
+            .ok_or(DataError::list_index_out_of_bounds(index, len))
     }
 }

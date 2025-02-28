@@ -31,7 +31,9 @@ impl<T: Copy> Vec1<T> {
     }
 }
 
-impl<T: Copy + Default + DefaultCodec<OT, O>, OT, O: CodecOps<OT>> DefaultCodec<OT, O> for Vec1<T> {
+impl<T: Copy + Default + DefaultCodec<OT, O>, OT: Clone, O: CodecOps<OT>> DefaultCodec<OT, O>
+    for Vec1<T>
+{
     fn codec() -> impl datafix::serialization::Codec<Self, OT, O> {
         T::codec().list_of().xmap(
             |vec| Vec1::new(*vec.first().unwrap_or(&T::default())),
@@ -66,7 +68,9 @@ impl<T: Copy> Vec2<T> {
     }
 }
 
-impl<T: Copy + Default + DefaultCodec<OT, O>, OT, O: CodecOps<OT>> DefaultCodec<OT, O> for Vec2<T> {
+impl<T: Copy + Default + DefaultCodec<OT, O>, OT: Clone, O: CodecOps<OT>> DefaultCodec<OT, O>
+    for Vec2<T>
+{
     fn codec() -> impl datafix::serialization::Codec<Self, OT, O> {
         T::codec().list_of().xmap(
             |vec| {
@@ -122,7 +126,9 @@ impl Vec3<f64> {
     }
 }
 
-impl<T: Copy + Default + DefaultCodec<OT, O>, OT, O: CodecOps<OT>> DefaultCodec<OT, O> for Vec3<T> {
+impl<T: Copy + Default + DefaultCodec<OT, O>, OT: Clone, O: CodecOps<OT>> DefaultCodec<OT, O>
+    for Vec3<T>
+{
     fn codec() -> impl datafix::serialization::Codec<Self, OT, O> {
         T::codec().list_of().xmap(
             |vec| {

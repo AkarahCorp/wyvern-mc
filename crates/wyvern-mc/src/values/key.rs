@@ -108,7 +108,7 @@ macro_rules! key {
     };
 }
 
-impl<T, OT, O: CodecOps<OT>> DefaultCodec<OT, O> for Key<T> {
+impl<T, OT: Clone, O: CodecOps<OT>> DefaultCodec<OT, O> for Key<T> {
     fn codec() -> impl datafix::serialization::Codec<Self, OT, O> {
         String::codec().xmap(Key::from_string, Key::into_string)
     }
