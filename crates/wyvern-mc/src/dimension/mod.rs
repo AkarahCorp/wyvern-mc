@@ -39,6 +39,7 @@ pub struct DimensionData {
     pub(crate) sender: Sender<DimensionMessage>,
     pub(crate) dim_type: Key<DimensionType>,
     pub(crate) chunk_generator: fn(&mut Chunk, i32, i32),
+    pub(crate) chunk_max: (u32, u32),
 }
 
 impl Dimension {
@@ -66,13 +67,17 @@ impl DimensionData {
 
     #[GetChunkSection]
     #[doc = "Returns a copy of the 16x16x16 chunk section at the provided coordinates."]
-    pub fn get_chunk_section(&mut self, position: Vec3<i32>) -> ActorResult<ChunkSection> {
+    pub fn get_chunk_section(&mut self, position: Vec3<i32>) -> ActorResult<Option<ChunkSection>> {
         let chunk_pos = Vec2::new(position.x(), position.z());
         self.try_initialize_chunk(&chunk_pos)?;
 
-        let chunk = self.chunks.get_mut(&chunk_pos).unwrap();
-        let chunk_y = position.y() / 16;
-        Ok(chunk.section_at_mut(chunk_y).unwrap().clone())
+        match self.chunks.get_mut(&chunk_pos) {
+            Some(chunk) => {
+                let chunk_y = position.y() / 16;
+                Ok(Some(chunk.section_at_mut(chunk_y).unwrap().clone()))
+            }
+            None => Ok(None),
+        }
     }
 
     #[SetBlock]
@@ -383,6 +388,13 @@ impl DimensionData {
         }
         Ok(vec)
     }
+
+    #[SetChunkLimits]
+    #[doc = "Sets the maximum number of chunks this dimension can hold."]
+    pub fn max_chunks(&mut self, x: u32, y: u32) -> ActorResult<()> {
+        self.chunk_max = (x, y);
+        Ok(())
+    }
 }
 
 impl DimensionData {
@@ -401,11 +413,15 @@ impl DimensionData {
             sender: chan.0,
             dim_type,
             chunk_generator: |_, _, _| {},
+            chunk_max: (u32::MAX, u32::MAX),
         }
     }
 
     pub(crate) fn try_initialize_chunk(&mut self, pos: &Vec2<i32>) -> ActorResult<()> {
-        if !self.chunks.contains_key(pos) {
+        if !self.chunks.contains_key(pos)
+            && pos.x() <= self.chunk_max.0 as i32
+            && pos.y() <= self.chunk_max.1 as i32
+        {
             let server = self.server.clone().unwrap();
             let registries = server.registries()?;
 

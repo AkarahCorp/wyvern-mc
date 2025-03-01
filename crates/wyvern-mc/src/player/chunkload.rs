@@ -99,7 +99,13 @@ impl ConnectionData {
                 let mut sections = Vec::new();
                 for y in (min_y..max_y).step_by(16) {
                     let pos = Vec3::new(chunk_x, y, chunk_z);
-                    let chunk = dimension.get_chunk_section(pos).unwrap();
+                    let chunk = dimension.get_chunk_section(pos);
+                    let Ok(chunk) = chunk else {
+                        return;
+                    };
+                    let Some(chunk) = chunk else {
+                        return;
+                    };
                     sections.push(chunk.as_protocol_section());
                 }
 

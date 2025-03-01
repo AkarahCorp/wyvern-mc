@@ -126,6 +126,8 @@ fn dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
             }
         })?;
 
+    event.dimension.max_chunks(3, 3)?;
+
     Ok(())
 }
 
