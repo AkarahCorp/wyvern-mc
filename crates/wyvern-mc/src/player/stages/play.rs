@@ -27,9 +27,9 @@ use crate::{
 };
 
 impl ConnectionData {
-    pub async fn play_phase(&mut self) -> ActorResult<()> {
+    pub fn play_phase(&mut self) -> ActorResult<()> {
         self.read_packets(
-            async |packet: C2SPlayPackets, this: &mut Self| -> ActorResult<()> {
+            |packet: C2SPlayPackets, this: &mut Self| -> ActorResult<()> {
                 log::debug!(
                     "Player {:?} has sent packet: {:?}",
                     this.associated_data.username,
@@ -63,15 +63,10 @@ impl ConnectionData {
                             }
                             PlayerStatus::CancelledDigging => {}
                             PlayerStatus::FinishedDigging => {
-                                this.associated_data
-                                    .dimension
-                                    .as_ref()
-                                    .unwrap()
-                                    .set_block(
-                                        block,
-                                        BlockState::new(Key::constant("minecraft", "air")),
-                                    )
-                                    .await?;
+                                this.associated_data.dimension.as_ref().unwrap().set_block(
+                                    block,
+                                    BlockState::new(Key::constant("minecraft", "air")),
+                                )?;
                                 if let Some(sender) = this.sender.upgrade() {
                                     this.connected_server.spawn_event(BreakBlockEvent {
                                         player: Player { sender },
@@ -80,14 +75,12 @@ impl ConnectionData {
                                 }
                             }
                             PlayerStatus::DropItemStack => {
-                                let item = this
-                                    .get_inv_slot(this.associated_data.held_slot as usize)
-                                    .await?;
+                                let item =
+                                    this.get_inv_slot(this.associated_data.held_slot as usize)?;
                                 this.set_inv_slot(
                                     this.associated_data.held_slot as usize,
                                     ItemStack::air(),
-                                )
-                                .await?;
+                                )?;
                                 if let Some(sender) = this.sender.upgrade() {
                                     this.connected_server.spawn_event(DropItemEvent {
                                         player: Player { sender },
@@ -96,14 +89,12 @@ impl ConnectionData {
                                 }
                             }
                             PlayerStatus::DropItem => {
-                                let item = this
-                                    .get_inv_slot(this.associated_data.held_slot as usize)
-                                    .await?;
+                                let item =
+                                    this.get_inv_slot(this.associated_data.held_slot as usize)?;
                                 this.set_inv_slot(
                                     this.associated_data.held_slot as usize,
                                     ItemStack::air(),
-                                )
-                                .await?;
+                                )?;
                                 if let Some(sender) = this.sender.upgrade() {
                                     this.connected_server.spawn_event(DropItemEvent {
                                         player: Player { sender },
@@ -123,7 +114,7 @@ impl ConnectionData {
                     }
                     C2SPlayPackets::AcceptTeleportation(packet) => {
                         if packet.teleport_id.as_i32() == 0 {
-                            this.connect_to_new_dimension().await?;
+                            this.connect_to_new_dimension()?;
                         }
 
                         this.send_chunks();
@@ -199,8 +190,7 @@ impl ConnectionData {
                     }
                     C2SPlayPackets::ClientTickEnd(_) => {}
                     C2SPlayPackets::PingRequest(packet) => {
-                        this.write_packet(PongResponseS2CPlayPacket(packet.id as u64))
-                            .await;
+                        this.write_packet(PongResponseS2CPlayPacket(packet.id as u64));
                     }
                     C2SPlayPackets::ChunkBatchReceived(_packet) => {}
                     C2SPlayPackets::SetCreativeModeSlot(packet) => {
@@ -208,8 +198,7 @@ impl ConnectionData {
 
                         this.associated_data
                             .inventory
-                            .set_slot(packet.slot as usize, stack)
-                            .await?;
+                            .set_slot(packet.slot as usize, stack)?;
                     }
                     C2SPlayPackets::SetCarriedItem(packet) => {
                         this.associated_data.held_slot = packet.slot + 36;
@@ -248,8 +237,7 @@ impl ConnectionData {
                         let held = this
                             .associated_data
                             .inventory
-                            .get_slot(this.associated_data.held_slot as usize)
-                            .await?;
+                            .get_slot(this.associated_data.held_slot as usize)?;
 
                         let state = BlockState::new(held.kind().retype());
                         let state_clone = state.clone();
@@ -259,24 +247,21 @@ impl ConnectionData {
                             .as_ref()
                             .ok_or(ActorError::ActorIsNotLoaded)?
                             .clone();
-                        Runtime::spawn(async move {
-                            let _ = dim.set_block(final_pos, state_clone).await;
+                        Runtime::spawn(move || {
+                            let _ = dim.set_block(final_pos, state_clone);
                         });
 
                         let item_count = held.get(ItemComponents::ITEM_COUNT).unwrap();
                         if item_count <= 1 {
-                            this.associated_data
-                                .inventory
-                                .set_slot(this.associated_data.held_slot as usize, ItemStack::air())
-                                .await?;
+                            this.associated_data.inventory.set_slot(
+                                this.associated_data.held_slot as usize,
+                                ItemStack::air(),
+                            )?;
                         } else {
-                            this.associated_data
-                                .inventory
-                                .set_slot(
-                                    this.associated_data.held_slot as usize,
-                                    held.with(ItemComponents::ITEM_COUNT, item_count - 1),
-                                )
-                                .await?;
+                            this.associated_data.inventory.set_slot(
+                                this.associated_data.held_slot as usize,
+                                held.with(ItemComponents::ITEM_COUNT, item_count - 1),
+                            )?;
                         }
 
                         if let Some(sender) = this.sender.upgrade() {
@@ -310,19 +295,16 @@ impl ConnectionData {
                                     ContainerSlotGroup::PlayerHotbar(hotbar) => {
                                         this.associated_data
                                             .inventory
-                                            .set_slot(36 + hotbar, slot.data.clone().into())
-                                            .await?;
+                                            .set_slot(36 + hotbar, slot.data.clone().into())?;
                                     }
                                     ContainerSlotGroup::PlayerUpper(upper) => {
                                         this.associated_data
                                             .inventory
-                                            .set_slot(9 + upper, slot.data.clone().into())
-                                            .await?;
+                                            .set_slot(9 + upper, slot.data.clone().into())?;
                                     }
                                     ContainerSlotGroup::Container(slot_idx) => {
                                         open_inventory
-                                            .set_slot(slot_idx, slot.data.clone().into())
-                                            .await?;
+                                            .set_slot(slot_idx, slot.data.clone().into())?;
                                     }
                                     _ => todo!(),
                                 }
@@ -331,8 +313,7 @@ impl ConnectionData {
                             for slot in packet.changed_slots.iter() {
                                 this.associated_data
                                     .inventory
-                                    .set_slot(slot.slot as usize, slot.data.clone().into())
-                                    .await?;
+                                    .set_slot(slot.slot as usize, slot.data.clone().into())?;
                             }
                         }
                     }
@@ -351,10 +332,9 @@ impl ConnectionData {
                 Ok(())
             },
         )
-        .await
     }
 
-    pub async fn connect_to_new_dimension(&mut self) -> ActorResult<()> {
+    pub fn connect_to_new_dimension(&mut self) -> ActorResult<()> {
         log::debug!("Setting dimension...");
 
         let key = Key::<Dimension>::constant("null", "null");
@@ -368,15 +348,16 @@ impl ConnectionData {
         }
 
         loop {
-            Runtime::yield_now().await;
-            self.handle_messages().await;
+            std::thread::yield_now();
+
+            self.handle_messages();
 
             if token.get() != key {
                 break;
             }
         }
 
-        self.associated_data.dimension = self.connected_server.dimension(token.get()).await.ok();
+        self.associated_data.dimension = self.connected_server.dimension(token.get()).ok();
 
         if self.associated_data.dimension.is_none() {
             let mut text = Text::new();
@@ -385,8 +366,7 @@ impl ConnectionData {
             ));
             self.write_packet(DisconnectS2CPlayPacket {
                 reason: text.to_nbt(),
-            })
-            .await;
+            });
             return Err(ActorError::ActorIsNotLoaded);
         }
 
@@ -394,11 +374,10 @@ impl ConnectionData {
         self.write_packet(GameEventS2CPlayPacket {
             event: GameEvent::WaitForChunks,
             value: 0.0,
-        })
-        .await;
+        });
 
         log::debug!("Broadcasting this player info...");
-        for player in self.connected_server.connections().await? {
+        for player in self.connected_server.connections()? {
             let data = self.associated_data.clone();
             let props = self
                 .props
@@ -410,25 +389,23 @@ impl ConnectionData {
                 })
                 .collect::<Vec<_>>()
                 .into();
-            self.intertwine(async move || {
-                let _ = player
-                    .write_packet(PlayerInfoUpdateS2CPlayPacket {
-                        actions: vec![(data.uuid, vec![
-                            PlayerActionEntry::AddPlayer {
-                                name: data.username.clone(),
-                                props,
-                            },
-                            PlayerActionEntry::Listed(true),
-                        ])],
-                    })
-                    .await;
-            })
-            .await;
+
+            Runtime::spawn(move || {
+                let _ = player.write_packet(PlayerInfoUpdateS2CPlayPacket {
+                    actions: vec![(data.uuid, vec![
+                        PlayerActionEntry::AddPlayer {
+                            name: data.username.clone(),
+                            props,
+                        },
+                        PlayerActionEntry::Listed(true),
+                    ])],
+                });
+            });
         }
 
         log::debug!("All done!");
         log::debug!("Sending over current player info...");
-        for player in self.connected_server.connections().await? {
+        for player in self.connected_server.connections()? {
             let Some(sender) = self.sender.upgrade() else {
                 continue;
             };
@@ -450,16 +427,14 @@ impl ConnectionData {
                                 .into(),
                         },
                     ])],
-                })
-                .await;
+                });
             } else {
                 self.write_packet(PlayerInfoUpdateS2CPlayPacket {
-                    actions: vec![(player.uuid().await?, vec![PlayerActionEntry::AddPlayer {
-                        name: player.username().await?,
-                        props: player.auth_props().await?.into(),
+                    actions: vec![(player.uuid()?, vec![PlayerActionEntry::AddPlayer {
+                        name: player.username()?,
+                        props: player.auth_props()?.into(),
                     }])],
-                })
-                .await;
+                });
             }
         }
 
@@ -469,21 +444,19 @@ impl ConnectionData {
             .dimension
             .as_ref()
             .unwrap()
-            .all_entities()
-            .await?
+            .all_entities()?
         {
-            let position = entity.position().await?;
+            let position = entity.position()?;
 
             log::debug!("Sending entity @ {:?}...", position);
             self.write_packet(AddEntityS2CPlayPacket {
-                id: entity.entity_id().await?.into(),
+                id: entity.entity_id()?.into(),
                 uuid: *entity.uuid(),
                 kind: self
                     .connected_server
-                    .registries()
-                    .await?
+                    .registries()?
                     .entity_types
-                    .get_entry(entity.entity_type().await?.retype())
+                    .get_entry(entity.entity_type()?.retype())
                     .unwrap(),
                 x: position.0.x(),
                 y: position.0.x(),
@@ -495,17 +468,15 @@ impl ConnectionData {
                 vel_x: 0,
                 vel_y: 0,
                 vel_z: 0,
-            })
-            .await;
+            });
         }
 
         log::debug!("Spawning human...");
         let dim = self.associated_data.dimension.as_ref().unwrap().clone();
         let data = self.associated_data.clone();
-        self.intertwine(async move || {
-            let _ = dim.spawn_player_entity(data.uuid, data.entity_id).await;
-        })
-        .await;
+        Runtime::spawn(move || {
+            let _ = dim.spawn_player_entity(data.uuid, data.entity_id);
+        });
 
         log::debug!("All done!");
 

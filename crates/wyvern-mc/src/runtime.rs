@@ -11,27 +11,10 @@ pub struct Runtime {
 }
 
 impl Runtime {
-    pub fn spawn<F>(future: F)
+    pub fn spawn<F>(func: F)
     where
-        F: Future<Output = ()> + Send + 'static,
+        F: FnOnce() + Send + 'static,
     {
-        (GLOBAL_RUNTIME
-            .spawn_handler
-            .get_or_init(|| panic!("No runtime spawn handler set")))(Box::pin(future));
-    }
-
-    pub async fn yield_now() {
-        futures_lite::future::yield_now().await;
-    }
-
-    pub fn set_spawn_handler(function: fn(Pin<Box<dyn Future<Output = ()> + Send>>)) {
-        GLOBAL_RUNTIME.spawn_handler.set(function);
-    }
-
-    #[cfg(feature = "rt-tokio")]
-    pub fn tokio() {
-        GLOBAL_RUNTIME.spawn_handler.set(|future| {
-            tokio::spawn(future);
-        });
+        std::thread::spawn(func);
     }
 }

@@ -1,13 +1,12 @@
 use std::{
     collections::VecDeque,
-    net::IpAddr,
+    net::{IpAddr, TcpStream},
     sync::{
         Arc, Mutex,
         atomic::{AtomicBool, Ordering},
     },
 };
 
-use async_net::TcpStream;
 use data::PlayerData;
 use flume::{Receiver, Sender, WeakSender};
 use inventory::PlayerInventory;
@@ -68,35 +67,35 @@ pub(crate) struct ConnectionData {
 #[message(Player, PlayerMessage)]
 impl ConnectionData {
     #[SetStage]
-    pub async fn set_stage(&mut self, stage: Stage) -> ActorResult<()> {
+    pub fn set_stage(&mut self, stage: Stage) -> ActorResult<()> {
         *self.stage.lock().unwrap() = stage;
         Ok(())
     }
 
     #[GetStage]
-    pub async fn stage(&mut self) -> ActorResult<Stage> {
+    pub fn stage(&mut self) -> ActorResult<Stage> {
         Ok(*self.stage.lock().unwrap())
     }
 
     #[IsLoaded]
-    pub async fn is_loaded(&self) -> ActorResult<bool> {
+    pub fn is_loaded(&self) -> ActorResult<bool> {
         Ok(self.is_loaded.load(Ordering::Acquire))
     }
 
     #[SendPacketBuf]
-    pub(crate) async fn send_packet_buf(&mut self, buf: PacketBuf) -> ActorResult<()> {
+    pub(crate) fn send_packet_buf(&mut self, buf: PacketBuf) -> ActorResult<()> {
         let cipherdata = self.packet_processing.encode_encrypt(buf).unwrap();
         self.bytes_to_send.extend(cipherdata.as_slice());
         Ok(())
     }
 
     #[GetServer]
-    pub async fn server(&self) -> ActorResult<Server> {
+    pub fn server(&self) -> ActorResult<Server> {
         Ok(self.connected_server.clone())
     }
 
     #[GetDimension]
-    pub async fn dimension(&self) -> ActorResult<Dimension> {
+    pub fn dimension(&self) -> ActorResult<Dimension> {
         self.associated_data
             .dimension
             .clone()
@@ -104,7 +103,7 @@ impl ConnectionData {
     }
 
     #[MojAuthProps]
-    pub async fn auth_props(&self) -> ActorResult<Vec<ProfileProperty>> {
+    pub fn auth_props(&self) -> ActorResult<Vec<ProfileProperty>> {
         Ok(self
             .props
             .iter()
@@ -117,13 +116,12 @@ impl ConnectionData {
     }
 
     #[ChangeDimension]
-    pub async fn set_dimension(&mut self, dimension: Dimension) -> ActorResult<()> {
+    pub fn set_dimension(&mut self, dimension: Dimension) -> ActorResult<()> {
         for chunk in self.associated_data.loaded_chunks.clone() {
             self.write_packet(ForgetLevelChunkS2CPlayPacket {
                 chunk_z: chunk.y(),
                 chunk_x: chunk.x(),
-            })
-            .await;
+            });
         }
 
         self.associated_data.dimension = Some(dimension.clone());
@@ -135,15 +133,14 @@ impl ConnectionData {
             dim: unsafe {
                 RegEntry::new_unchecked(
                     self.connected_server
-                        .registries()
-                        .await?
+                        .registries()?
                         .dimension_types
-                        .get_entry(dimension.dimension_type().await?)
+                        .get_entry(dimension.dimension_type()?)
                         .unwrap()
                         .id(),
                 )
             },
-            dim_name: dimension.name().await?.into(),
+            dim_name: dimension.name()?.into(),
             seed: 0,
             gamemode: Gamemode::Survival,
             prev_gamemode: Gamemode::None,
@@ -156,13 +153,11 @@ impl ConnectionData {
                 keep_attributes: true,
                 keep_metadata: true,
             },
-        })
-        .await;
+        });
         self.write_packet(GameEventS2CPlayPacket {
             event: GameEvent::WaitForChunks,
             value: 0.0,
-        })
-        .await;
+        });
         self.write_packet(PlayerPositionS2CPlayPacket {
             teleport_id: VarInt::from(18383),
             x: 1.0,
@@ -184,25 +179,22 @@ impl ConnectionData {
                 relative_vz: true,
                 rotate_velocity: false,
             },
-        })
-        .await;
+        });
         self.write_packet(PlayerRotationS2CPlayPacket {
             yaw: 0.0,
             pitch: 0.0,
-        })
-        .await;
+        });
 
-        for entity in dimension.entities().await? {
-            let position = entity.position().await?;
+        for entity in dimension.entities()? {
+            let position = entity.position()?;
             self.write_packet(AddEntityS2CPlayPacket {
-                id: entity.entity_id().await?.into(),
+                id: entity.entity_id()?.into(),
                 uuid: *entity.uuid(),
                 kind: self
                     .connected_server
-                    .registries()
-                    .await?
+                    .registries()?
                     .entity_types
-                    .get_entry(entity.entity_type().await?.retype())
+                    .get_entry(entity.entity_type()?.retype())
                     .unwrap(),
                 x: position.0.x(),
                 y: position.0.x(),
@@ -214,20 +206,19 @@ impl ConnectionData {
                 vel_x: 0,
                 vel_y: 0,
                 vel_z: 0,
-            })
-            .await;
+            });
         }
 
         Ok(())
     }
 
     #[GetInvSlot]
-    pub(crate) async fn get_inv_slot(&self, slot: usize) -> ActorResult<ItemStack> {
-        self.associated_data.inventory.get_slot(slot).await
+    pub(crate) fn get_inv_slot(&self, slot: usize) -> ActorResult<ItemStack> {
+        self.associated_data.inventory.get_slot(slot)
     }
 
     #[SetInvSlot]
-    pub(crate) async fn set_inv_slot(&mut self, slot: usize, item: ItemStack) -> ActorResult<()> {
+    pub(crate) fn set_inv_slot(&mut self, slot: usize, item: ItemStack) -> ActorResult<()> {
         let copy = item.clone();
 
         let slot = self
@@ -237,7 +228,7 @@ impl ConnectionData {
             .map(|(x, _)| x.container_slot_count())
             .unwrap_or(0)
             + slot;
-        self.associated_data.inventory.set_slot(slot, copy).await?;
+        self.associated_data.inventory.set_slot(slot, copy)?;
 
         let slot = if self.associated_data.screen.is_some() {
             (slot as i32) - 9
@@ -262,53 +253,45 @@ impl ConnectionData {
             slot: slot as i16,
             slot_data: item.into(),
         };
-        self.write_packet(packet).await;
+        self.write_packet(packet);
         Ok(())
     }
 
     #[Username]
-    pub async fn username(&self) -> ActorResult<String> {
+    pub fn username(&self) -> ActorResult<String> {
         Ok(self.associated_data.username.clone())
     }
 
     #[Uuid]
-    pub async fn uuid(&self) -> ActorResult<Uuid> {
+    pub fn uuid(&self) -> ActorResult<Uuid> {
         Ok(self.associated_data.uuid)
     }
 
     #[Position]
-    pub async fn position(&self) -> ActorResult<Vec3<f64>> {
+    pub fn position(&self) -> ActorResult<Vec3<f64>> {
         Ok(self.associated_data.last_position)
     }
 
     #[SendMessage]
-    pub(crate) async fn send_message_component(
-        &mut self,
-        message: TextComponent,
-    ) -> ActorResult<()> {
+    pub(crate) fn send_message_component(&mut self, message: TextComponent) -> ActorResult<()> {
         self.write_packet(SystemChatS2CPlayPacket {
             content: PtcText::from(message).to_nbt(),
             is_actionbar: false,
-        })
-        .await;
+        });
         Ok(())
     }
 
     #[SendActionBar]
-    pub(crate) async fn send_action_bar_component(
-        &mut self,
-        message: TextComponent,
-    ) -> ActorResult<()> {
+    pub(crate) fn send_action_bar_component(&mut self, message: TextComponent) -> ActorResult<()> {
         self.write_packet(SystemChatS2CPlayPacket {
             content: PtcText::from(message).to_nbt(),
             is_actionbar: true,
-        })
-        .await;
+        });
         Ok(())
     }
 
     #[OpenScreen]
-    pub async fn open_screen(&mut self, kind: ScreenWindowKind) -> ActorResult<()> {
+    pub fn open_screen(&mut self, kind: ScreenWindowKind) -> ActorResult<()> {
         let id = if self.associated_data.window_id > 100 {
             self.associated_data.window_id = 1;
             1
@@ -320,8 +303,7 @@ impl ConnectionData {
             window: VarInt::new(id as i32),
             title: PtcText::new().to_nbt(),
             kind,
-        })
-        .await;
+        });
         self.associated_data.screen = Some((
             kind,
             DataInventory::new_filled(kind.container_slot_count(), ItemStack::air),
@@ -330,33 +312,32 @@ impl ConnectionData {
     }
 
     #[SetScreenSlot]
-    pub async fn set_screen_slot(&mut self, slot: usize, item: ItemStack) -> ActorResult<()> {
+    pub fn set_screen_slot(&mut self, slot: usize, item: ItemStack) -> ActorResult<()> {
         let Some(inventory) = self.associated_data.screen.as_mut().map(|x| &mut x.1) else {
             return Err(ActorError::BadRequest);
         };
-        inventory.set_slot(slot, item.clone()).await?;
+        inventory.set_slot(slot, item.clone())?;
 
         self.write_packet(ContainerSetSlotS2CPlayPacket {
             window_id: VarInt::new(self.associated_data.window_id as i32),
             state_id: VarInt::new(0),
             slot: slot as i16,
             slot_data: item.into(),
-        })
-        .await;
+        });
 
         Ok(())
     }
 
     #[GetScreenSlot]
-    pub async fn get_screen_slot(&mut self, slot: usize) -> ActorResult<ItemStack> {
+    pub fn get_screen_slot(&mut self, slot: usize) -> ActorResult<ItemStack> {
         let Some(inventory) = self.associated_data.screen.as_mut().map(|x| &mut x.1) else {
             return Err(ActorError::BadRequest);
         };
-        inventory.get_slot(slot).await
+        inventory.get_slot(slot)
     }
 
     #[PlaySound]
-    pub async fn play_sound(&mut self, sound: Sound) -> ActorResult<()> {
+    pub fn play_sound(&mut self, sound: Sound) -> ActorResult<()> {
         self.write_packet(SoundEntityS2CPlayPacket {
             sound: sound.clone().into(),
             category: SoundCategory::Master,
@@ -364,14 +345,13 @@ impl ConnectionData {
             volume: sound.volume,
             pitch: sound.pitch,
             seed: 0,
-        })
-        .await;
+        });
         Ok(())
     }
 }
 
 impl Player {
-    pub(crate) async fn write_packet<P: PrefixedPacketEncode + std::fmt::Debug>(
+    pub(crate) fn write_packet<P: PrefixedPacketEncode + std::fmt::Debug>(
         &self,
         packet: P,
     ) -> ActorResult<()> {
@@ -387,7 +367,7 @@ impl Player {
         new_buf.write_u8s(len_buf.as_slice());
         new_buf.write_u8s(buf.as_slice());
 
-        self.send_packet_buf(buf).await?;
+        self.send_packet_buf(buf)?;
 
         Ok(())
     }
@@ -398,17 +378,17 @@ impl Player {
         })
     }
 
-    pub async fn send_message(&self, text: impl Text) -> ActorResult<()> {
-        self.send_message_component(text.into()).await
+    pub fn send_message(&self, text: impl Text) -> ActorResult<()> {
+        self.send_message_component(text.into())
     }
 
-    pub async fn send_action_bar(&self, text: impl Text) -> ActorResult<()> {
-        self.send_action_bar_component(text.into()).await
+    pub fn send_action_bar(&self, text: impl Text) -> ActorResult<()> {
+        self.send_action_bar_component(text.into())
     }
 }
 
 impl ConnectionData {
-    pub async fn write_packet<P: PrefixedPacketEncode + std::fmt::Debug>(&mut self, packet: P) {
+    pub fn write_packet<P: PrefixedPacketEncode + std::fmt::Debug>(&mut self, packet: P) {
         let mut buf = PacketBuf::new();
         packet.encode_prefixed(&mut buf).unwrap();
 
@@ -421,7 +401,7 @@ impl ConnectionData {
         new_buf.write_u8s(len_buf.as_slice());
         new_buf.write_u8s(buf.as_slice());
 
-        self.send_packet_buf(buf).await.unwrap();
+        let _ = self.send_packet_buf(buf);
     }
 
     pub fn update_self_entity(&mut self) {
@@ -430,9 +410,9 @@ impl ConnectionData {
         let dir = self.associated_data.last_direction;
         let uuid = self.associated_data.uuid;
 
-        Runtime::spawn(async move {
-            let _ = dim.get_entity(uuid).teleport(pos).await;
-            let _ = dim.get_entity(uuid).rotate(dir).await;
+        Runtime::spawn(move || {
+            let _ = dim.get_entity(uuid).teleport(pos);
+            let _ = dim.get_entity(uuid).rotate(dir);
         });
     }
 }

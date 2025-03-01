@@ -70,11 +70,11 @@ impl ConnectionData {
         if let Some(pos) = chunks.first() {
             let pos = *pos;
             self.associated_data.loaded_chunks.push(pos);
-            Runtime::spawn(async move {
-                let dim_type_entry = dimension.dimension_type().await.unwrap();
+            Runtime::spawn(move || {
+                let dim_type_entry = dimension.dimension_type().unwrap();
 
                 let (min_y, max_y, height) = {
-                    let registries = server.registries().await.unwrap();
+                    let registries = server.registries().unwrap();
                     let dim_type = registries
                         .dimension_types
                         .get(dim_type_entry.retype())
@@ -89,7 +89,7 @@ impl ConnectionData {
 
                 log::error!(
                     "Player {:?} is loading chunk @ {:?}",
-                    player.username().await,
+                    player.username(),
                     pos
                 );
                 let chunk_x = pos.x();
@@ -99,7 +99,7 @@ impl ConnectionData {
                 let mut sections = Vec::new();
                 for y in (min_y..max_y).step_by(16) {
                     let pos = Vec3::new(chunk_x, y, chunk_z);
-                    let chunk = dimension.get_chunk_section(pos).await.unwrap();
+                    let chunk = dimension.get_chunk_section(pos).unwrap();
                     sections.push(chunk.as_protocol_section());
                 }
 
@@ -133,18 +133,15 @@ impl ConnectionData {
                         chunk_x: chunk_center.x().into(),
                         chunk_z: chunk_center.y().into(),
                     })
-                    .await
                     .unwrap();
                 player
                     .write_packet(ChunkBatchStartS2CPlayPacket {})
-                    .await
                     .unwrap();
-                player.write_packet(packet).await.unwrap();
+                player.write_packet(packet).unwrap();
                 player
                     .write_packet(ChunkBatchFinishedS2CPlayPacket {
                         size: VarInt::from(1),
                     })
-                    .await
                     .unwrap();
             });
         }

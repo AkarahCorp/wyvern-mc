@@ -20,8 +20,8 @@ use crate::{
 };
 
 impl ConnectionData {
-    pub async fn login_stage(&mut self) -> ActorResult<()> {
-        self.read_packets(async |packet: C2SLoginPackets, this: &mut Self| {
+    pub fn login_stage(&mut self) -> ActorResult<()> {
+        self.read_packets(|packet: C2SLoginPackets, this: &mut Self| {
             log::debug!("Packet: {:?}", packet);
             match packet {
                 C2SLoginPackets::CustomQueryAnswer(_packet) => todo!(),
@@ -36,8 +36,7 @@ impl ConnectionData {
                             version: "1.21.4".to_string(),
                         }]
                         .into(),
-                    })
-                    .await;
+                    });
                 }
                 C2SLoginPackets::Key(packet) => {
                     let Ok(decrypted_verify_token) = this
@@ -69,15 +68,13 @@ impl ConnectionData {
                     let secret_cipher = SecretCipher::from_key_bytes(&secret_key);
                     this.packet_processing.secret_cipher = secret_cipher;
 
-                    let mojauth = match MojAuth::start(
+                    let mojauth = match MojAuth::start_blocking(
                         None,
                         this.associated_data.username.clone(),
-                        "WyvernMC".to_string(),
+                        "WyvernMC",
                         this.packet_processing.secret_cipher.key().unwrap(),
                         this.public_key.as_ref().unwrap(),
-                    )
-                    .await
-                    {
+                    ) {
                         Ok(mojauth) => mojauth,
                         Err(err) => {
                             return Err(match err {
@@ -97,16 +94,14 @@ impl ConnectionData {
                         uuid: this.associated_data.uuid,
                         username: this.associated_data.username.clone(),
                         props: LengthPrefixHashMap::new(),
-                    })
-                    .await;
+                    });
 
                     log::error!("Prepi for cif ");
                 }
                 C2SLoginPackets::Hello(packet) => {
                     this.write_packet(LoginCompressionS2CLoginPacket {
                         threshold: VarInt::from(128),
-                    })
-                    .await;
+                    });
                     this.packet_processing.compression = CompressionMode::ZLib { threshold: 128 };
 
                     log::error!("0");
@@ -130,8 +125,7 @@ impl ConnectionData {
                         public_key: this.public_key.as_ref().unwrap().der_bytes().into(),
                         verify_token: this.verify_token.clone().into(),
                         should_auth: true,
-                    })
-                    .await;
+                    });
                     log::error!("4");
                 }
                 C2SLoginPackets::CookieResponse(_packet) => todo!(),
@@ -139,6 +133,5 @@ impl ConnectionData {
 
             Ok(())
         })
-        .await
     }
 }

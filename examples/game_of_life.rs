@@ -11,7 +11,6 @@ use wyvern_mc::{
         SwapHandsEvent,
     },
     key,
-    runtime::Runtime,
     server::Server,
     values::{
         Key, Vec3,
@@ -24,11 +23,9 @@ const MAX_Z: usize = 50;
 
 static IS_RUNNING: AtomicBool = AtomicBool::new(false);
 
-#[tokio::main]
-async fn main() {
+fn main() {
     env_logger::init();
 
-    Runtime::tokio();
     Server::builder()
         .event(on_server_start)
         .event(on_dim_init)
@@ -52,65 +49,59 @@ async fn main() {
                 DimensionType::default().min_y(0).height(16),
             );
         })
-        .run()
-        .await;
+        .run();
 }
 
-async fn on_server_start(event: Arc<ServerStartEvent>) -> ActorResult<()> {
+fn on_server_start(event: Arc<ServerStartEvent>) -> ActorResult<()> {
     event
         .server
-        .create_dimension(key!(game_of_life:overworld))
-        .await?;
+        .create_dimension(key!(game_of_life:overworld))?;
     Ok(())
 }
 
-async fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
+fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
     for x in 0..MAX_X {
         for z in 0..MAX_Z {
-            event
-                .dimension
-                .set_block(
-                    Vec3::new(x as i32, 0, z as i32),
-                    BlockState::new(Blocks::DIRT),
-                )
-                .await?;
+            event.dimension.set_block(
+                Vec3::new(x as i32, 0, z as i32),
+                BlockState::new(Blocks::DIRT),
+            )?;
         }
     }
     Ok(())
 }
 
-async fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
+fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
     event.new_dimension.set(key!(game_of_life:overworld));
     Ok(())
 }
 
-async fn on_start_break(event: Arc<StartBreakBlockEvent>) -> ActorResult<()> {
-    let dim = event.player.dimension().await?;
+fn on_start_break(event: Arc<StartBreakBlockEvent>) -> ActorResult<()> {
+    let dim = event.player.dimension()?;
     let block = event.position;
 
-    let block_state = dim.get_block(block).await?;
+    let block_state = dim.get_block(block)?;
     let name = block_state.name();
 
     if name == &Blocks::DIRT {
-        dim.set_block(block, BlockState::new(Blocks::GRASS_BLOCK))
-            .await?;
+        dim.set_block(block, BlockState::new(Blocks::GRASS_BLOCK))?;
     } else if name == &Blocks::GRASS_BLOCK {
-        dim.set_block(block, BlockState::new(Blocks::DIRT)).await?;
+        dim.set_block(block, BlockState::new(Blocks::DIRT))?;
     }
     Ok(())
 }
 
-async fn on_swap_hands(event: Arc<SwapHandsEvent>) -> ActorResult<()> {
+fn on_swap_hands(event: Arc<SwapHandsEvent>) -> ActorResult<()> {
     IS_RUNNING.store(!IS_RUNNING.load(Ordering::Acquire), Ordering::Release);
     while IS_RUNNING.load(Ordering::Acquire) {
-        run_tick(&event.player.server().await?).await?;
+        run_tick(&event.player.server()?)?;
     }
     Ok(())
 }
 
 #[allow(clippy::needless_range_loop)]
-async fn run_tick(server: &Server) -> ActorResult<()> {
-    let dim = server.dimension(key![game_of_life:overworld]).await?;
+fn run_tick(server: &Server) -> ActorResult<()> {
+    let dim = server.dimension(key![game_of_life:overworld])?;
     let mut copies = std::array::from_fn::<_, { MAX_X }, _>(|_| {
         std::array::from_fn::<_, { MAX_Z }, _>(|_| BlockState::new(Blocks::AIR))
     });
@@ -120,7 +111,7 @@ async fn run_tick(server: &Server) -> ActorResult<()> {
 
     for x in 0..MAX_X {
         for z in 0..MAX_Z {
-            copies[x][z] = dim.get_block(Vec3::new(x as i32, 0, z as i32)).await?;
+            copies[x][z] = dim.get_block(Vec3::new(x as i32, 0, z as i32))?;
         }
     }
 
@@ -161,8 +152,7 @@ async fn run_tick(server: &Server) -> ActorResult<()> {
 
     for x in 0..MAX_X {
         for z in 0..MAX_Z {
-            dim.set_block(Vec3::new(x as i32, 0, z as i32), outputs[x][z].clone())
-                .await?;
+            dim.set_block(Vec3::new(x as i32, 0, z as i32), outputs[x][z].clone())?;
         }
     }
 

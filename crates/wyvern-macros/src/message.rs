@@ -106,7 +106,7 @@ pub fn message(attr: TokenStream, item: TokenStream) -> TokenStream {
         }
 
         impl crate::actors::Actor for #target_type {
-            async fn handle_messages(&mut self) {
+            fn handle_messages(&mut self) {
                 for _ in 0..512 {
                     match self.receiver.try_recv() {
                         Ok(v) => {
@@ -226,16 +226,16 @@ fn create_fn_from_variant(variant: &MessageVariant) -> TokenStream {
 
     let r = quote! {
         #(#doc_attr)*
-        #fn_vis async fn #name(&self, #(#param_names: #param_types),*) -> #rt {
+        #fn_vis fn #name(&self, #(#param_names: #param_types),*) -> #rt {
             let (tx, mut rx) = flume::bounded(1);
-            match self.sender.send_async(#enum_type::#enum_variant(#(#param_names,)* tx)).await {
+            match self.sender.send(#enum_type::#enum_variant(#(#param_names,)* tx)) {
                 Ok(v) => {},
                 Err(e) => return Err(ActorError::ActorDoesNotExist)
             }
             loop {
                 match rx.try_recv() {
                     Ok(v) => return v,
-                    Err(e) => futures_lite::future::yield_now().await
+                    Err(e) => std::thread::yield_now()
                 };
             };
         }
@@ -289,10 +289,10 @@ fn create_weak_fn_from_variant(variant: &MessageVariant) -> TokenStream {
 
     let r = quote! {
         #(#doc_attr)*
-        #fn_vis async fn #name(&self, #(#param_names: #param_types),*) -> #rt {
+        #fn_vis fn #name(&self, #(#param_names: #param_types),*) -> #rt {
             let sender = self.sender.upgrade().ok_or(crate::actors::ActorError::ActorDoesNotExist)?;
             let (tx, mut rx) = flume::bounded(1);
-            match sender.send_async(#enum_type::#enum_variant(#(#param_names,)* tx)).await {
+            match sender.send(#enum_type::#enum_variant(#(#param_names,)* tx)) {
                 Ok(v) => {},
                 Err(_) => return Err(ActorError::ActorDoesNotExist)
             }
@@ -300,7 +300,7 @@ fn create_weak_fn_from_variant(variant: &MessageVariant) -> TokenStream {
                 match rx.try_recv() {
                     Ok(v) => return v,
                     Err(e) => {
-                        crate::runtime::Runtime::yield_now().await;
+                        std::thread::yield_now();
                     }
                 };
             };
@@ -332,8 +332,8 @@ fn create_match_arm_from_variant(variant: &MessageVariant) -> TokenStream {
 
     let r = quote! {
         #enum_type::#enum_variant(#(#param_names,)* tx) => {
-            let r = self.#name(#(#param_names,)*).await;
-            let _ = tx.send_async(r).await;
+            let r = self.#name(#(#param_names,)*);
+            let _ = tx.send(r);
         }
     };
     r

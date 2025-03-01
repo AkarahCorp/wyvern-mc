@@ -22,29 +22,29 @@ impl Entity {
         &self.dimension
     }
 
-    pub async fn remove(&self) -> ActorResult<()> {
-        self.dimension.remove_entity(self.uuid).await?;
+    pub fn remove(&self) -> ActorResult<()> {
+        self.dimension.remove_entity(self.uuid)?;
         Ok(())
     }
 
-    pub async fn entity_id(&self) -> ActorResult<i32> {
-        self.dimension.entity_id(self.uuid).await
+    pub fn entity_id(&self) -> ActorResult<i32> {
+        self.dimension.entity_id(self.uuid)
     }
 
-    pub async fn entity_type(&self) -> ActorResult<Key<EntityType>> {
-        self.dimension.entity_type(self.uuid).await
+    pub fn entity_type(&self) -> ActorResult<Key<EntityType>> {
+        self.dimension.entity_type(self.uuid)
     }
 
-    pub async fn position(&self) -> ActorResult<(Vec3<f64>, Vec2<f32>)> {
-        self.dimension.entity_pos(self.uuid).await
+    pub fn position(&self) -> ActorResult<(Vec3<f64>, Vec2<f32>)> {
+        self.dimension.entity_pos(self.uuid)
     }
 
-    pub async fn teleport(&mut self, position: Vec3<f64>) -> ActorResult<()> {
-        self.dimension.teleport_entity(self.uuid, position).await
+    pub fn teleport(&mut self, position: Vec3<f64>) -> ActorResult<()> {
+        self.dimension.teleport_entity(self.uuid, position)
     }
 
-    pub async fn rotate(&mut self, heading: Vec2<f32>) -> ActorResult<()> {
-        self.dimension.rotate_entity(self.uuid, heading).await
+    pub fn rotate(&mut self, heading: Vec2<f32>) -> ActorResult<()> {
+        self.dimension.rotate_entity(self.uuid, heading)
     }
 }
 

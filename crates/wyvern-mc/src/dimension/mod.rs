@@ -54,21 +54,21 @@ impl Dimension {
 impl DimensionData {
     #[GetName]
     #[doc = "Get the name of this dimension."]
-    pub async fn name(&self) -> ActorResult<Key<Dimension>> {
+    pub fn name(&self) -> ActorResult<Key<Dimension>> {
         Ok(self.name.clone().retype())
     }
 
     #[GetServer]
     #[doc = "Get the server this Dimension is running under."]
-    pub async fn server(&self) -> ActorResult<Server> {
+    pub fn server(&self) -> ActorResult<Server> {
         self.server.clone().ok_or(ActorError::ActorIsNotLoaded)
     }
 
     #[GetChunkSection]
     #[doc = "Returns a copy of the 16x16x16 chunk section at the provided coordinates."]
-    pub async fn get_chunk_section(&mut self, position: Vec3<i32>) -> ActorResult<ChunkSection> {
+    pub fn get_chunk_section(&mut self, position: Vec3<i32>) -> ActorResult<ChunkSection> {
         let chunk_pos = Vec2::new(position.x(), position.z());
-        self.try_initialize_chunk(&chunk_pos).await?;
+        self.try_initialize_chunk(&chunk_pos)?;
 
         let chunk = self.chunks.get_mut(&chunk_pos).unwrap();
         let chunk_y = position.y() / 16;
@@ -77,45 +77,38 @@ impl DimensionData {
 
     #[SetBlock]
     #[doc = "Sets a block in this dimension at the given coordinates to the provided block state."]
-    pub async fn set_block(
-        &mut self,
-        position: Vec3<i32>,
-        block_state: BlockState,
-    ) -> ActorResult<()> {
+    pub fn set_block(&mut self, position: Vec3<i32>, block_state: BlockState) -> ActorResult<()> {
         let chunk_pos = Vec2::new(position.x() / 16, position.z() / 16);
         let pos_in_chunk = Vec3::new(position.x() % 16, position.y(), position.z() % 16);
 
-        self.try_initialize_chunk(&chunk_pos).await?;
+        self.try_initialize_chunk(&chunk_pos)?;
 
         let chunk = self.chunks.get_mut(&chunk_pos).unwrap();
         chunk.set_block_at(pos_in_chunk, block_state.clone());
 
         let server = self.server.clone().unwrap();
-        Runtime::spawn(async move {
-            for conn in server.players().await.unwrap_or_else(|_| Vec::new()) {
+        Runtime::spawn(move || {
+            for conn in server.players().unwrap_or_else(|_| Vec::new()) {
                 let block_state = block_state.clone();
                 let pos = position;
                 let conn = conn.clone();
 
-                let _ = conn
-                    .write_packet(BlockUpdateS2CPlayPacket {
-                        pos: BlockPos::new(pos.x(), pos.y(), pos.z()),
-                        block: unsafe { RegEntry::new_unchecked(block_state.protocol_id() as u32) },
-                    })
-                    .await;
+                let _ = conn.write_packet(BlockUpdateS2CPlayPacket {
+                    pos: BlockPos::new(pos.x(), pos.y(), pos.z()),
+                    block: unsafe { RegEntry::new_unchecked(block_state.protocol_id() as u32) },
+                });
             }
         });
-        Runtime::yield_now().await;
         Ok(())
     }
 
     #[GetBlock]
     #[doc = "Returns a copy of the block state at the provided coordinates."]
-    pub async fn get_block(&mut self, position: Vec3<i32>) -> ActorResult<BlockState> {
+    pub fn get_block(&mut self, position: Vec3<i32>) -> ActorResult<BlockState> {
         let chunk = Vec2::new(position.x() / 16, position.z() / 16);
         let pos_in_chunk = Vec3::new(position.x() % 16, position.y(), position.z() % 16);
 
-        self.try_initialize_chunk(&chunk).await?;
+        self.try_initialize_chunk(&chunk)?;
 
         let chunk = self.chunks.get_mut(&chunk).unwrap();
         Ok(chunk.get_block_at(pos_in_chunk))
@@ -123,23 +116,20 @@ impl DimensionData {
 
     #[GetDimType]
     #[doc = "Returns the Dimension Type value of this Dimension."]
-    pub async fn dimension_type(&mut self) -> ActorResult<Key<DimensionType>> {
+    pub fn dimension_type(&mut self) -> ActorResult<Key<DimensionType>> {
         Ok(self.dim_type.clone())
     }
 
     #[SetChunkGenerator]
     #[doc = "Overrides the function that will be called whenever a new Chunk is generated. The default chunk generator is a no-op."]
-    pub async fn set_chunk_generator(
-        &mut self,
-        function: fn(&mut Chunk, i32, i32),
-    ) -> ActorResult<()> {
+    pub fn set_chunk_generator(&mut self, function: fn(&mut Chunk, i32, i32)) -> ActorResult<()> {
         self.chunk_generator = function;
         Ok(())
     }
 
     #[GetAllEntities]
     #[doc = "Returns a handle to all of the entities present in this dimension."]
-    pub async fn entities(&self) -> ActorResult<Vec<Entity>> {
+    pub fn entities(&self) -> ActorResult<Vec<Entity>> {
         Ok(self
             .entities
             .values()
@@ -155,7 +145,7 @@ impl DimensionData {
 
     #[GetAllEntitiesAndHumans]
     #[doc = "Returns a handle to all of the entities present in this dimension, including human entities."]
-    pub async fn all_entities(&self) -> ActorResult<Vec<Entity>> {
+    pub fn all_entities(&self) -> ActorResult<Vec<Entity>> {
         Ok(self
             .entities
             .values()
@@ -170,13 +160,13 @@ impl DimensionData {
 
     #[SpawnEntity]
     #[doc = "Spawns a new entity in the dimension with the given type, returning a handle to the entity."]
-    pub async fn spawn_entity(&mut self, entity_type: Key<EntityType>) -> ActorResult<Entity> {
+    pub fn spawn_entity(&mut self, entity_type: Key<EntityType>) -> ActorResult<Entity> {
         let mut uuid = Uuid::new_v4();
         while self.entities.contains_key(&uuid) {
             uuid = Uuid::new_v4();
         }
 
-        let id = self.server.clone().unwrap().new_entity_id().await?;
+        let id = self.server.clone().unwrap().new_entity_id()?;
 
         self.entities.insert(uuid, EntityData {
             entity_type: entity_type.clone(),
@@ -191,28 +181,26 @@ impl DimensionData {
             sender: self.sender.clone(),
         };
 
-        Runtime::spawn(async move {
-            for conn in dim.players().await.unwrap_or_else(|_| Vec::new()) {
-                let conn = dim.server().await.unwrap().player(conn).await.unwrap();
-                let _ = conn
-                    .write_packet(AddEntityS2CPlayPacket {
-                        id: id.into(),
-                        uuid,
-                        kind: PtcEntityType::vanilla_registry()
-                            .get_entry(&entity_type.clone().into())
-                            .unwrap(),
-                        x: 0.0,
-                        y: 0.0,
-                        z: 0.0,
-                        pitch: Angle::of_deg(0.0),
-                        yaw: Angle::of_deg(0.0),
-                        head_yaw: Angle::of_deg(0.0),
-                        data: VarInt::from(0),
-                        vel_x: 0,
-                        vel_y: 0,
-                        vel_z: 0,
-                    })
-                    .await;
+        Runtime::spawn(move || {
+            for conn in dim.players().unwrap_or_else(|_| Vec::new()) {
+                let conn = dim.server().unwrap().player(conn).unwrap();
+                let _ = conn.write_packet(AddEntityS2CPlayPacket {
+                    id: id.into(),
+                    uuid,
+                    kind: PtcEntityType::vanilla_registry()
+                        .get_entry(&entity_type.clone().into())
+                        .unwrap(),
+                    x: 0.0,
+                    y: 0.0,
+                    z: 0.0,
+                    pitch: Angle::of_deg(0.0),
+                    yaw: Angle::of_deg(0.0),
+                    head_yaw: Angle::of_deg(0.0),
+                    data: VarInt::from(0),
+                    vel_x: 0,
+                    vel_y: 0,
+                    vel_z: 0,
+                });
             }
         });
 
@@ -225,7 +213,7 @@ impl DimensionData {
     }
 
     #[SpawnPlayerEntity]
-    pub(crate) async fn spawn_player_entity(&mut self, uuid: Uuid, id: i32) -> ActorResult<Entity> {
+    pub(crate) fn spawn_player_entity(&mut self, uuid: Uuid, id: i32) -> ActorResult<Entity> {
         self.entities.insert(uuid, EntityData {
             entity_type: Key::constant("minecraft", "player"),
             uuid,
@@ -239,29 +227,27 @@ impl DimensionData {
             sender: self.sender.clone(),
         };
 
-        Runtime::spawn(async move {
-            for conn in dim.players().await.unwrap_or_else(|_| Vec::new()) {
+        Runtime::spawn(move || {
+            for conn in dim.players().unwrap_or_else(|_| Vec::new()) {
                 if conn != uuid {
-                    let conn = dim.server().await.unwrap().player(conn).await.unwrap();
-                    let _ = conn
-                        .write_packet(AddEntityS2CPlayPacket {
-                            id: id.into(),
-                            uuid,
-                            kind: PtcEntityType::vanilla_registry()
-                                .get_entry(&Identifier::new("minecraft", "player"))
-                                .unwrap(),
-                            x: 0.0,
-                            y: 0.0,
-                            z: 0.0,
-                            pitch: Angle::of_deg(0.0),
-                            yaw: Angle::of_deg(0.0),
-                            head_yaw: Angle::of_deg(0.0),
-                            data: VarInt::from(0),
-                            vel_x: 0,
-                            vel_y: 0,
-                            vel_z: 0,
-                        })
-                        .await;
+                    let conn = dim.server().unwrap().player(conn).unwrap();
+                    let _ = conn.write_packet(AddEntityS2CPlayPacket {
+                        id: id.into(),
+                        uuid,
+                        kind: PtcEntityType::vanilla_registry()
+                            .get_entry(&Identifier::new("minecraft", "player"))
+                            .unwrap(),
+                        x: 0.0,
+                        y: 0.0,
+                        z: 0.0,
+                        pitch: Angle::of_deg(0.0),
+                        yaw: Angle::of_deg(0.0),
+                        head_yaw: Angle::of_deg(0.0),
+                        data: VarInt::from(0),
+                        vel_x: 0,
+                        vel_y: 0,
+                        vel_z: 0,
+                    });
                 }
             }
         });
@@ -275,7 +261,7 @@ impl DimensionData {
     }
 
     #[RemoveEntity]
-    pub(crate) async fn remove_entity(&mut self, uuid: Uuid) -> ActorResult<()> {
+    pub(crate) fn remove_entity(&mut self, uuid: Uuid) -> ActorResult<()> {
         let entry = self.entities.remove(&uuid);
 
         if let Some(entry) = entry {
@@ -285,13 +271,11 @@ impl DimensionData {
                 .ok_or(ActorError::ActorDoesNotExist)?
                 .clone();
 
-            Runtime::spawn(async move {
-                for conn in server.connections().await.unwrap() {
-                    let _ = conn
-                        .write_packet(RemoveEntitiesS2CPlayPacket {
-                            entities: vec![VarInt::new(entry.id)].into(),
-                        })
-                        .await;
+            Runtime::spawn(move || {
+                for conn in server.connections().unwrap() {
+                    let _ = conn.write_packet(RemoveEntitiesS2CPlayPacket {
+                        entities: vec![VarInt::new(entry.id)].into(),
+                    });
                 }
             });
         };
@@ -300,7 +284,7 @@ impl DimensionData {
     }
 
     #[EntityId]
-    pub(crate) async fn entity_id(&mut self, uuid: Uuid) -> ActorResult<i32> {
+    pub(crate) fn entity_id(&mut self, uuid: Uuid) -> ActorResult<i32> {
         self.entities
             .get(&uuid)
             .ok_or(ActorError::ActorDoesNotExist)
@@ -308,7 +292,7 @@ impl DimensionData {
     }
 
     #[EntityType]
-    pub(crate) async fn entity_type(&mut self, uuid: Uuid) -> ActorResult<Key<EntityType>> {
+    pub(crate) fn entity_type(&mut self, uuid: Uuid) -> ActorResult<Key<EntityType>> {
         self.entities
             .get(&uuid)
             .ok_or(ActorError::ActorDoesNotExist)
@@ -316,7 +300,7 @@ impl DimensionData {
     }
 
     #[EntityPos]
-    pub(crate) async fn entity_pos(&mut self, uuid: Uuid) -> ActorResult<(Vec3<f64>, Vec2<f32>)> {
+    pub(crate) fn entity_pos(&mut self, uuid: Uuid) -> ActorResult<(Vec3<f64>, Vec2<f32>)> {
         self.entities
             .get(&uuid)
             .ok_or(ActorError::ActorDoesNotExist)
@@ -324,11 +308,7 @@ impl DimensionData {
     }
 
     #[TeleportEntity]
-    pub(crate) async fn teleport_entity(
-        &mut self,
-        uuid: Uuid,
-        position: Vec3<f64>,
-    ) -> ActorResult<()> {
+    pub(crate) fn teleport_entity(&mut self, uuid: Uuid, position: Vec3<f64>) -> ActorResult<()> {
         if let Some(entity) = self.entities.get_mut(&uuid) {
             entity.position = position;
             let entity = entity.clone();
@@ -337,24 +317,22 @@ impl DimensionData {
                 sender: self.sender.clone(),
             };
 
-            Runtime::spawn(async move {
-                for conn in dim.players().await.unwrap() {
+            Runtime::spawn(move || {
+                for conn in dim.players().unwrap() {
                     if conn != entity.uuid {
-                        let conn = dim.server().await.unwrap().player(conn).await.unwrap();
-                        let _ = conn
-                            .write_packet(EntityPositionSyncS2CPlayPacket {
-                                entity_id: entity.id.into(),
-                                x: entity.position.x(),
-                                y: entity.position.y(),
-                                z: entity.position.z(),
-                                vx: 0.0,
-                                vy: 0.0,
-                                vz: 0.0,
-                                yaw: entity.heading.x(),
-                                pitch: entity.heading.y(),
-                                on_ground: false,
-                            })
-                            .await;
+                        let conn = dim.server().unwrap().player(conn).unwrap();
+                        let _ = conn.write_packet(EntityPositionSyncS2CPlayPacket {
+                            entity_id: entity.id.into(),
+                            x: entity.position.x(),
+                            y: entity.position.y(),
+                            z: entity.position.z(),
+                            vx: 0.0,
+                            vy: 0.0,
+                            vz: 0.0,
+                            yaw: entity.heading.x(),
+                            pitch: entity.heading.y(),
+                            on_ground: false,
+                        });
                     }
                 }
             });
@@ -363,11 +341,7 @@ impl DimensionData {
     }
 
     #[RotateEntity]
-    pub(crate) async fn rotate_entity(
-        &mut self,
-        uuid: Uuid,
-        heading: Vec2<f32>,
-    ) -> ActorResult<()> {
+    pub(crate) fn rotate_entity(&mut self, uuid: Uuid, heading: Vec2<f32>) -> ActorResult<()> {
         if let Some(entity) = self.entities.get_mut(&uuid) {
             entity.heading = heading;
             let entity = entity.clone();
@@ -375,24 +349,22 @@ impl DimensionData {
                 sender: self.sender.clone(),
             };
 
-            Runtime::spawn(async move {
-                for conn in dim.players().await.unwrap() {
+            Runtime::spawn(move || {
+                for conn in dim.players().unwrap() {
                     if conn != entity.uuid {
-                        let conn = dim.server().await.unwrap().player(conn).await.unwrap();
-                        let _ = conn
-                            .write_packet(EntityPositionSyncS2CPlayPacket {
-                                entity_id: entity.id.into(),
-                                x: entity.position.x(),
-                                y: entity.position.y(),
-                                z: entity.position.z(),
-                                vx: 0.0,
-                                vy: 0.0,
-                                vz: 0.0,
-                                yaw: entity.heading.x(),
-                                pitch: entity.heading.y(),
-                                on_ground: false,
-                            })
-                            .await;
+                        let conn = dim.server().unwrap().player(conn).unwrap();
+                        let _ = conn.write_packet(EntityPositionSyncS2CPlayPacket {
+                            entity_id: entity.id.into(),
+                            x: entity.position.x(),
+                            y: entity.position.y(),
+                            z: entity.position.z(),
+                            vx: 0.0,
+                            vy: 0.0,
+                            vz: 0.0,
+                            yaw: entity.heading.x(),
+                            pitch: entity.heading.y(),
+                            on_ground: false,
+                        });
                     }
                 }
             });
@@ -402,7 +374,7 @@ impl DimensionData {
 
     #[GetPlayers]
     #[doc = "Returns the UUID for all players present in this dimension."]
-    pub async fn players(&mut self) -> ActorResult<Vec<Uuid>> {
+    pub fn players(&mut self) -> ActorResult<Vec<Uuid>> {
         let mut vec = Vec::new();
         for entity in &mut self.entities {
             if entity.1.entity_type == Key::constant("minecraft", "player") {
@@ -432,10 +404,10 @@ impl DimensionData {
         }
     }
 
-    pub(crate) async fn try_initialize_chunk(&mut self, pos: &Vec2<i32>) -> ActorResult<()> {
+    pub(crate) fn try_initialize_chunk(&mut self, pos: &Vec2<i32>) -> ActorResult<()> {
         if !self.chunks.contains_key(pos) {
             let server = self.server.clone().unwrap();
-            let registries = server.registries().await?;
+            let registries = server.registries()?;
 
             let dim_type = registries
                 .dimension_types

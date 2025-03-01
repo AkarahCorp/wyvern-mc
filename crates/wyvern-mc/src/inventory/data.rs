@@ -40,14 +40,14 @@ impl Default for DataInventory {
 }
 
 impl Inventory for DataInventory {
-    async fn get_slot(&self, slot: usize) -> ActorResult<ItemStack> {
+    fn get_slot(&self, slot: usize) -> ActorResult<ItemStack> {
         self.slots
             .get(&slot)
             .cloned()
             .ok_or(ActorError::IndexOutOfBounds)
     }
 
-    async fn set_slot(&mut self, slot: usize, item: ItemStack) -> ActorResult<()> {
+    fn set_slot(&mut self, slot: usize, item: ItemStack) -> ActorResult<()> {
         self.slots.insert(slot, item);
         Ok(())
     }

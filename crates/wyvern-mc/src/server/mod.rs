@@ -13,7 +13,6 @@ use crate::{
     message,
 };
 use crate::{actors::Actor, runtime::Runtime};
-use async_net::TcpListener;
 use dimensions::DimensionContainer;
 use flume::Sender;
 use registries::RegistryContainer;
@@ -54,8 +53,8 @@ impl Server {
 
     pub fn spawn_event<E: Event + Send + 'static>(&self, event: E) -> ActorResult<()> {
         let server = self.clone();
-        Runtime::spawn(async move {
-            event.dispatch(server.event_bus().await.unwrap());
+        Runtime::spawn(move || {
+            event.dispatch(server.event_bus().unwrap());
         });
         Ok(())
     }
@@ -64,33 +63,30 @@ impl Server {
 #[message(Server, ServerMessage)]
 impl ServerData {
     #[NewEntityId]
-    pub async fn new_entity_id(&mut self) -> ActorResult<i32> {
+    pub fn new_entity_id(&mut self) -> ActorResult<i32> {
         self.last_entity_id += 1;
         log::debug!("New entity id produced: {:?}", self.last_entity_id);
         Ok(self.last_entity_id)
     }
 
     #[GetEventBus]
-    pub async fn event_bus(&mut self) -> ActorResult<Arc<EventBus>> {
+    pub fn event_bus(&mut self) -> ActorResult<Arc<EventBus>> {
         Ok(self.events.clone())
     }
 
     #[SpawnConnectionInternal]
-    pub async fn spawn_connection_internal(
-        &mut self,
-        conn: ConnectionWithSignal,
-    ) -> ActorResult<()> {
+    pub fn spawn_connection_internal(&mut self, conn: ConnectionWithSignal) -> ActorResult<()> {
         self.connections.push(conn);
         Ok(())
     }
 
     #[GetRegistries]
-    pub async fn registries(&self) -> ActorResult<Arc<RegistryContainer>> {
+    pub fn registries(&self) -> ActorResult<Arc<RegistryContainer>> {
         Ok(self.registries.clone())
     }
 
     #[GetDimension]
-    pub async fn dimension(&self, key: Key<Dimension>) -> ActorResult<Dimension> {
+    pub fn dimension(&self, key: Key<Dimension>) -> ActorResult<Dimension> {
         self.dimensions
             .get(&key)
             .map(|dim| Dimension {
@@ -100,12 +96,12 @@ impl ServerData {
     }
 
     #[GetAllDimensions]
-    pub async fn dimensions(&self) -> ActorResult<Vec<Dimension>> {
+    pub fn dimensions(&self) -> ActorResult<Vec<Dimension>> {
         Ok(self.dimensions.dimensions().cloned().collect())
     }
 
     #[CreateDimension]
-    pub async fn create_dimension(&mut self, name: Key<Dimension>) -> ActorResult<Dimension> {
+    pub fn create_dimension(&mut self, name: Key<Dimension>) -> ActorResult<Dimension> {
         log::debug!("Creating new dimension: {:?}", name);
         let mut root_dim = DimensionData::new(
             name.clone().retype(),
@@ -119,9 +115,9 @@ impl ServerData {
             sender: root_dim.sender.clone(),
         };
         self.dimensions.insert(name, dim.clone());
-        Runtime::spawn(async move {
+        Runtime::spawn(move || {
             loop {
-                root_dim.handle_messages().await;
+                root_dim.handle_messages();
             }
         });
 
@@ -134,17 +130,16 @@ impl ServerData {
             server: server_clone.clone(),
         });
 
-        futures_lite::future::yield_now().await;
         Ok(dim)
     }
 
     #[GetConnections]
-    pub async fn connections(&self) -> ActorResult<Vec<Player>> {
+    pub fn connections(&self) -> ActorResult<Vec<Player>> {
         Ok(self.connections.iter().map(|x| x.lower()).collect())
     }
 
     #[GetPlayers]
-    pub async fn players(&mut self) -> ActorResult<Vec<Player>> {
+    pub fn players(&mut self) -> ActorResult<Vec<Player>> {
         let mut vec = Vec::new();
 
         for conn in &self.connections {
@@ -159,11 +154,9 @@ impl ServerData {
     }
 
     #[GetPlayerByUuid]
-    pub async fn player(&self, player: Uuid) -> ActorResult<Player> {
+    pub fn player(&self, player: Uuid) -> ActorResult<Player> {
         for conn in &self.connections {
-            if conn.player.uuid().await == Ok(player)
-                && conn.player.stage().await == Ok(Stage::Play)
-            {
+            if conn.player.uuid() == Ok(player) && conn.player.stage() == Ok(Stage::Play) {
                 return Ok(conn.player.clone());
             }
         }
@@ -172,7 +165,7 @@ impl ServerData {
 }
 
 impl ServerData {
-    pub async fn start(self) {
+    pub fn start(self) {
         log::info!("A server is starting!");
         let snd = Server {
             sender: self.sender.clone(),
@@ -182,21 +175,22 @@ impl ServerData {
             log::error!("WyvernMC does not support running two servers at once. Bugs may occur.");
         });
         let snd_clone = snd.clone();
-        Runtime::spawn(async move {
+        Runtime::spawn(move || {
             let _ = snd_clone.spawn_event(ServerStartEvent {
                 server: snd_clone.clone(),
             });
         });
-        Runtime::spawn(Self::networking_loop(snd.clone()));
-        self.handle_loops(snd).await;
+        let snd_clone = snd.clone();
+        Runtime::spawn(move || Self::networking_loop(snd_clone));
+        self.handle_loops(snd);
     }
 
-    pub async fn handle_loops(mut self, server: Server) {
+    pub fn handle_loops(mut self, server: Server) {
         loop {
             self.connections
                 .retain_mut(|connection| connection._signal.try_recv().is_err());
 
-            self.handle_messages().await;
+            self.handle_messages();
             let dur = Instant::now().duration_since(self.last_tick);
             if dur > Duration::from_millis(50) {
                 self.last_tick = Instant::now();
@@ -208,14 +202,14 @@ impl ServerData {
         }
     }
 
-    pub async fn networking_loop(server: Server) {
-        let listener = TcpListener::bind(SocketAddrV4::new(Ipv4Addr::new(127, 0, 0, 1), 25565))
-            .await
-            .unwrap();
+    pub fn networking_loop(server: Server) {
+        let listener =
+            std::net::TcpListener::bind(SocketAddrV4::new(Ipv4Addr::new(127, 0, 0, 1), 25565))
+                .unwrap();
 
         log::info!("A server is now listening on: 127.0.0.1:25565");
         loop {
-            let new_client = listener.accept().await;
+            let new_client = listener.accept();
             match new_client {
                 Ok((stream, addr)) => {
                     log::info!("Accepted new client: {:?}", addr);
@@ -228,7 +222,7 @@ impl ServerData {
                         stage,
                         is_loaded,
                     );
-                    let _ = server.spawn_connection_internal(signal).await;
+                    let _ = server.spawn_connection_internal(signal);
                 }
                 Err(_err) => {}
             }

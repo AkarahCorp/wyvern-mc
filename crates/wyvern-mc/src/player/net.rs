@@ -1,8 +1,9 @@
+use core::panic;
 use std::{
     collections::VecDeque,
     fmt::Debug,
-    io::ErrorKind,
-    net::IpAddr,
+    io::{ErrorKind, Read, Write},
+    net::{IpAddr, TcpStream},
     sync::{Arc, Mutex, atomic::AtomicBool},
     time::{Duration, Instant},
 };
@@ -11,10 +12,7 @@ use crate::{
     actors::{Actor, ActorResult},
     runtime::Runtime,
 };
-use async_net::TcpStream;
 use flume::{Receiver, Sender};
-use futures_lite::{AsyncReadExt, AsyncWriteExt};
-use futures_util::future::Either;
 use voxidian_protocol::packet::{
     DecodeError, PrefixedPacketDecode, Stage, c2s::handshake::C2SHandshakePackets,
     processing::PacketProcessing, s2c::play::KeepAliveS2CPlayPacket,
@@ -37,16 +35,14 @@ impl ConnectionData {
         let (signal_tx, signal_rx) = flume::bounded(1);
         let (data_tx, data_rx) = flume::unbounded();
 
-        Runtime::spawn(ConnectionData::execute_connection(
-            stream,
-            addr,
-            data_tx.clone(),
-            data_rx,
-            signal_tx,
-            server,
-            stage.clone(),
-            is_loaded.clone(),
-        ));
+        let stage2 = stage.clone();
+        let loaded2 = is_loaded.clone();
+        let data_tx2 = data_tx.clone();
+        Runtime::spawn(move || {
+            ConnectionData::execute_connection(
+                stream, addr, data_tx2, data_rx, signal_tx, server, stage2, loaded2,
+            )
+        });
 
         ConnectionWithSignal {
             player: Player { sender: data_tx },
@@ -57,7 +53,7 @@ impl ConnectionData {
     }
 
     #[allow(clippy::too_many_arguments)]
-    pub async fn execute_connection(
+    pub fn execute_connection(
         stream: TcpStream,
         addr: IpAddr,
         sender: Sender<PlayerMessage>,
@@ -67,6 +63,7 @@ impl ConnectionData {
         stage: Arc<Mutex<Stage>>,
         is_loaded: Arc<AtomicBool>,
     ) {
+        stream.set_nonblocking(true).unwrap();
         let conn = ConnectionData {
             stream,
             addr,
@@ -86,109 +83,106 @@ impl ConnectionData {
             is_loaded,
         };
 
-        conn.event_loop().await;
+        conn.event_loop();
     }
 
-    pub async fn event_loop(mut self) {
+    pub fn event_loop(mut self) {
         loop {
-            futures_lite::future::yield_now().await;
-            let result = self.handle_incoming_bytes().await;
+            let result = self.handle_incoming_bytes();
             if result.is_err() {
                 log::info!("A player has disconnected. Stopping their connection data...");
 
                 if let Some(dim) = self.associated_data.dimension {
-                    let _ = dim.remove_entity(self.associated_data.uuid).await;
+                    let _ = dim.remove_entity(self.associated_data.uuid);
                 }
-                let _ = self.signal.send_async(ConnectionStoppedSignal).await;
+                self.signal.send(ConnectionStoppedSignal).unwrap();
                 break;
             }
-            self.handle_messages().await;
-            let _ = self.read_incoming_packets().await;
-            self.write_outgoing_packets().await;
+            self.handle_messages();
+            let _ = self.read_incoming_packets();
+            self.write_outgoing_packets();
 
             let now = Instant::now();
             if now > self.associated_data.last_sent_keep_alive + Duration::from_secs(5)
                 && *self.stage.lock().unwrap() == Stage::Play
             {
-                self.write_packet(KeepAliveS2CPlayPacket(10)).await;
+                self.write_packet(KeepAliveS2CPlayPacket(10));
                 self.associated_data.last_sent_keep_alive = Instant::now();
             }
         }
     }
 
-    pub async fn handle_incoming_bytes(&mut self) -> Result<(), ()> {
+    pub fn handle_incoming_bytes(&mut self) -> Result<(), ()> {
         let mut buf = [0; 512];
 
-        match futures_util::future::select(
-            async_io::Timer::after(Duration::from_millis(5)),
-            self.stream.read(&mut buf),
-        )
-        .await
-        {
-            Either::Left(_) => Ok(()),
-            Either::Right(bytes_read) => match bytes_read.0 {
-                Ok(bytes_read) => {
-                    if bytes_read == 0 {
-                        return Err(());
-                    }
-                    for byte in &buf[0..bytes_read] {
-                        let byte = self
-                            .packet_processing
-                            .secret_cipher
-                            .decrypt_u8(*byte)
-                            .unwrap();
-                        self.received_bytes.push_back(byte);
-                    }
-                    Ok(())
+        match self.stream.read(&mut buf) {
+            Ok(bytes_read) => {
+                if bytes_read == 0 {
+                    return Err(());
                 }
-                Err(e) if e.kind() == ErrorKind::WouldBlock => Ok(()),
-                Err(_e) => Err(()),
-            },
-        }
+                for byte in &buf[0..bytes_read] {
+                    let byte = self
+                        .packet_processing
+                        .secret_cipher
+                        .decrypt_u8(*byte)
+                        .unwrap();
+                    self.received_bytes.push_back(byte);
+                }
+            }
+            Err(e) if e.kind() == ErrorKind::WouldBlock => {}
+            Err(e) => {
+                panic!("{:?}", e);
+            }
+        };
+
+        Ok(())
     }
 
-    pub async fn read_incoming_packets(&mut self) -> ActorResult<()> {
+    pub fn read_incoming_packets(&mut self) -> ActorResult<()> {
         let stage = *self.stage.lock().unwrap();
         match stage {
             Stage::Handshake => {
-                self.read_packets(async |packet: C2SHandshakePackets, this: &mut Self| {
+                self.read_packets(|packet: C2SHandshakePackets, this: &mut Self| {
                     let C2SHandshakePackets::Intention(packet) = packet;
                     *this.stage.lock().unwrap() = packet.intended_stage.into_stage();
                     Ok(())
-                })
-                .await?;
+                })?;
             }
             Stage::Status => {
-                self.status_stage().await?;
+                self.status_stage()?;
             }
             Stage::Login => {
-                self.login_stage().await?;
+                self.login_stage()?;
             }
             Stage::Config => {
-                self.configuration_stage().await?;
+                self.configuration_stage()?;
             }
             Stage::Play => {
-                self.play_phase().await?;
+                self.play_phase()?;
             }
             Stage::Transfer => todo!("doesn't exist, this needs to be removed D:"),
         }
         Ok(())
     }
 
-    pub async fn write_outgoing_packets(&mut self) {
+    pub fn write_outgoing_packets(&mut self) {
         loop {
             if self.bytes_to_send.is_empty() {
                 break;
             }
 
-            self.stream.write_all(&self.bytes_to_send).await.unwrap();
+            match self.stream.write_all(&self.bytes_to_send) {
+                Ok(()) => {}
+                Err(e) if e.kind() == ErrorKind::WouldBlock => {}
+                Err(e) => panic!("{:?}", e),
+            }
             self.bytes_to_send.clear();
         }
     }
 
-    pub async fn read_packets<
+    pub fn read_packets<
         T: PrefixedPacketDecode + Debug,
-        F: AsyncFnOnce(T, &mut Self) -> ActorResult<()>,
+        F: FnOnce(T, &mut Self) -> ActorResult<()>,
     >(
         &mut self,
         f: F,
@@ -211,7 +205,7 @@ impl ConnectionData {
                 let buf_copy = buf.clone();
                 match T::decode_prefixed(&mut buf) {
                     Ok(packet) => {
-                        f(packet, self).await?;
+                        f(packet, self)?;
                         Ok(())
                     }
                     Err(DecodeError::EndOfBuffer) => {

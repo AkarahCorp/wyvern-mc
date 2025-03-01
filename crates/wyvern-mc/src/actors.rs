@@ -1,22 +1,5 @@
-use crate::runtime::Runtime;
-
 pub trait Actor {
-    fn handle_messages(&mut self) -> impl Future<Output = ()> + Send + Sync;
-
-    fn intertwine<F: AsyncFnOnce() + Send + Sync>(&mut self, f: F) -> impl Future<Output = ()> {
-        async move {
-            futures_lite::future::race(
-                async move {
-                    loop {
-                        self.handle_messages().await;
-                        Runtime::yield_now().await;
-                    }
-                },
-                async move { f().await },
-            )
-            .await
-        }
-    }
+    fn handle_messages(&mut self);
 }
 
 pub type ActorResult<T> = Result<T, ActorError>;

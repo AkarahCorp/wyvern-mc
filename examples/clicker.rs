@@ -13,7 +13,6 @@ use wyvern_mc::{
     },
     inventory::{Inventory, ItemStack},
     key,
-    runtime::Runtime,
     server::Server,
     values::{
         Key, SoundCategory, Sounds, Texts, Uuid, Vec3,
@@ -23,11 +22,8 @@ use wyvern_mc::{
 
 static COUNTER: LazyLock<Mutex<HashMap<Uuid, i32>>> = LazyLock::new(|| Mutex::new(HashMap::new()));
 
-#[tokio::main]
-async fn main() {
+fn main() {
     env_logger::init();
-
-    Runtime::tokio();
 
     Server::builder()
         .event(on_server_start)
@@ -50,45 +46,40 @@ async fn main() {
             });
             registries.dimension_type(Key::new("minecraft", "overworld"), DimensionType::default());
         })
-        .run()
-        .await;
+        .run();
 }
 
-async fn on_server_start(event: Arc<ServerStartEvent>) -> ActorResult<()> {
-    event.server.create_dimension(key!(clicker:root)).await?;
+fn on_server_start(event: Arc<ServerStartEvent>) -> ActorResult<()> {
+    event.server.create_dimension(key!(clicker:root))?;
 
     Ok(())
 }
 
-async fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
+fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
     for x in 0..6 {
         for z in 0..6 {
-            event
-                .dimension
-                .set_block(
-                    Vec3::new(x, 0, z),
-                    BlockState::new(key![minecraft:grass_block]),
-                )
-                .await?;
+            event.dimension.set_block(
+                Vec3::new(x, 0, z),
+                BlockState::new(key![minecraft:grass_block]),
+            )?;
         }
     }
     Ok(())
 }
 
-async fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
+fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
     event.new_dimension.set(key!(clicker:root));
 
     event
         .player
         .inventory()?
-        .set_slot(40, ItemStack::new(Key::new("minecraft", "diamond")))
-        .await?;
+        .set_slot(40, ItemStack::new(Key::new("minecraft", "diamond")))?;
     Ok(())
 }
 
-async fn on_tick(event: Arc<ServerTickEvent>) -> ActorResult<()> {
-    for player in event.server.players().await? {
-        let uuid = player.uuid().await?;
+fn on_tick(event: Arc<ServerTickEvent>) -> ActorResult<()> {
+    for player in event.server.players()? {
+        let uuid = player.uuid()?;
 
         let count = {
             let mut counter = COUNTER.lock().unwrap();
@@ -102,15 +93,13 @@ async fn on_tick(event: Arc<ServerTickEvent>) -> ActorResult<()> {
             }
         };
 
-        player
-            .send_action_bar(Texts::literal(format!("Clicks: {:?}", count)))
-            .await?;
+        player.send_action_bar(Texts::literal(format!("Clicks: {:?}", count)))?;
     }
     Ok(())
 }
 
-async fn on_right_click(event: Arc<RightClickEvent>) -> ActorResult<()> {
-    let uuid = event.player.uuid().await?;
+fn on_right_click(event: Arc<RightClickEvent>) -> ActorResult<()> {
+    let uuid = event.player.uuid()?;
     {
         let mut counter = COUNTER.lock().unwrap();
         if let Some(number) = counter.get_mut(&uuid) {
@@ -118,23 +107,17 @@ async fn on_right_click(event: Arc<RightClickEvent>) -> ActorResult<()> {
         };
     }
 
-    event
-        .player
-        .play_sound(
-            Sounds::BLOCK_AMETHYST_CLUSTER_BREAK
-                .pitch(1.5)
-                .volume(0.7)
-                .category(SoundCategory::Master),
-        )
-        .await?;
+    event.player.play_sound(
+        Sounds::BLOCK_AMETHYST_CLUSTER_BREAK
+            .pitch(1.5)
+            .volume(0.7)
+            .category(SoundCategory::Master),
+    )?;
 
     Ok(())
 }
 
-async fn on_swap_hands(event: Arc<SwapHandsEvent>) -> ActorResult<()> {
-    event
-        .player
-        .open_screen(ScreenWindowKind::Generic9x1)
-        .await?;
+fn on_swap_hands(event: Arc<SwapHandsEvent>) -> ActorResult<()> {
+    event.player.open_screen(ScreenWindowKind::Generic9x1)?;
     Ok(())
 }

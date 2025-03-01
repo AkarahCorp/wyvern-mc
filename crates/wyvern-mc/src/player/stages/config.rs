@@ -14,16 +14,15 @@ use voxidian_protocol::{
 use crate::{actors::ActorResult, player::ConnectionData};
 
 impl ConnectionData {
-    pub async fn configuration_stage(&mut self) -> ActorResult<()> {
-        self.read_packets(async |packet: C2SConfigPackets, this: &mut Self| {
+    pub fn configuration_stage(&mut self) -> ActorResult<()> {
+        self.read_packets(|packet: C2SConfigPackets, this: &mut Self| {
             log::debug!("Packet: {:?}", packet);
             {
                 match packet {
                     C2SConfigPackets::CustomPayload(_packet) => {}
                     C2SConfigPackets::FinishConfiguration(_packet) => {
                         *this.stage.lock().unwrap() = Stage::Play;
-                        this.associated_data.entity_id =
-                            this.connected_server.new_entity_id().await?;
+                        this.associated_data.entity_id = this.connected_server.new_entity_id()?;
                         this.write_packet(LoginS2CPlayPacket {
                             entity: this.associated_data.entity_id,
                             hardcore: false,
@@ -48,8 +47,7 @@ impl ConnectionData {
                             portal_cooldown: VarInt::from(0),
                             sea_level: VarInt::from(64),
                             enforce_chat_reports: false,
-                        })
-                        .await;
+                        });
 
                         this.write_packet(PlayerPositionS2CPlayPacket {
                             teleport_id: VarInt::from(0),
@@ -72,8 +70,7 @@ impl ConnectionData {
                                 relative_vz: false,
                                 rotate_velocity: false,
                             },
-                        })
-                        .await;
+                        });
                     }
                     C2SConfigPackets::ResourcePack(_packet) => todo!(),
                     C2SConfigPackets::CookieResponse(_packet) => todo!(),
@@ -85,59 +82,48 @@ impl ConnectionData {
                     C2SConfigPackets::SelectKnownPacks(_packet) => {
                         this.write_packet(
                             this.connected_server
-                                .registries()
-                                .await?
+                                .registries()?
                                 .biomes
                                 .inner
                                 .to_registry_data_packet(),
-                        )
-                        .await;
+                        );
                         this.write_packet(
                             this.connected_server
-                                .registries()
-                                .await?
+                                .registries()?
                                 .damage_types
                                 .inner
                                 .to_registry_data_packet(),
-                        )
-                        .await;
+                        );
                         this.write_packet(
                             this.connected_server
-                                .registries()
-                                .await?
+                                .registries()?
                                 .wolf_variants
                                 .inner
                                 .to_registry_data_packet(),
-                        )
-                        .await;
+                        );
 
                         this.write_packet(
                             this.connected_server
-                                .registries()
-                                .await?
+                                .registries()?
                                 .painting_variants
                                 .inner
                                 .to_registry_data_packet(),
-                        )
-                        .await;
+                        );
 
                         this.write_packet(
                             this.connected_server
-                                .registries()
-                                .await?
+                                .registries()?
                                 .dimension_types
                                 .inner
                                 .to_registry_data_packet(),
-                        )
-                        .await;
+                        );
 
-                        this.write_packet(FinishConfigurationS2CConfigPacket).await;
+                        this.write_packet(FinishConfigurationS2CConfigPacket);
                     }
                 }
             }
 
             Ok(())
         })
-        .await
     }
 }

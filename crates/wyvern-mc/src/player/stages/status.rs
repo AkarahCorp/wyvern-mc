@@ -12,8 +12,8 @@ use voxidian_protocol::{
 use crate::{actors::ActorResult, player::ConnectionData};
 
 impl ConnectionData {
-    pub async fn status_stage(&mut self) -> ActorResult<()> {
-        self.read_packets(async |packet: C2SStatusPackets, this| {
+    pub fn status_stage(&mut self) -> ActorResult<()> {
+        self.read_packets(|packet: C2SStatusPackets, this| {
             log::debug!("Packet: {:?}", packet);
             match packet {
                 C2SStatusPackets::StatusRequest(_packet) => {
@@ -34,19 +34,16 @@ impl ConnectionData {
                             prevent_chat_reports: true,
                         }
                         .to_packet(),
-                    )
-                    .await;
+                    );
                 }
                 C2SStatusPackets::PingRequest(packet) => {
                     this.write_packet(PongResponseS2CStatusPacket {
                         timestamp: packet.timestamp,
-                    })
-                    .await;
+                    });
                 }
             }
 
             Ok(())
         })
-        .await
     }
 }
