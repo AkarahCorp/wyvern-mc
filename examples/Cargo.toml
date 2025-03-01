@@ -4,8 +4,7 @@ version = "0.0.0"
 edition = "2024"
 
 [dev-dependencies]
-wyvern-mc = { path = "../crates/wyvern-mc", features = ["rt-tokio"] }
-tokio = { workspace = true }
+wyvern-mc = { path = "../crates/wyvern-mc" }
 voxidian-protocol = { workspace = true }
 noise = "0.9.0"
 rand = { workspace = true }
