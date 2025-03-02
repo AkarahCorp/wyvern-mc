@@ -92,11 +92,13 @@ impl ConnectionData {
             if result.is_err() {
                 log::info!("A player has disconnected. Stopping their connection data...");
 
-                if let Some(dim) = self.associated_data.dimension {
+                if let Some(dim) = &self.associated_data.dimension {
                     let _ = dim.remove_entity(self.associated_data.uuid);
                 }
                 self.signal.send(ConnectionStoppedSignal).unwrap();
-                break;
+                log::error!("Sending drop signal");
+                drop(self);
+                return;
             }
             self.handle_messages();
             let _ = self.read_incoming_packets();
@@ -130,9 +132,7 @@ impl ConnectionData {
                 }
             }
             Err(e) if e.kind() == ErrorKind::WouldBlock => {}
-            Err(e) => {
-                panic!("{:?}", e);
-            }
+            Err(_) => return Err(()),
         };
 
         Ok(())

@@ -88,7 +88,9 @@ impl DimensionData {
 
         self.try_initialize_chunk(&chunk_pos)?;
 
-        let chunk = self.chunks.get_mut(&chunk_pos).unwrap();
+        let Some(chunk) = self.chunks.get_mut(&chunk_pos) else {
+            return Ok(());
+        };
         chunk.set_block_at(pos_in_chunk, block_state.clone());
 
         let server = self.server.clone().unwrap();
@@ -413,7 +415,7 @@ impl DimensionData {
             sender: chan.0,
             dim_type,
             chunk_generator: |_, _, _| {},
-            chunk_max: (u32::MAX, u32::MAX),
+            chunk_max: (i32::MAX as u32, i32::MAX as u32),
         }
     }
 
