@@ -4,6 +4,7 @@
 pub mod actors;
 pub mod components;
 pub mod dimension;
+pub mod entities;
 pub mod events;
 pub mod inventory;
 pub mod item;

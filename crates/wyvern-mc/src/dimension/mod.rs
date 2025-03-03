@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
+use crate::entities::{Entity, EntityData};
 use blocks::BlockState;
 use chunk::{Chunk, ChunkSection};
-use entity::{Entity, EntityData};
 use flume::Sender;
 use voxidian_protocol::{
     packet::s2c::play::{
@@ -25,7 +25,6 @@ use crate::{
 
 pub mod blocks;
 pub mod chunk;
-pub mod entity;
 pub mod properties;
 
 #[allow(dead_code)]
@@ -176,17 +175,14 @@ impl DimensionData {
 
         let id = self.server.clone().unwrap().new_entity_id()?;
 
-        self.entities.insert(
+        self.entities.insert(uuid, EntityData {
+            entity_type: entity_type.clone(),
             uuid,
-            EntityData {
-                entity_type: entity_type.clone(),
-                uuid,
-                id,
-                position: Vec3::new(0.0, 0.0, 0.0),
-                heading: Vec2::new(0.0, 0.0),
-                metadata: EntityMetadata::new(),
-            },
-        );
+            id,
+            position: Vec3::new(0.0, 0.0, 0.0),
+            heading: Vec2::new(0.0, 0.0),
+            metadata: EntityMetadata::new(),
+        });
 
         let dim = Dimension {
             sender: self.sender.clone(),
@@ -227,17 +223,14 @@ impl DimensionData {
 
     #[SpawnPlayerEntity]
     pub(crate) fn spawn_player_entity(&mut self, uuid: Uuid, id: i32) -> ActorResult<Entity> {
-        self.entities.insert(
+        self.entities.insert(uuid, EntityData {
+            entity_type: Id::constant("minecraft", "player"),
             uuid,
-            EntityData {
-                entity_type: Id::constant("minecraft", "player"),
-                uuid,
-                id,
-                position: Vec3::new(0.0, 0.0, 0.0),
-                heading: Vec2::new(0.0, 0.0),
-                metadata: EntityMetadata::new(),
-            },
-        );
+            id,
+            position: Vec3::new(0.0, 0.0, 0.0),
+            heading: Vec2::new(0.0, 0.0),
+            metadata: EntityMetadata::new(),
+        });
 
         let dim = Dimension {
             sender: self.sender.clone(),

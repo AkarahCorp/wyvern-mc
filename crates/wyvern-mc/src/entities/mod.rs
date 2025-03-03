@@ -2,10 +2,9 @@ use voxidian_protocol::value::{EntityMetadata, Uuid};
 
 use crate::{
     actors::ActorResult,
+    dimension::Dimension,
     values::{Id, Vec2, Vec3},
 };
-
-use super::Dimension;
 
 #[derive(Debug)]
 pub struct Entity {
