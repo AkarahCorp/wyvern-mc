@@ -1,8 +1,5 @@
 mod types;
-use std::{
-    any::{Any, type_name_of_val},
-    fmt::Debug,
-};
+use std::{any::Any, fmt::Debug};
 
 use dyn_clone::DynClone;
 pub use types::*;
@@ -12,11 +9,15 @@ mod holder;
 pub use holder::*;
 
 pub trait ComponentElement: Any + Sync + Send + DynClone + Debug {
-    fn element_type_name(&self) -> String;
+    fn as_any(&self) -> &dyn Any;
+    fn as_any_mut(&mut self) -> &mut dyn Any;
 }
 
 impl<T: Any + Sync + Send + DynClone + Debug> ComponentElement for T {
-    fn element_type_name(&self) -> String {
-        type_name_of_val(self).to_string()
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
     }
 }

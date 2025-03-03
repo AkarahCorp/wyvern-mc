@@ -17,7 +17,6 @@ pub struct ItemType;
 #[derive(Clone, Debug)]
 pub struct ItemStack {
     pub(crate) id: Id,
-    pub(crate) count: u16,
     pub(crate) map: DataComponentMap,
 }
 
@@ -35,16 +34,14 @@ impl ItemStack {
     pub fn new(id: Id) -> ItemStack {
         ItemStack {
             id,
-            count: 1,
-            map: DataComponentMap::new(),
+            map: DataComponentMap::new().with(ItemComponents::ITEM_COUNT, 1),
         }
     }
 
     pub fn air() -> ItemStack {
         ItemStack {
             id: Id::constant("minecraft", "air"),
-            count: 0,
-            map: DataComponentMap::new(),
+            map: DataComponentMap::new().with(ItemComponents::ITEM_COUNT, 1),
         }
     }
 
@@ -81,9 +78,13 @@ impl From<ItemStack> for SlotData {
             }));
         }
 
+        let count = value
+            .get(ItemComponents::ITEM_COUNT)
+            .expect("All items must have an ItemComponents::ITEM_COUNT component")
+            as i32;
         SlotData {
             id: ITEM_REGISTRY.get_entry(&value.id.into()).unwrap(),
-            count: (value.count as i32).into(),
+            count: count.into(),
             components,
             removed_components: Vec::new(),
         }
@@ -94,8 +95,8 @@ impl From<SlotData> for ItemStack {
     fn from(value: SlotData) -> Self {
         ItemStack {
             id: ITEM_REGISTRY.lookup(&value.id).unwrap().id.clone().into(),
-            count: value.count.as_i32() as u16,
-            map: DataComponentMap::new(),
+            map: DataComponentMap::new()
+                .with(ItemComponents::ITEM_COUNT, value.count.as_i32() as u16),
         }
     }
 }

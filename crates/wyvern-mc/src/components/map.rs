@@ -1,4 +1,4 @@
-use std::{any::Any, collections::HashMap, sync::Arc};
+use std::{collections::HashMap, sync::Arc};
 
 use dyn_clone::clone_box;
 
@@ -36,7 +36,7 @@ impl DataComponentMap {
         self.inner
             .get(&kind.id())
             // FIXME: for some reason this line is always failing
-            .and_then(|x| <dyn Any>::downcast_ref::<T>(x))
+            .and_then(|x| (**x).as_any().downcast_ref::<T>())
             .map(|x| clone_box(x))
             .map(|x| *x)
             .ok_or(ActorError::ComponentNotFound)

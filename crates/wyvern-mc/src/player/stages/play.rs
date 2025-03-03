@@ -252,17 +252,18 @@ impl ConnectionData {
                             let _ = dim.set_block(final_pos, state_clone);
                         });
 
-                        let item_count = held.get(ItemComponents::ITEM_COUNT).unwrap();
-                        if item_count <= 1 {
-                            this.associated_data.inventory.set_slot(
-                                this.associated_data.held_slot as usize,
-                                ItemStack::air(),
-                            )?;
-                        } else {
-                            this.associated_data.inventory.set_slot(
-                                this.associated_data.held_slot as usize,
-                                held.with(ItemComponents::ITEM_COUNT, item_count - 1),
-                            )?;
+                        if let Ok(item_count) = held.get(ItemComponents::ITEM_COUNT) {
+                            if item_count <= 1 {
+                                this.associated_data.inventory.set_slot(
+                                    this.associated_data.held_slot as usize,
+                                    ItemStack::air(),
+                                )?;
+                            } else {
+                                this.associated_data.inventory.set_slot(
+                                    this.associated_data.held_slot as usize,
+                                    held.with(ItemComponents::ITEM_COUNT, item_count - 1),
+                                )?;
+                            }
                         }
 
                         if let Some(sender) = this.sender.upgrade() {
