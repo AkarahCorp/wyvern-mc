@@ -38,17 +38,23 @@ fn main() {
         .event(on_chat)
         .event(on_join)
         .registries(|registries| {
-            registries.wolf_variant(Id::new("minecraft", "pale"), WolfVariant {
-                angry_texture: Id::empty(),
-                wild_texture: Id::empty(),
-                tame_texture: Id::empty(),
-                biomes: Vec::new(),
-            });
-            registries.painting_variant(Id::new("minecraft", "something_idk"), PaintingVariant {
-                asset: Id::empty(),
-                width: 1,
-                height: 1,
-            });
+            registries.wolf_variant(
+                Id::new("minecraft", "pale"),
+                WolfVariant {
+                    angry_texture: Id::empty(),
+                    wild_texture: Id::empty(),
+                    tame_texture: Id::empty(),
+                    biomes: Vec::new(),
+                },
+            );
+            registries.painting_variant(
+                Id::new("minecraft", "something_idk"),
+                PaintingVariant {
+                    asset: Id::empty(),
+                    width: 1,
+                    height: 1,
+                },
+            );
             registries.dimension_type(
                 Id::new("minecraft", "overworld"),
                 DimensionType::default().min_y(-32).height(64),
@@ -62,17 +68,18 @@ static SIMPLEX: LazyLock<Simplex> = LazyLock::new(|| Simplex::new(0));
 fn on_command(event: Arc<PlayerCommandEvent>) -> ActorResult<()> {
     if event.command.as_str() == "overload" {
         let event = event.clone();
-        Runtime::spawn(move || {
+        Runtime::spawn_task(move || {
             let state = BlockState::new(Id::new("minecraft", "grass_block"))
                 .with_property(BlockProperties::SNOWY, false);
             let dim = event.player.dimension().unwrap();
             for x in 1..100 {
                 for y in 1..10 {
                     for z in 1..100 {
-                        let _ = dim.set_block(Vec3::new(x, y, z), state.clone());
+                        let _ = dim.set_block(Vec3::new(x, y, z), state.clone())?;
                     }
                 }
             }
+            Ok(())
         });
     }
 
@@ -159,14 +166,17 @@ fn on_server_tick(event: Arc<ServerTickEvent>) -> ActorResult<()> {
                         .with_color(TextColor::new(0, 255, 0))
                         .into(),
                 )
-                .with(ItemComponents::LORE, vec![
-                    Texts::literal("Fancy lore line.")
-                        .with_color(TextColor::new(133, 133, 133))
-                        .into(),
-                    Texts::literal("How cool!")
-                        .with_color(TextColor::new(182, 18, 238))
-                        .into(),
-                ]),
+                .with(
+                    ItemComponents::LORE,
+                    vec![
+                        Texts::literal("Fancy lore line.")
+                            .with_color(TextColor::new(133, 133, 133))
+                            .into(),
+                        Texts::literal("How cool!")
+                            .with_color(TextColor::new(182, 18, 238))
+                            .into(),
+                    ],
+                ),
         )?;
     }
 

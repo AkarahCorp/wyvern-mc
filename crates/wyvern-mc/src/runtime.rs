@@ -1,20 +1,54 @@
 #![allow(unused)]
 
-use std::{pin::Pin, sync::OnceLock};
+use std::{
+    pin::Pin,
+    sync::{LazyLock, OnceLock},
+};
+
+use flume::{Receiver, Sender};
+
+use crate::actors::ActorResult;
 
 static GLOBAL_RUNTIME: Runtime = Runtime {
-    spawn_handler: OnceLock::new(),
+    tasks: OnceLock::new(),
 };
 
 pub struct Runtime {
-    spawn_handler: OnceLock<fn(Pin<Box<dyn Future<Output = ()> + Send>>)>,
+    tasks: OnceLock<Sender<Box<dyn FnOnce() -> ActorResult<()> + Send>>>,
 }
 
 impl Runtime {
-    pub fn spawn<F>(func: F)
+    pub fn spawn_actor<F>(func: F)
     where
         F: FnOnce() + Send + 'static,
     {
         std::thread::spawn(func);
+    }
+
+    pub fn spawn_task<F>(func: F)
+    where
+        F: FnOnce() -> ActorResult<()> + Send + 'static,
+    {
+        let sender = GLOBAL_RUNTIME.tasks.get_or_init(|| {
+            let chan = flume::unbounded();
+            for _ in 0..std::thread::available_parallelism()
+                .expect("Multithreaded system is required")
+                .into()
+            {
+                let recv: Receiver<Box<dyn FnOnce() -> ActorResult<()> + Send>> = chan.1.clone();
+                std::thread::spawn(move || {
+                    loop {
+                        match recv.recv() {
+                            Ok(task) => {
+                                task();
+                            }
+                            Err(_) => break,
+                        }
+                    }
+                });
+            }
+            chan.0
+        });
+        sender.send(Box::new(func));
     }
 }

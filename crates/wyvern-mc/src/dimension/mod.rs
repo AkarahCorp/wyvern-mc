@@ -94,7 +94,7 @@ impl DimensionData {
         chunk.set_block_at(pos_in_chunk, block_state.clone());
 
         let server = self.server.clone().unwrap();
-        Runtime::spawn(move || {
+        Runtime::spawn_task(move || {
             for conn in server.players().unwrap_or_else(|_| Vec::new()) {
                 let block_state = block_state.clone();
                 let pos = position;
@@ -105,6 +105,7 @@ impl DimensionData {
                     block: unsafe { RegEntry::new_unchecked(block_state.protocol_id() as u32) },
                 });
             }
+            Ok(())
         });
         Ok(())
     }
@@ -175,20 +176,23 @@ impl DimensionData {
 
         let id = self.server.clone().unwrap().new_entity_id()?;
 
-        self.entities.insert(uuid, EntityData {
-            entity_type: entity_type.clone(),
+        self.entities.insert(
             uuid,
-            id,
-            position: Vec3::new(0.0, 0.0, 0.0),
-            heading: Vec2::new(0.0, 0.0),
-            metadata: EntityMetadata::new(),
-        });
+            EntityData {
+                entity_type: entity_type.clone(),
+                uuid,
+                id,
+                position: Vec3::new(0.0, 0.0, 0.0),
+                heading: Vec2::new(0.0, 0.0),
+                metadata: EntityMetadata::new(),
+            },
+        );
 
         let dim = Dimension {
             sender: self.sender.clone(),
         };
 
-        Runtime::spawn(move || {
+        Runtime::spawn_task(move || {
             for conn in dim.players().unwrap_or_else(|_| Vec::new()) {
                 let conn = dim.server().unwrap().player(conn).unwrap();
                 let _ = conn.write_packet(AddEntityS2CPlayPacket {
@@ -209,6 +213,8 @@ impl DimensionData {
                     vel_z: 0,
                 });
             }
+
+            Ok(())
         });
 
         Ok(Entity {
@@ -221,20 +227,23 @@ impl DimensionData {
 
     #[SpawnPlayerEntity]
     pub(crate) fn spawn_player_entity(&mut self, uuid: Uuid, id: i32) -> ActorResult<Entity> {
-        self.entities.insert(uuid, EntityData {
-            entity_type: Id::constant("minecraft", "player"),
+        self.entities.insert(
             uuid,
-            id,
-            position: Vec3::new(0.0, 0.0, 0.0),
-            heading: Vec2::new(0.0, 0.0),
-            metadata: EntityMetadata::new(),
-        });
+            EntityData {
+                entity_type: Id::constant("minecraft", "player"),
+                uuid,
+                id,
+                position: Vec3::new(0.0, 0.0, 0.0),
+                heading: Vec2::new(0.0, 0.0),
+                metadata: EntityMetadata::new(),
+            },
+        );
 
         let dim = Dimension {
             sender: self.sender.clone(),
         };
 
-        Runtime::spawn(move || {
+        Runtime::spawn_task(move || {
             for conn in dim.players().unwrap_or_else(|_| Vec::new()) {
                 if conn != uuid {
                     let conn = dim.server().unwrap().player(conn).unwrap();
@@ -257,6 +266,7 @@ impl DimensionData {
                     });
                 }
             }
+            Ok(())
         });
 
         Ok(Entity {
@@ -278,12 +288,13 @@ impl DimensionData {
                 .ok_or(ActorError::ActorDoesNotExist)?
                 .clone();
 
-            Runtime::spawn(move || {
+            Runtime::spawn_task(move || {
                 for conn in server.connections().unwrap() {
                     let _ = conn.write_packet(RemoveEntitiesS2CPlayPacket {
                         entities: vec![VarInt::new(entry.id)].into(),
                     });
                 }
+                Ok(())
             });
         };
 
@@ -324,7 +335,7 @@ impl DimensionData {
                 sender: self.sender.clone(),
             };
 
-            Runtime::spawn(move || {
+            Runtime::spawn_task(move || {
                 for conn in dim.players().unwrap() {
                     if conn != entity.uuid {
                         let conn = dim.server().unwrap().player(conn).unwrap();
@@ -342,6 +353,7 @@ impl DimensionData {
                         });
                     }
                 }
+                Ok(())
             });
         }
         Ok(())
@@ -356,7 +368,7 @@ impl DimensionData {
                 sender: self.sender.clone(),
             };
 
-            Runtime::spawn(move || {
+            Runtime::spawn_task(move || {
                 for conn in dim.players().unwrap() {
                     if conn != entity.uuid {
                         let conn = dim.server().unwrap().player(conn).unwrap();
@@ -374,6 +386,7 @@ impl DimensionData {
                         });
                     }
                 }
+                Ok(())
             });
         }
         Ok(())

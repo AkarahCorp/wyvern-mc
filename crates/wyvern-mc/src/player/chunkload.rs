@@ -70,7 +70,7 @@ impl ConnectionData {
         if let Some(pos) = chunks.first() {
             let pos = *pos;
             self.associated_data.loaded_chunks.push(pos);
-            Runtime::spawn(move || {
+            Runtime::spawn_task(move || {
                 let dim_type_entry = dimension.dimension_type().unwrap();
 
                 let (min_y, max_y, height) = {
@@ -96,12 +96,9 @@ impl ConnectionData {
                 let mut sections = Vec::new();
                 for y in (min_y..max_y).step_by(16) {
                     let pos = Vec3::new(chunk_x, y, chunk_z);
-                    let chunk = dimension.get_chunk_section(pos);
-                    let Ok(chunk) = chunk else {
-                        return;
-                    };
+                    let chunk = dimension.get_chunk_section(pos)?;
                     let Some(chunk) = chunk else {
-                        return;
+                        return Ok(());
                     };
                     sections.push(chunk.as_protocol_section());
                 }
@@ -131,21 +128,17 @@ impl ConnectionData {
                     block_light_array: vec![].into(),
                 };
 
-                player
-                    .write_packet(SetChunkCacheCenterS2CPlayPacket {
-                        chunk_x: chunk_center.x().into(),
-                        chunk_z: chunk_center.y().into(),
-                    })
-                    .unwrap();
-                player
-                    .write_packet(ChunkBatchStartS2CPlayPacket {})
-                    .unwrap();
+                player.write_packet(SetChunkCacheCenterS2CPlayPacket {
+                    chunk_x: chunk_center.x().into(),
+                    chunk_z: chunk_center.y().into(),
+                })?;
+                player.write_packet(ChunkBatchStartS2CPlayPacket {})?;
                 player.write_packet(packet).unwrap();
-                player
-                    .write_packet(ChunkBatchFinishedS2CPlayPacket {
-                        size: VarInt::from(1),
-                    })
-                    .unwrap();
+                player.write_packet(ChunkBatchFinishedS2CPlayPacket {
+                    size: VarInt::from(1),
+                })?;
+
+                Ok(())
             });
         }
     }

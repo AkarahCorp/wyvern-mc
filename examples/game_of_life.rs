@@ -1,6 +1,9 @@
-use std::sync::{
-    Arc,
-    atomic::{AtomicBool, Ordering},
+use std::{
+    sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering},
+    },
+    time::Instant,
 };
 
 use wyvern_mc::{
@@ -33,17 +36,23 @@ fn main() {
         .event(on_start_break)
         .event(on_swap_hands)
         .registries(|registries| {
-            registries.wolf_variant(Id::new("minecraft", "pale"), WolfVariant {
-                angry_texture: Id::empty(),
-                wild_texture: Id::empty(),
-                tame_texture: Id::empty(),
-                biomes: Vec::new(),
-            });
-            registries.painting_variant(Id::new("minecraft", "something_idk"), PaintingVariant {
-                asset: Id::empty(),
-                width: 1,
-                height: 1,
-            });
+            registries.wolf_variant(
+                Id::new("minecraft", "pale"),
+                WolfVariant {
+                    angry_texture: Id::empty(),
+                    wild_texture: Id::empty(),
+                    tame_texture: Id::empty(),
+                    biomes: Vec::new(),
+                },
+            );
+            registries.painting_variant(
+                Id::new("minecraft", "something_idk"),
+                PaintingVariant {
+                    asset: Id::empty(),
+                    width: 1,
+                    height: 1,
+                },
+            );
             registries.dimension_type(
                 Id::new("minecraft", "overworld"),
                 DimensionType::default().min_y(0).height(16),
@@ -99,6 +108,7 @@ fn on_swap_hands(event: Arc<SwapHandsEvent>) -> ActorResult<()> {
 
 #[allow(clippy::needless_range_loop)]
 fn run_tick(server: &Server) -> ActorResult<()> {
+    let start = Instant::now();
     let dim = server.dimension(id![game_of_life:overworld])?;
     let mut copies = std::array::from_fn::<_, { MAX_X }, _>(|_| {
         std::array::from_fn::<_, { MAX_Z }, _>(|_| BlockState::new(Blocks::AIR))
@@ -147,12 +157,16 @@ fn run_tick(server: &Server) -> ActorResult<()> {
             }
         }
     }
+    let end1 = Instant::now();
 
     for x in 0..MAX_X {
         for z in 0..MAX_Z {
             dim.set_block(Vec3::new(x as i32, 0, z as i32), outputs[x][z].clone())?;
         }
     }
+    let end2 = Instant::now();
+
+    log::error!("{:?}", (end2 - start, end1 - start, end2 - end1));
 
     Ok(())
 }

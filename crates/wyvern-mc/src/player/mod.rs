@@ -410,9 +410,9 @@ impl ConnectionData {
         let dir = self.associated_data.last_direction;
         let uuid = self.associated_data.uuid;
 
-        Runtime::spawn(move || {
-            let _ = dim.get_entity(uuid).teleport(pos);
-            let _ = dim.get_entity(uuid).rotate(dir);
+        Runtime::spawn_task(move || {
+            dim.get_entity(uuid).teleport(pos)?;
+            dim.get_entity(uuid).rotate(dir)
         });
     }
 }

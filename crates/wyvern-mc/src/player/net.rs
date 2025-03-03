@@ -38,7 +38,7 @@ impl ConnectionData {
         let stage2 = stage.clone();
         let loaded2 = is_loaded.clone();
         let data_tx2 = data_tx.clone();
-        Runtime::spawn(move || {
+        Runtime::spawn_actor(move || {
             ConnectionData::execute_connection(
                 stream, addr, data_tx2, data_rx, signal_tx, server, stage2, loaded2,
             )

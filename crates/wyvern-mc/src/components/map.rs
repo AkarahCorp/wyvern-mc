@@ -32,10 +32,8 @@ impl DataComponentMap {
     }
 
     pub fn get<T: 'static + ComponentElement>(&self, kind: DataComponentType<T>) -> ActorResult<T> {
-        log::error!("{:#?}\n\n\n{:#?}", kind, self);
         self.inner
             .get(&kind.id())
-            // FIXME: for some reason this line is always failing
             .and_then(|x| (**x).as_any().downcast_ref::<T>())
             .map(|x| clone_box(x))
             .map(|x| *x)

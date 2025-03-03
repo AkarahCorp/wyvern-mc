@@ -50,7 +50,6 @@ impl ConnectionData {
                         }
                     }
                     C2SPlayPackets::PlayerAction(packet) => {
-                        log::warn!("{:?}", packet);
                         let block =
                             Vec3::new(packet.location.x, packet.location.y, packet.location.z);
                         match packet.status {
@@ -248,8 +247,10 @@ impl ConnectionData {
                             .as_ref()
                             .ok_or(ActorError::ActorIsNotLoaded)?
                             .clone();
-                        Runtime::spawn(move || {
+                        Runtime::spawn_task(move || {
                             let _ = dim.set_block(final_pos, state_clone);
+
+                            Ok(())
                         });
 
                         if let Ok(item_count) = held.get(ItemComponents::ITEM_COUNT) {
@@ -392,16 +393,20 @@ impl ConnectionData {
                 .collect::<Vec<_>>()
                 .into();
 
-            Runtime::spawn(move || {
+            Runtime::spawn_task(move || {
                 let _ = player.write_packet(PlayerInfoUpdateS2CPlayPacket {
-                    actions: vec![(data.uuid, vec![
-                        PlayerActionEntry::AddPlayer {
-                            name: data.username.clone(),
-                            props,
-                        },
-                        PlayerActionEntry::Listed(true),
-                    ])],
+                    actions: vec![(
+                        data.uuid,
+                        vec![
+                            PlayerActionEntry::AddPlayer {
+                                name: data.username.clone(),
+                                props,
+                            },
+                            PlayerActionEntry::Listed(true),
+                        ],
+                    )],
                 });
+                Ok(())
             });
         }
 
@@ -414,8 +419,9 @@ impl ConnectionData {
 
             if player.sender.same_channel(&sender) {
                 self.write_packet(PlayerInfoUpdateS2CPlayPacket {
-                    actions: vec![(self.associated_data.uuid, vec![
-                        PlayerActionEntry::AddPlayer {
+                    actions: vec![(
+                        self.associated_data.uuid,
+                        vec![PlayerActionEntry::AddPlayer {
                             name: self.associated_data.username.clone(),
                             props: self
                                 .props
@@ -427,15 +433,18 @@ impl ConnectionData {
                                 })
                                 .collect::<Vec<_>>()
                                 .into(),
-                        },
-                    ])],
+                        }],
+                    )],
                 });
             } else {
                 self.write_packet(PlayerInfoUpdateS2CPlayPacket {
-                    actions: vec![(player.uuid()?, vec![PlayerActionEntry::AddPlayer {
-                        name: player.username()?,
-                        props: player.auth_props()?.into(),
-                    }])],
+                    actions: vec![(
+                        player.uuid()?,
+                        vec![PlayerActionEntry::AddPlayer {
+                            name: player.username()?,
+                            props: player.auth_props()?.into(),
+                        }],
+                    )],
                 });
             }
         }
@@ -476,8 +485,9 @@ impl ConnectionData {
         log::debug!("Spawning human...");
         let dim = self.associated_data.dimension.as_ref().unwrap().clone();
         let data = self.associated_data.clone();
-        Runtime::spawn(move || {
+        Runtime::spawn_task(move || {
             let _ = dim.spawn_player_entity(data.uuid, data.entity_id);
+            Ok(())
         });
 
         log::debug!("All done!");
