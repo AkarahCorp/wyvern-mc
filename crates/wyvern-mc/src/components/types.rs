@@ -3,18 +3,21 @@ use std::{
     sync::atomic::{AtomicU32, Ordering},
 };
 
+use crate::values::Id;
+
 static COMPONENT_TYPE_INDEX: AtomicU32 = AtomicU32::new(0);
 
 pub struct DataComponentType<T> {
-    #[allow(unused)]
     id: u32,
+    name: Id,
     _phantom: PhantomData<T>,
 }
 
 impl<T> DataComponentType<T> {
-    pub fn new() -> DataComponentType<T> {
+    pub fn new(name: Id) -> DataComponentType<T> {
         DataComponentType {
             id: COMPONENT_TYPE_INDEX.fetch_add(1, Ordering::Relaxed),
+            name,
             _phantom: PhantomData,
         }
     }
@@ -22,10 +25,8 @@ impl<T> DataComponentType<T> {
     pub fn id(&self) -> u32 {
         self.id
     }
-}
 
-impl<T> Default for DataComponentType<T> {
-    fn default() -> Self {
-        Self::new()
+    pub fn name(&self) -> &Id {
+        &self.name
     }
 }
