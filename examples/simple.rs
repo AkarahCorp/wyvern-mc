@@ -4,6 +4,7 @@ use noise::{NoiseFn, Simplex};
 use voxidian_protocol::packet::s2c::play::ScreenWindowKind;
 use wyvern_mc::{
     actors::ActorResult,
+    components::DataComponentHolder,
     dimension::{
         blocks::{BlockState, Blocks},
         chunk::Chunk,
@@ -24,6 +25,8 @@ use wyvern_mc::{
 };
 
 fn main() {
+    env_logger::init();
+
     Server::builder()
         .event(on_server_start)
         .event(on_server_tick)

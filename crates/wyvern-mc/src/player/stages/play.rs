@@ -14,6 +14,7 @@ use voxidian_protocol::{
 
 use crate::{
     actors::{Actor, ActorError, ActorResult},
+    components::DataComponentHolder,
     dimension::blocks::BlockState,
     events::{
         BreakBlockEvent, ChangeHeldSlotEvent, ChatMessageEvent, DropItemEvent, PlaceBlockEvent,

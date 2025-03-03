@@ -1,11 +1,14 @@
-use std::{any::Any, collections::HashMap};
+use std::{any::Any, collections::HashMap, sync::Arc};
+
+use dyn_clone::clone_box;
 
 use crate::actors::{ActorError, ActorResult};
 
-use super::DataComponentType;
+use super::{ComponentElement, DataComponentType};
 
+#[derive(Clone, Debug)]
 pub struct DataComponentMap {
-    inner: HashMap<u32, Box<dyn Any>>,
+    inner: HashMap<u64, Arc<dyn ComponentElement>>,
 }
 
 impl DataComponentMap {
@@ -15,20 +18,27 @@ impl DataComponentMap {
         }
     }
 
-    pub fn set<T: 'static>(&mut self, kind: DataComponentType<T>, value: T) {
-        self.inner.insert(kind.id(), Box::new(value));
+    pub fn set<T: 'static + ComponentElement>(&mut self, kind: DataComponentType<T>, value: T) {
+        self.inner.insert(kind.id(), Arc::new(value));
     }
 
-    pub fn with<T: 'static>(mut self, kind: DataComponentType<T>, value: T) -> Self {
-        self.inner.insert(kind.id(), Box::new(value));
+    pub fn with<T: 'static + ComponentElement>(
+        mut self,
+        kind: DataComponentType<T>,
+        value: T,
+    ) -> Self {
+        self.inner.insert(kind.id(), Arc::new(value));
         self
     }
 
-    pub fn get<T: 'static + Clone>(&self, kind: DataComponentType<T>) -> ActorResult<T> {
+    pub fn get<T: 'static + ComponentElement>(&self, kind: DataComponentType<T>) -> ActorResult<T> {
+        log::error!("{:#?}\n\n\n{:#?}", kind, self);
         self.inner
             .get(&kind.id())
-            .map(|x| x.downcast_ref::<T>().unwrap())
-            .cloned()
+            // FIXME: for some reason this line is always failing
+            .and_then(|x| <dyn Any>::downcast_ref::<T>(x))
+            .map(|x| clone_box(x))
+            .map(|x| *x)
             .ok_or(ActorError::ComponentNotFound)
     }
 }

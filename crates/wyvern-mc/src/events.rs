@@ -131,7 +131,7 @@ pub struct PlaceBlockEvent {
     pub block: BlockState,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct DropItemEvent {
     pub player: Player,
     pub item: ItemStack,

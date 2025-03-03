@@ -1,28 +1,24 @@
-use std::{
-    marker::PhantomData,
-    sync::atomic::{AtomicU32, Ordering},
-};
+use std::marker::PhantomData;
 
 use crate::values::Id;
 
-static COMPONENT_TYPE_INDEX: AtomicU32 = AtomicU32::new(0);
-
+#[derive(PartialEq, Hash, Clone, Debug)]
 pub struct DataComponentType<T> {
-    id: u32,
+    id: u64,
     name: Id,
     _phantom: PhantomData<T>,
 }
 
 impl<T> DataComponentType<T> {
-    pub fn new(name: Id) -> DataComponentType<T> {
+    pub const fn new(id: u64, name: Id) -> DataComponentType<T> {
         DataComponentType {
-            id: COMPONENT_TYPE_INDEX.fetch_add(1, Ordering::Relaxed),
+            id,
             name,
             _phantom: PhantomData,
         }
     }
 
-    pub fn id(&self) -> u32 {
+    pub fn id(&self) -> u64 {
         self.id
     }
 

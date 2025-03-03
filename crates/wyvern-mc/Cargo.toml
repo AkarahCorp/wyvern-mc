@@ -10,3 +10,4 @@ datafix = { workspace = true }
 log = { workspace = true }
 flume = { workspace = true }
 rand = { workspace = true }
+dyn-clone = { workspace = true }

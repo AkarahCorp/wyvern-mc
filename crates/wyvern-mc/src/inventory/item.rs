@@ -1,25 +1,34 @@
-use std::{
-    collections::{HashMap, HashSet},
-    sync::LazyLock,
-};
+use std::sync::LazyLock;
 
 use voxidian_protocol::{
     registry::Registry,
-    value::{DataComponentTypes, DataComponents, Item, SlotData},
+    value::{Damage, DataComponents, Item, ItemModel, MaxDamage, SlotData, VarInt},
 };
 
-use crate::values::Id;
+use crate::{
+    components::{DataComponentHolder, DataComponentMap},
+    values::Id,
+};
 
-use super::Component;
+use super::ItemComponents;
 
 pub struct ItemType;
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct ItemStack {
     pub(crate) id: Id,
     pub(crate) count: u16,
-    pub(crate) added_components: HashMap<DataComponentTypes, DataComponents>,
-    pub(crate) removed_components: HashSet<DataComponentTypes>,
+    pub(crate) map: DataComponentMap,
+}
+
+impl DataComponentHolder for ItemStack {
+    fn component_map(&self) -> &crate::components::DataComponentMap {
+        &self.map
+    }
+
+    fn component_map_mut(&mut self) -> &mut crate::components::DataComponentMap {
+        &mut self.map
+    }
 }
 
 impl ItemStack {
@@ -27,8 +36,7 @@ impl ItemStack {
         ItemStack {
             id,
             count: 1,
-            added_components: HashMap::new(),
-            removed_components: HashSet::new(),
+            map: DataComponentMap::new(),
         }
     }
 
@@ -36,18 +44,8 @@ impl ItemStack {
         ItemStack {
             id: Id::constant("minecraft", "air"),
             count: 0,
-            added_components: HashMap::new(),
-            removed_components: HashSet::new(),
+            map: DataComponentMap::new(),
         }
-    }
-
-    pub fn with<C: Component<ItemStack, V>, V>(mut self, component: C, value: V) -> Self {
-        component.insert_component(&mut self, value);
-        self
-    }
-
-    pub fn get<C: Component<ItemStack, V>, V>(&self, component: C) -> Option<V> {
-        component.get_component(self)
     }
 
     pub fn kind(&self) -> Id {
@@ -65,37 +63,39 @@ pub(crate) static ITEM_REGISTRY: LazyLock<Registry<Item>> = LazyLock::new(Item::
 
 impl From<ItemStack> for SlotData {
     fn from(value: ItemStack) -> Self {
-        let components: Vec<DataComponents> = value.added_components.values().cloned().collect();
-        let mut removed_components = Vec::new();
-        for component in value.removed_components {
-            removed_components.push(component);
+        let mut components: Vec<DataComponents> = Vec::new();
+
+        if let Ok(c) = value.get(ItemComponents::DAMAGE) {
+            components.push(DataComponents::Damage(Damage {
+                damage: VarInt::new(c),
+            }));
         }
+        if let Ok(amount) = value.get(ItemComponents::MAX_DAMAGE) {
+            components.push(DataComponents::MaxDamage(MaxDamage {
+                amount: VarInt::new(amount),
+            }));
+        }
+        if let Ok(asset) = value.get(ItemComponents::ITEM_MODEL) {
+            components.push(DataComponents::ItemModel(ItemModel {
+                asset: asset.into(),
+            }));
+        }
+
         SlotData {
             id: ITEM_REGISTRY.get_entry(&value.id.into()).unwrap(),
             count: (value.count as i32).into(),
             components,
-            removed_components,
+            removed_components: Vec::new(),
         }
     }
 }
 
 impl From<SlotData> for ItemStack {
     fn from(value: SlotData) -> Self {
-        let mut added_components = HashMap::new();
-        for component in value.components {
-            added_components.insert(component.as_type(), component);
-        }
-
-        let mut removed_components = HashSet::new();
-        for component in value.removed_components {
-            removed_components.insert(component);
-        }
-
         ItemStack {
             id: ITEM_REGISTRY.lookup(&value.id).unwrap().id.clone().into(),
             count: value.count.as_i32() as u16,
-            added_components,
-            removed_components,
+            map: DataComponentMap::new(),
         }
     }
 }
