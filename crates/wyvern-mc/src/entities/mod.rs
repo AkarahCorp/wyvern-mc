@@ -1,10 +1,14 @@
-use voxidian_protocol::value::{EntityMetadata, Uuid};
+use voxidian_protocol::value::Uuid;
 
 use crate::{
     actors::ActorResult,
+    components::DataComponentMap,
     dimension::Dimension,
     values::{Id, Vec2, Vec3},
 };
+
+mod components;
+pub use components::*;
 
 #[derive(Debug)]
 pub struct Entity {
@@ -52,14 +56,7 @@ pub struct EntityType;
 #[allow(unused)]
 #[derive(Debug, Clone)]
 pub struct EntityData {
-    pub(crate) entity_type: Id,
-    pub(crate) uuid: Uuid,
-    pub(crate) id: i32,
-
-    pub(crate) position: Vec3<f64>,
-    pub(crate) heading: Vec2<f32>,
-
-    pub(crate) metadata: EntityMetadata,
+    pub(crate) components: DataComponentMap,
 }
 
 pub struct Entities;

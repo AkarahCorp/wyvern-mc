@@ -4,7 +4,7 @@ use std::{
     fmt::Debug,
     io::{ErrorKind, Read, Write},
     net::{IpAddr, TcpStream},
-    sync::{Arc, Mutex, atomic::AtomicBool},
+    sync::{Arc, Mutex},
     time::{Duration, Instant},
 };
 
@@ -30,17 +30,15 @@ impl ConnectionData {
         addr: IpAddr,
         server: Server,
         stage: Arc<Mutex<Stage>>,
-        is_loaded: Arc<AtomicBool>,
     ) -> ConnectionWithSignal {
         let (signal_tx, signal_rx) = flume::bounded(1);
         let (data_tx, data_rx) = flume::unbounded();
 
         let stage2 = stage.clone();
-        let loaded2 = is_loaded.clone();
         let data_tx2 = data_tx.clone();
         Runtime::spawn_actor(move || {
             ConnectionData::execute_connection(
-                stream, addr, data_tx2, data_rx, signal_tx, server, stage2, loaded2,
+                stream, addr, data_tx2, data_rx, signal_tx, server, stage2,
             )
         });
 
@@ -48,7 +46,6 @@ impl ConnectionData {
             player: Player { sender: data_tx },
             _signal: signal_rx,
             stage,
-            is_loaded,
         }
     }
 
@@ -61,7 +58,6 @@ impl ConnectionData {
         signal: Sender<ConnectionStoppedSignal>,
         server: Server,
         stage: Arc<Mutex<Stage>>,
-        is_loaded: Arc<AtomicBool>,
     ) {
         stream.set_nonblocking(true).unwrap();
         let conn = ConnectionData {
@@ -80,7 +76,6 @@ impl ConnectionData {
             verify_token: Vec::new(),
             public_key: None,
             props: Vec::new(),
-            is_loaded,
         };
 
         conn.event_loop();

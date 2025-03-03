@@ -1,5 +1,3 @@
-use std::sync::atomic::Ordering;
-
 use voxidian_protocol::{
     packet::{
         c2s::play::{BlockFace, C2SPlayPackets, PlayerStatus},
@@ -39,9 +37,6 @@ impl ConnectionData {
                 );
 
                 match packet {
-                    C2SPlayPackets::PlayerLoaded(_packet) => {
-                        this.is_loaded.store(true, Ordering::Release);
-                    }
                     C2SPlayPackets::ChatCommand(packet) => {
                         if let Some(sender) = this.sender.upgrade() {
                             this.connected_server.spawn_event(PlayerCommandEvent {

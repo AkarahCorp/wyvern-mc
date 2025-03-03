@@ -2,7 +2,8 @@ use std::collections::HashMap;
 
 use crate::{
     blocks::BlockState,
-    entities::{Entity, EntityData},
+    components::{DataComponentHolder, DataComponentMap},
+    entities::{Entity, EntityComponents, EntityData},
 };
 use chunk::{Chunk, ChunkSection};
 use flume::Sender;
@@ -12,9 +13,7 @@ use voxidian_protocol::{
         RemoveEntitiesS2CPlayPacket,
     },
     registry::RegEntry,
-    value::{
-        Angle, BlockPos, EntityMetadata, EntityType as PtcEntityType, Identifier, Uuid, VarInt,
-    },
+    value::{Angle, BlockPos, EntityType as PtcEntityType, Identifier, Uuid, VarInt},
 };
 
 use crate::{
@@ -140,12 +139,14 @@ impl DimensionData {
         Ok(self
             .entities
             .values()
-            .filter(|x| x.entity_type != Id::constant("minecraft", "player"))
+            .filter(|x| {
+                x.get(EntityComponents::ENTITY_TYPE).unwrap() != Id::constant("minecraft", "player")
+            })
             .map(|x| Entity {
                 dimension: Dimension {
                     sender: self.sender.clone(),
                 },
-                uuid: x.uuid,
+                uuid: x.get(EntityComponents::UUID).unwrap(),
             })
             .collect())
     }
@@ -160,7 +161,7 @@ impl DimensionData {
                 dimension: Dimension {
                     sender: self.sender.clone(),
                 },
-                uuid: x.uuid,
+                uuid: x.components.get(EntityComponents::UUID).unwrap(),
             })
             .collect())
     }
@@ -173,16 +174,15 @@ impl DimensionData {
             uuid = Uuid::new_v4();
         }
 
+        let mut components = DataComponentMap::new();
         let id = self.server.clone().unwrap().new_entity_id()?;
+        components.set(EntityComponents::ENTITY_ID, id);
+        components.set(EntityComponents::UUID, uuid);
+        components.set(EntityComponents::ENTITY_TYPE, entity_type.clone());
+        components.set(EntityComponents::POSITION, Vec3::new(0.0, 0.0, 0.0));
+        components.set(EntityComponents::DIRECTION, Vec2::new(0.0, 0.0));
 
-        self.entities.insert(uuid, EntityData {
-            entity_type: entity_type.clone(),
-            uuid,
-            id,
-            position: Vec3::new(0.0, 0.0, 0.0),
-            heading: Vec2::new(0.0, 0.0),
-            metadata: EntityMetadata::new(),
-        });
+        self.entities.insert(uuid, EntityData { components });
 
         let dim = Dimension {
             sender: self.sender.clone(),
@@ -223,14 +223,17 @@ impl DimensionData {
 
     #[SpawnPlayerEntity]
     pub(crate) fn spawn_player_entity(&mut self, uuid: Uuid, id: i32) -> ActorResult<Entity> {
-        self.entities.insert(uuid, EntityData {
-            entity_type: Id::constant("minecraft", "player"),
-            uuid,
-            id,
-            position: Vec3::new(0.0, 0.0, 0.0),
-            heading: Vec2::new(0.0, 0.0),
-            metadata: EntityMetadata::new(),
-        });
+        let mut components = DataComponentMap::new();
+        components.set(EntityComponents::ENTITY_ID, id);
+        components.set(EntityComponents::UUID, uuid);
+        components.set(
+            EntityComponents::ENTITY_TYPE,
+            Id::constant("minecraft", "player"),
+        );
+        components.set(EntityComponents::POSITION, Vec3::new(0.0, 0.0, 0.0));
+        components.set(EntityComponents::DIRECTION, Vec2::new(0.0, 0.0));
+
+        self.entities.insert(uuid, EntityData { components });
 
         let dim = Dimension {
             sender: self.sender.clone(),
@@ -284,7 +287,10 @@ impl DimensionData {
             Runtime::spawn_task(move || {
                 for conn in server.connections().unwrap() {
                     let _ = conn.write_packet(RemoveEntitiesS2CPlayPacket {
-                        entities: vec![VarInt::new(entry.id)].into(),
+                        entities: vec![VarInt::new(
+                            entry.get(EntityComponents::ENTITY_ID).unwrap(),
+                        )]
+                        .into(),
                     });
                 }
                 Ok(())
@@ -299,7 +305,7 @@ impl DimensionData {
         self.entities
             .get(&uuid)
             .ok_or(ActorError::ActorDoesNotExist)
-            .map(|x| x.id)
+            .map(|x| x.get(EntityComponents::ENTITY_ID).unwrap())
     }
 
     #[EntityType]
@@ -307,7 +313,7 @@ impl DimensionData {
         self.entities
             .get(&uuid)
             .ok_or(ActorError::ActorDoesNotExist)
-            .map(|x| x.entity_type.clone())
+            .map(|x| x.get(EntityComponents::ENTITY_TYPE).unwrap())
     }
 
     #[EntityPos]
@@ -315,13 +321,18 @@ impl DimensionData {
         self.entities
             .get(&uuid)
             .ok_or(ActorError::ActorDoesNotExist)
-            .map(|x| (x.position, x.heading))
+            .map(|x| {
+                (
+                    x.get(EntityComponents::POSITION).unwrap(),
+                    x.get(EntityComponents::DIRECTION).unwrap(),
+                )
+            })
     }
 
     #[TeleportEntity]
     pub(crate) fn teleport_entity(&mut self, uuid: Uuid, position: Vec3<f64>) -> ActorResult<()> {
         if let Some(entity) = self.entities.get_mut(&uuid) {
-            entity.position = position;
+            entity.set(EntityComponents::POSITION, position);
             let entity = entity.clone();
 
             let dim = Dimension {
@@ -329,19 +340,22 @@ impl DimensionData {
             };
 
             Runtime::spawn_task(move || {
+                let uuid = entity.get(EntityComponents::UUID).unwrap();
+                let id = entity.get(EntityComponents::ENTITY_ID).unwrap();
+                let heading = entity.get(EntityComponents::DIRECTION).unwrap();
                 for conn in dim.players().unwrap() {
-                    if conn != entity.uuid {
+                    if conn != uuid {
                         let conn = dim.server().unwrap().player(conn).unwrap();
                         let _ = conn.write_packet(EntityPositionSyncS2CPlayPacket {
-                            entity_id: entity.id.into(),
-                            x: entity.position.x(),
-                            y: entity.position.y(),
-                            z: entity.position.z(),
+                            entity_id: id.into(),
+                            x: position.x(),
+                            y: position.y(),
+                            z: position.z(),
                             vx: 0.0,
                             vy: 0.0,
                             vz: 0.0,
-                            yaw: entity.heading.x(),
-                            pitch: entity.heading.y(),
+                            yaw: heading.x(),
+                            pitch: heading.y(),
                             on_ground: false,
                         });
                     }
@@ -355,26 +369,32 @@ impl DimensionData {
     #[RotateEntity]
     pub(crate) fn rotate_entity(&mut self, uuid: Uuid, heading: Vec2<f32>) -> ActorResult<()> {
         if let Some(entity) = self.entities.get_mut(&uuid) {
-            entity.heading = heading;
+            entity.set(EntityComponents::DIRECTION, heading);
             let entity = entity.clone();
             let dim = Dimension {
                 sender: self.sender.clone(),
             };
 
+            let uuid = entity.get(EntityComponents::UUID).unwrap();
+
+            let position = entity.get(EntityComponents::POSITION).unwrap();
+            let heading = entity.get(EntityComponents::DIRECTION).unwrap();
+            let id = entity.get(EntityComponents::ENTITY_ID).unwrap();
+
             Runtime::spawn_task(move || {
                 for conn in dim.players().unwrap() {
-                    if conn != entity.uuid {
+                    if conn != uuid {
                         let conn = dim.server().unwrap().player(conn).unwrap();
                         let _ = conn.write_packet(EntityPositionSyncS2CPlayPacket {
-                            entity_id: entity.id.into(),
-                            x: entity.position.x(),
-                            y: entity.position.y(),
-                            z: entity.position.z(),
+                            entity_id: id.into(),
+                            x: position.x(),
+                            y: position.y(),
+                            z: position.z(),
                             vx: 0.0,
                             vy: 0.0,
                             vz: 0.0,
-                            yaw: entity.heading.x(),
-                            pitch: entity.heading.y(),
+                            yaw: heading.x(),
+                            pitch: heading.y(),
                             on_ground: false,
                         });
                     }
@@ -390,8 +410,10 @@ impl DimensionData {
     pub fn players(&mut self) -> ActorResult<Vec<Uuid>> {
         let mut vec = Vec::new();
         for entity in &mut self.entities {
-            if entity.1.entity_type == Id::constant("minecraft", "player") {
-                vec.push(entity.1.uuid);
+            let etype = entity.1.get(EntityComponents::ENTITY_TYPE).unwrap();
+            if etype == Id::constant("minecraft", "player") {
+                let uuid = entity.1.get(EntityComponents::UUID).unwrap();
+                vec.push(uuid);
             }
         }
         Ok(vec)

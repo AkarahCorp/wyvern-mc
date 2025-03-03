@@ -1,9 +1,6 @@
 use std::{
     net::{Ipv4Addr, SocketAddrV4},
-    sync::{
-        Arc, Mutex, OnceLock,
-        atomic::{AtomicBool, Ordering},
-    },
+    sync::{Arc, Mutex, OnceLock},
     time::{Duration, Instant},
 };
 
@@ -145,9 +142,8 @@ impl ServerData {
 
         for conn in &self.connections {
             let stage = *conn.stage.lock().unwrap() == Stage::Play;
-            let loaded = conn.is_loaded.load(Ordering::Acquire);
 
-            if stage && loaded {
+            if stage {
                 vec.push(conn.lower());
             }
         }
@@ -204,6 +200,7 @@ impl ServerData {
             if dur > Duration::from_millis(50) {
                 self.last_tick = Instant::now();
 
+                log::error!("ticking");
                 let _ = server.spawn_event(ServerTickEvent {
                     server: server.clone(),
                 });
@@ -223,13 +220,11 @@ impl ServerData {
                 Ok((stream, addr)) => {
                     log::info!("Accepted new client: {:?}", addr);
                     let stage = Arc::new(Mutex::new(Stage::Handshake));
-                    let is_loaded = Arc::new(AtomicBool::new(false));
                     let signal = ConnectionData::connection_channel(
                         stream,
                         addr.ip(),
                         server.clone(),
                         stage,
-                        is_loaded,
                     );
                     let _ = server.spawn_connection_internal(signal);
                 }
