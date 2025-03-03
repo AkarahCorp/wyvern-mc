@@ -10,4 +10,5 @@ pub enum ActorError {
     ActorIsNotLoaded,
     IndexOutOfBounds,
     BadRequest,
+    ComponentNotFound,
 }
