@@ -2,6 +2,7 @@ use voxidian_protocol::value::{TextColour, TextComponent};
 
 use super::{Text, TextMeta};
 
+#[derive(Debug, Clone)]
 pub enum TextKinds {
     Literal(TextLiteral),
 }
@@ -13,7 +14,7 @@ impl From<TextKinds> for TextComponent {
         }
     }
 }
-
+#[derive(Debug, Clone)]
 pub struct TextLiteral {
     pub(crate) content: String,
     pub(crate) meta: TextMeta,

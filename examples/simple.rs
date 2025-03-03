@@ -152,7 +152,21 @@ fn on_server_tick(event: Arc<ServerTickEvent>) -> ActorResult<()> {
             38,
             ItemStack::new(Id::new("minecraft", "netherite_axe"))
                 .with(ItemComponents::MAX_DAMAGE, 1500)
-                .with(ItemComponents::DAMAGE, 1),
+                .with(ItemComponents::DAMAGE, 1)
+                .with(
+                    ItemComponents::ITEM_NAME,
+                    Texts::literal("Normal Netherite Axe")
+                        .with_color(TextColor::new(0, 255, 0))
+                        .into(),
+                )
+                .with(ItemComponents::LORE, vec![
+                    Texts::literal("Fancy lore line.")
+                        .with_color(TextColor::new(133, 133, 133))
+                        .into(),
+                    Texts::literal("How cool!")
+                        .with_color(TextColor::new(182, 18, 238))
+                        .into(),
+                ]),
         )?;
     }
 

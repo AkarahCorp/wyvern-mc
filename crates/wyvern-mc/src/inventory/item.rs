@@ -2,12 +2,15 @@ use std::sync::LazyLock;
 
 use voxidian_protocol::{
     registry::Registry,
-    value::{Damage, DataComponents, Item, ItemModel, MaxDamage, SlotData, VarInt},
+    value::{
+        CustomData, Damage, DataComponents, Item, ItemModel, ItemName, LengthPrefixVec, Lore,
+        MaxDamage, Nbt as PtcNbt, NbtElement, SlotData, Text, VarInt,
+    },
 };
 
 use crate::{
     components::{DataComponentHolder, DataComponentMap},
-    values::Id,
+    values::{Id, TextKinds},
 };
 
 use super::ItemComponents;
@@ -75,6 +78,47 @@ impl From<ItemStack> for SlotData {
         if let Ok(asset) = value.get(ItemComponents::ITEM_MODEL) {
             components.push(DataComponents::ItemModel(ItemModel {
                 asset: asset.into(),
+            }));
+        }
+        if let Ok(data) = value.get(ItemComponents::CUSTOM_DATA) {
+            if let NbtElement::Compound(root) = NbtElement::from(data) {
+                components.push(DataComponents::CustomData(CustomData {
+                    data: PtcNbt {
+                        name: String::new(),
+                        root,
+                    },
+                }));
+            }
+        }
+        if let Ok(name) = value.get(ItemComponents::ITEM_NAME) {
+            components.push(DataComponents::ItemName(ItemName {
+                name: {
+                    let mut text = Text::new();
+                    let component = match name {
+                        TextKinds::Literal(text_literal) => text_literal.into(),
+                    };
+                    text.push(component);
+                    text
+                }
+                .to_nbt(),
+            }));
+        }
+        if let Ok(lore) = value.get(ItemComponents::LORE) {
+            components.push(DataComponents::Lore(Lore {
+                lines: {
+                    let mut vec = Vec::new();
+                    for line in lore {
+                        vec.push({
+                            let mut text = Text::new();
+                            let component = match line {
+                                TextKinds::Literal(text_literal) => text_literal.into(),
+                            };
+                            text.push(component);
+                            text.to_nbt()
+                        });
+                    }
+                    LengthPrefixVec::from(vec)
+                },
             }));
         }
 
