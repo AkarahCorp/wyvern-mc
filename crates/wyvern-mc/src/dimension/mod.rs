@@ -1,7 +1,9 @@
 use std::collections::HashMap;
 
-use crate::entities::{Entity, EntityData};
-use blocks::BlockState;
+use crate::{
+    blocks::BlockState,
+    entities::{Entity, EntityData},
+};
 use chunk::{Chunk, ChunkSection};
 use flume::Sender;
 use voxidian_protocol::{
@@ -23,9 +25,7 @@ use crate::{
     values::{Id, Vec2, Vec3},
 };
 
-pub mod blocks;
 pub mod chunk;
-pub mod properties;
 
 #[allow(dead_code)]
 #[crate::actor(Dimension, DimensionMessage)]

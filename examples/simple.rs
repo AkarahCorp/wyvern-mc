@@ -4,12 +4,9 @@ use noise::{NoiseFn, Simplex};
 use voxidian_protocol::packet::s2c::play::ScreenWindowKind;
 use wyvern_mc::{
     actors::ActorResult,
+    blocks::{BlockProperties, BlockState, Blocks},
     components::DataComponentHolder,
-    dimension::{
-        blocks::{BlockState, Blocks},
-        chunk::Chunk,
-        properties::BlockProperties,
-    },
+    dimension::chunk::Chunk,
     events::{
         BreakBlockEvent, ChatMessageEvent, DimensionCreateEvent, DropItemEvent, PlaceBlockEvent,
         PlayerCommandEvent, PlayerJoinEvent, ServerStartEvent, ServerTickEvent,

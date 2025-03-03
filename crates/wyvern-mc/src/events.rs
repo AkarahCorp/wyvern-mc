@@ -2,7 +2,8 @@ use std::{fmt::Debug, pin::Pin, sync::Arc};
 
 use crate::{
     actors::ActorResult,
-    dimension::{Dimension, blocks::BlockState},
+    blocks::BlockState,
+    dimension::Dimension,
     item::ItemStack,
     player::Player,
     server::Server,

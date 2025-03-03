@@ -10,7 +10,7 @@ use voxidian_protocol::{
 
 use crate::values::{Vec3, nbt::NbtCompound};
 
-use super::blocks::BlockState;
+use crate::blocks::BlockState;
 
 #[derive(Clone, Debug)]
 pub struct Chunk {

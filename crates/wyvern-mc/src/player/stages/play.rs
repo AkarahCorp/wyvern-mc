@@ -14,8 +14,8 @@ use voxidian_protocol::{
 
 use crate::{
     actors::{Actor, ActorError, ActorResult},
+    blocks::BlockState,
     components::DataComponentHolder,
-    dimension::blocks::BlockState,
     events::{
         BreakBlockEvent, ChangeHeldSlotEvent, ChatMessageEvent, DropItemEvent, PlaceBlockEvent,
         PlayerCommandEvent, PlayerJoinEvent, PlayerMoveEvent, RightClickEvent,
@@ -396,16 +396,13 @@ impl ConnectionData {
 
             Runtime::spawn_task(move || {
                 let _ = player.write_packet(PlayerInfoUpdateS2CPlayPacket {
-                    actions: vec![(
-                        data.uuid,
-                        vec![
-                            PlayerActionEntry::AddPlayer {
-                                name: data.username.clone(),
-                                props,
-                            },
-                            PlayerActionEntry::Listed(true),
-                        ],
-                    )],
+                    actions: vec![(data.uuid, vec![
+                        PlayerActionEntry::AddPlayer {
+                            name: data.username.clone(),
+                            props,
+                        },
+                        PlayerActionEntry::Listed(true),
+                    ])],
                 });
                 Ok(())
             });
@@ -420,9 +417,8 @@ impl ConnectionData {
 
             if player.sender.same_channel(&sender) {
                 self.write_packet(PlayerInfoUpdateS2CPlayPacket {
-                    actions: vec![(
-                        self.associated_data.uuid,
-                        vec![PlayerActionEntry::AddPlayer {
+                    actions: vec![(self.associated_data.uuid, vec![
+                        PlayerActionEntry::AddPlayer {
                             name: self.associated_data.username.clone(),
                             props: self
                                 .props
@@ -434,18 +430,15 @@ impl ConnectionData {
                                 })
                                 .collect::<Vec<_>>()
                                 .into(),
-                        }],
-                    )],
+                        },
+                    ])],
                 });
             } else {
                 self.write_packet(PlayerInfoUpdateS2CPlayPacket {
-                    actions: vec![(
-                        player.uuid()?,
-                        vec![PlayerActionEntry::AddPlayer {
-                            name: player.username()?,
-                            props: player.auth_props()?.into(),
-                        }],
-                    )],
+                    actions: vec![(player.uuid()?, vec![PlayerActionEntry::AddPlayer {
+                        name: player.username()?,
+                        props: player.auth_props()?.into(),
+                    }])],
                 });
             }
         }

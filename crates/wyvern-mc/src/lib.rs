@@ -2,6 +2,7 @@
 #![allow(clippy::type_complexity)]
 
 pub mod actors;
+pub mod blocks;
 pub mod components;
 pub mod dimension;
 pub mod entities;
