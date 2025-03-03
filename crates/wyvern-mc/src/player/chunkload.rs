@@ -84,11 +84,6 @@ impl ConnectionData {
                     (min_y, max_y, height)
                 };
 
-                log::error!(
-                    "Player {:?} is loading chunk @ {:?}",
-                    player.username(),
-                    pos
-                );
                 let chunk_x = pos.x();
                 let chunk_z = pos.y();
 
@@ -104,12 +99,6 @@ impl ConnectionData {
                 }
 
                 let end = Instant::now();
-
-                log::error!(
-                    "Fetching a chunk of height {:?} took {:?}",
-                    height,
-                    end - start
-                );
 
                 let packet = LevelChunkWithLightS2CPlayPacket {
                     chunk_x,

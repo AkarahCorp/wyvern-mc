@@ -91,7 +91,6 @@ impl ConnectionData {
                     let _ = dim.remove_entity(self.associated_data.uuid);
                 }
                 self.signal.send(ConnectionStoppedSignal).unwrap();
-                log::error!("Sending drop signal");
                 drop(self);
                 return;
             }

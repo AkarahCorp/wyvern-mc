@@ -60,7 +60,6 @@ impl DimensionData {
         loop {
             self.handle_messages();
             if Instant::now().duration_since(self.last_update) > Duration::from_millis(50) {
-                log::error!("Propogating");
                 self.last_update = Instant::now();
                 let _ = self.propogate_entities();
             }

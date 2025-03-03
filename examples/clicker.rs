@@ -110,6 +110,13 @@ fn on_tick(event: Arc<ServerTickEvent>) -> ActorResult<()> {
                     rand::random_range(0.0..1.0),
                 ),
             )?;
+            entity.set(
+                EntityComponents::DIRECTION,
+                Vec2::new(
+                    rand::random_range(-90.0..90.0),
+                    rand::random_range(-180.0..180.0),
+                ),
+            )?;
         }
     }
     Ok(())

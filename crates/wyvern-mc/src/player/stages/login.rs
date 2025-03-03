@@ -111,7 +111,6 @@ impl ConnectionData {
                         verify_token: this.verify_token.clone().into(),
                         should_auth: true,
                     });
-                    log::error!("4");
                 }
                 C2SLoginPackets::CookieResponse(_packet) => todo!(),
             }

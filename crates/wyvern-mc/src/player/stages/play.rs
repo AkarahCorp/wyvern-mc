@@ -446,7 +446,6 @@ impl ConnectionData {
             .unwrap()
             .all_entities()?;
         log::debug!("Sending all entities...");
-        log::error!("{:?}", entities);
         for entity in entities {
             let position = entity
                 .get(EntityComponents::POSITION)
@@ -476,7 +475,6 @@ impl ConnectionData {
                 vel_y: 0,
                 vel_z: 0,
             });
-            log::error!("UUID: {:?}", entity.get(EntityComponents::UUID));
         }
 
         log::debug!("Spawning human...");

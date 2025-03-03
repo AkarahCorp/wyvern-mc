@@ -183,22 +183,14 @@ impl ServerData {
 
     pub fn handle_loops(mut self, server: Server) {
         loop {
-            self.connections.retain_mut(|connection| {
-                if connection._signal.try_recv().is_err() {
-                    true
-                } else {
-                    log::error!("Receiving drop signal and trying to drop");
-                    log::error!("{:?}", connection.player.sender.sender_count());
-                    false
-                }
-            });
+            self.connections
+                .retain_mut(|connection| connection._signal.try_recv().is_err());
 
             self.handle_messages();
             let dur = Instant::now().duration_since(self.last_tick);
             if dur > Duration::from_millis(50) {
                 self.last_tick = Instant::now();
 
-                log::error!("ticking");
                 let _ = server.spawn_event(ServerTickEvent {
                     server: server.clone(),
                 });
