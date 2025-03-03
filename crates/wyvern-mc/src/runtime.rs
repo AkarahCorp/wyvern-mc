@@ -37,13 +37,8 @@ impl Runtime {
             {
                 let recv: Receiver<Box<dyn FnOnce() -> ActorResult<()> + Send>> = chan.1.clone();
                 std::thread::spawn(move || {
-                    loop {
-                        match recv.recv() {
-                            Ok(task) => {
-                                task();
-                            }
-                            Err(_) => break,
-                        }
+                    while let Ok(task) = recv.recv() {
+                        task();
                     }
                 });
             }
