@@ -3,7 +3,7 @@ use std::{fmt::Debug, pin::Pin, sync::Arc};
 use crate::{
     actors::ActorResult,
     dimension::{Dimension, blocks::BlockState},
-    inventory::ItemStack,
+    item::ItemStack,
     player::Player,
     server::Server,
     values::{Id, Vec2, Vec3, cell::Token},

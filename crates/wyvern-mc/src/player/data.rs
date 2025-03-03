@@ -2,7 +2,8 @@ use std::time::Instant;
 
 use crate::{
     dimension::Dimension,
-    inventory::{DataInventory, ItemStack},
+    inventory::DataInventory,
+    item::ItemStack,
     values::{Vec2, Vec3},
 };
 use voxidian_protocol::{

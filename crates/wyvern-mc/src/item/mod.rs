@@ -1,3 +1,6 @@
+mod components;
+pub use components::*;
+
 use std::sync::LazyLock;
 
 use voxidian_protocol::{
@@ -12,8 +15,6 @@ use crate::{
     components::{DataComponentHolder, DataComponentMap},
     values::{Id, TextKinds},
 };
-
-use super::ItemComponents;
 
 pub struct ItemType;
 

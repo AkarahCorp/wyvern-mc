@@ -6,6 +6,7 @@ pub mod components;
 pub mod dimension;
 pub mod events;
 pub mod inventory;
+pub mod item;
 pub mod player;
 pub mod runtime;
 pub mod server;

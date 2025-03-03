@@ -7,11 +7,11 @@ pub struct PlayerInventory {
 }
 
 impl Inventory for PlayerInventory {
-    fn get_slot(&self, slot: usize) -> ActorResult<crate::inventory::ItemStack> {
+    fn get_slot(&self, slot: usize) -> ActorResult<crate::item::ItemStack> {
         self.player.get_inv_slot(slot)
     }
 
-    fn set_slot(&mut self, slot: usize, item: crate::inventory::ItemStack) -> ActorResult<()> {
+    fn set_slot(&mut self, slot: usize, item: crate::item::ItemStack) -> ActorResult<()> {
         self.player.set_inv_slot(slot, item)
     }
 }

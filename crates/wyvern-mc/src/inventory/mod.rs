@@ -1,11 +1,7 @@
-mod item;
-pub use item::*;
 mod data;
 pub use data::*;
-mod components;
-pub use components::*;
 
-use crate::actors::ActorResult;
+use crate::{actors::ActorResult, item::ItemStack};
 
 pub trait Inventory {
     fn get_slot(&self, slot: usize) -> ActorResult<ItemStack>;

@@ -1,8 +1,11 @@
 use std::{collections::HashMap, fmt::Debug};
 
-use crate::actors::{ActorError, ActorResult};
+use crate::{
+    actors::{ActorError, ActorResult},
+    item::ItemStack,
+};
 
-use super::{Inventory, ItemStack};
+use super::Inventory;
 
 #[derive(Clone)]
 pub struct DataInventory {

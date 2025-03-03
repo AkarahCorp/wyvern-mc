@@ -15,7 +15,8 @@ use wyvern_mc::{
         PlayerCommandEvent, PlayerJoinEvent, ServerStartEvent, ServerTickEvent,
     },
     id,
-    inventory::{Inventory, ItemComponents, ItemStack},
+    inventory::Inventory,
+    item::{ItemComponents, ItemStack},
     runtime::Runtime,
     server::Server,
     values::{

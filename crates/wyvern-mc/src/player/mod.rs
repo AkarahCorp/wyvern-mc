@@ -32,7 +32,8 @@ use wyvern_macros::{actor, message};
 use crate::{
     actors::{ActorError, ActorResult},
     dimension::Dimension,
-    inventory::{DataInventory, Inventory, ItemStack},
+    inventory::{DataInventory, Inventory},
+    item::ItemStack,
     runtime::Runtime,
     server::Server,
     values::{Sound, Text, Vec2, Vec3},
