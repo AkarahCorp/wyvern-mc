@@ -22,7 +22,7 @@ use crate::{
     dimension::{Dimension, DimensionData},
     events::{DimensionCreateEvent, Event, EventBus, ServerStartEvent, ServerTickEvent},
     player::{ConnectionData, ConnectionWithSignal, Player},
-    values::Key,
+    values::Id,
 };
 
 mod builder;
@@ -86,7 +86,7 @@ impl ServerData {
     }
 
     #[GetDimension]
-    pub fn dimension(&self, key: Key<Dimension>) -> ActorResult<Dimension> {
+    pub fn dimension(&self, key: Id) -> ActorResult<Dimension> {
         self.dimensions
             .get(&key)
             .map(|dim| Dimension {
@@ -101,14 +101,14 @@ impl ServerData {
     }
 
     #[CreateDimension]
-    pub fn create_dimension(&mut self, name: Key<Dimension>) -> ActorResult<Dimension> {
+    pub fn create_dimension(&mut self, name: Id) -> ActorResult<Dimension> {
         log::debug!("Creating new dimension: {:?}", name);
         let mut root_dim = DimensionData::new(
-            name.clone().retype(),
+            name.clone(),
             Server {
                 sender: self.sender.clone(),
             },
-            Key::new("minecraft", "overworld"),
+            Id::new("minecraft", "overworld"),
         );
 
         let dim = Dimension {

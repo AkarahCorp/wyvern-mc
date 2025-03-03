@@ -1,6 +1,6 @@
 use std::sync::LazyLock;
 
-use super::Key;
+use super::Id;
 use voxidian_protocol::{
     packet::s2c::play::SoundCategory as PtcSoundCategory,
     registry::Registry,
@@ -24,7 +24,7 @@ impl From<SoundCategory> for PtcSoundCategory {
 
 #[derive(Debug, Clone)]
 pub struct Sound {
-    pub(crate) name: Key<Sound>,
+    pub(crate) name: Id,
     pub(crate) pitch: f32,
     pub(crate) volume: f32,
     pub(crate) category: SoundCategory,

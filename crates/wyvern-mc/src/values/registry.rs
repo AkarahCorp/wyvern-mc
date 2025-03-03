@@ -1,6 +1,6 @@
 use voxidian_protocol::registry::{RegEntry, Registry as PtcRegistry};
 
-use super::Key;
+use super::Id;
 
 pub struct Registry<T> {
     pub(crate) inner: PtcRegistry<T>,
@@ -22,19 +22,19 @@ impl<T> Registry<T> {
             inner: PtcRegistry::new(),
         }
     }
-    pub fn insert(&mut self, key: Key<T>, value: T) {
+    pub fn insert(&mut self, key: Id, value: T) {
         self.inner.insert(key.into(), value);
     }
 
-    pub fn get(&self, key: Key<T>) -> Option<&T> {
+    pub fn get(&self, key: Id) -> Option<&T> {
         self.inner.get(&key.into())
     }
 
-    pub fn keys(&self) -> impl Iterator<Item = Key<T>> {
+    pub fn keys(&self) -> impl Iterator<Item = Id> {
         self.inner.keys().map(|x| x.clone().into())
     }
 
-    pub fn entries(&self) -> impl Iterator<Item = (Key<T>, &T)> {
+    pub fn entries(&self) -> impl Iterator<Item = (Id, &T)> {
         self.inner.entries().map(|x| (x.0.clone().into(), x.1))
     }
 
@@ -42,7 +42,7 @@ impl<T> Registry<T> {
         self.inner.clear();
     }
 
-    pub(crate) fn get_entry(&self, key: Key<T>) -> Option<RegEntry<T>> {
+    pub(crate) fn get_entry(&self, key: Id) -> Option<RegEntry<T>> {
         self.inner.get_entry(&key.into())
     }
 }

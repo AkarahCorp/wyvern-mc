@@ -2,7 +2,7 @@ use voxidian_protocol::value::{EntityMetadata, Uuid};
 
 use crate::{
     actors::ActorResult,
-    values::{Key, Vec2, Vec3},
+    values::{Id, Vec2, Vec3},
 };
 
 use super::Dimension;
@@ -31,7 +31,7 @@ impl Entity {
         self.dimension.entity_id(self.uuid)
     }
 
-    pub fn entity_type(&self) -> ActorResult<Key<EntityType>> {
+    pub fn entity_type(&self) -> ActorResult<Id> {
         self.dimension.entity_type(self.uuid)
     }
 
@@ -53,7 +53,7 @@ pub struct EntityType;
 #[allow(unused)]
 #[derive(Debug, Clone)]
 pub struct EntityData {
-    pub(crate) entity_type: Key<EntityType>,
+    pub(crate) entity_type: Id,
     pub(crate) uuid: Uuid,
     pub(crate) id: i32,
 

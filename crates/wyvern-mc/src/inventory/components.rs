@@ -1,6 +1,6 @@
 use voxidian_protocol::value::{Damage, DataComponentTypes, DataComponents, ItemModel, MaxDamage};
 
-use crate::values::{Key, resource::Texture};
+use crate::values::Id;
 
 use super::ItemStack;
 
@@ -100,8 +100,8 @@ impl Component<ItemStack, u32> for DamageComponentType {
 }
 
 pub struct ItemModelComponentType;
-impl Component<ItemStack, Key<Texture>> for ItemModelComponentType {
-    fn insert_component(&self, holder: &mut ItemStack, value: Key<Texture>) {
+impl Component<ItemStack, Id> for ItemModelComponentType {
+    fn insert_component(&self, holder: &mut ItemStack, value: Id) {
         holder.added_components.insert(
             DataComponentTypes::ItemModel,
             DataComponents::ItemModel(ItemModel {
@@ -113,7 +113,7 @@ impl Component<ItemStack, Key<Texture>> for ItemModelComponentType {
             .remove(&DataComponentTypes::ItemModel);
     }
 
-    fn get_component(&self, holder: &ItemStack) -> Option<Key<Texture>> {
+    fn get_component(&self, holder: &ItemStack) -> Option<Id> {
         holder
             .added_components
             .get(&DataComponentTypes::ItemModel)

@@ -12,10 +12,10 @@ use wyvern_mc::{
         SwapHandsEvent,
     },
     inventory::{Inventory, ItemStack},
-    key,
+    id,
     server::Server,
     values::{
-        Key, SoundCategory, Sounds, Texts, Uuid, Vec3,
+        Id, SoundCategory, Sounds, Texts, Uuid, Vec3,
         regval::{DimensionType, PaintingVariant, WolfVariant},
     },
 };
@@ -33,24 +33,24 @@ fn main() {
         .event(on_right_click)
         .event(on_swap_hands)
         .registries(|registries| {
-            registries.wolf_variant(Key::new("minecraft", "pale"), WolfVariant {
-                angry_texture: Key::empty(),
-                wild_texture: Key::empty(),
-                tame_texture: Key::empty(),
+            registries.wolf_variant(Id::new("minecraft", "pale"), WolfVariant {
+                angry_texture: Id::empty(),
+                wild_texture: Id::empty(),
+                tame_texture: Id::empty(),
                 biomes: Vec::new(),
             });
-            registries.painting_variant(Key::new("minecraft", "something_idk"), PaintingVariant {
-                asset: Key::empty(),
+            registries.painting_variant(Id::new("minecraft", "something_idk"), PaintingVariant {
+                asset: Id::empty(),
                 width: 1,
                 height: 1,
             });
-            registries.dimension_type(Key::new("minecraft", "overworld"), DimensionType::default());
+            registries.dimension_type(Id::new("minecraft", "overworld"), DimensionType::default());
         })
         .run();
 }
 
 fn on_server_start(event: Arc<ServerStartEvent>) -> ActorResult<()> {
-    event.server.create_dimension(key!(clicker:root))?;
+    event.server.create_dimension(id!(clicker:root))?;
 
     Ok(())
 }
@@ -60,7 +60,7 @@ fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
         for z in 0..6 {
             event.dimension.set_block(
                 Vec3::new(x, 0, z),
-                BlockState::new(key![minecraft:grass_block]),
+                BlockState::new(id![minecraft:grass_block]),
             )?;
         }
     }
@@ -68,12 +68,12 @@ fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
 }
 
 fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
-    event.new_dimension.set(key!(clicker:root));
+    event.new_dimension.set(id!(clicker:root));
 
     event
         .player
         .inventory()?
-        .set_slot(40, ItemStack::new(Key::new("minecraft", "diamond")))?;
+        .set_slot(40, ItemStack::new(Id::new("minecraft", "diamond")))?;
     Ok(())
 }
 

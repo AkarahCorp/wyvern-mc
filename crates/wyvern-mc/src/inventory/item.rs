@@ -8,7 +8,7 @@ use voxidian_protocol::{
     value::{DataComponentTypes, DataComponents, Item, SlotData},
 };
 
-use crate::values::Key;
+use crate::values::Id;
 
 use super::Component;
 
@@ -16,14 +16,14 @@ pub struct ItemType;
 
 #[derive(Debug, Clone)]
 pub struct ItemStack {
-    pub(crate) id: Key<ItemType>,
+    pub(crate) id: Id,
     pub(crate) count: u16,
     pub(crate) added_components: HashMap<DataComponentTypes, DataComponents>,
     pub(crate) removed_components: HashSet<DataComponentTypes>,
 }
 
 impl ItemStack {
-    pub fn new(id: Key<ItemType>) -> ItemStack {
+    pub fn new(id: Id) -> ItemStack {
         ItemStack {
             id,
             count: 1,
@@ -34,7 +34,7 @@ impl ItemStack {
 
     pub fn air() -> ItemStack {
         ItemStack {
-            id: Key::constant("minecraft", "air"),
+            id: Id::constant("minecraft", "air"),
             count: 0,
             added_components: HashMap::new(),
             removed_components: HashSet::new(),
@@ -50,7 +50,7 @@ impl ItemStack {
         component.get_component(self)
     }
 
-    pub fn kind(&self) -> Key<ItemType> {
+    pub fn kind(&self) -> Id {
         self.id.clone()
     }
 }

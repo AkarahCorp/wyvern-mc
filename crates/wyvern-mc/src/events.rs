@@ -6,7 +6,7 @@ use crate::{
     inventory::ItemStack,
     player::Player,
     server::Server,
-    values::{Key, Vec2, Vec3, cell::Token},
+    values::{Id, Vec2, Vec3, cell::Token},
 };
 
 macro_rules! event_bus {
@@ -167,5 +167,5 @@ pub struct ChatMessageEvent {
 #[derive(Debug, Clone)]
 pub struct PlayerJoinEvent {
     pub player: Player,
-    pub new_dimension: Token<Key<Dimension>>,
+    pub new_dimension: Token<Id>,
 }

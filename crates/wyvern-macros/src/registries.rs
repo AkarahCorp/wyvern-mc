@@ -23,7 +23,7 @@ fn entity_type_to_tokens(entity: &EntityType) -> TokenStream {
         proc_macro2::Ident::new(&path.to_uppercase(), proc_macro2::Span::call_site());
 
     quote! {
-        pub const #fn_name_ident: Key<EntityType> = Key::constant(#namespace, #path);
+        pub const #fn_name_ident: Id = Id::constant(#namespace, #path);
     }
 }
 
@@ -49,7 +49,7 @@ fn block_to_tokens(id: &Identifier) -> TokenStream {
         proc_macro2::Ident::new(&path.to_uppercase(), proc_macro2::Span::call_site());
 
     quote! {
-        pub const #fn_name_ident: Key<Block> = Key::constant(#namespace, #path);
+        pub const #fn_name_ident: Id = Id::constant(#namespace, #path);
     }
 }
 
@@ -78,6 +78,6 @@ fn sound_to_tokens(id: &Identifier) -> TokenStream {
     );
 
     quote! {
-        pub const #fn_name_ident: Sound = Sound { name: Key::constant(#namespace, #path), pitch: 1.0, volume: 1.0, category: SoundCategory::Master };
+        pub const #fn_name_ident: Sound = Sound { name: Id::constant(#namespace, #path), pitch: 1.0, volume: 1.0, category: SoundCategory::Master };
     }
 }

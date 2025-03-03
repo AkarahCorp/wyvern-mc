@@ -10,10 +10,10 @@ use wyvern_mc::{
         DimensionCreateEvent, PlayerJoinEvent, ServerStartEvent, StartBreakBlockEvent,
         SwapHandsEvent,
     },
-    key,
+    id,
     server::Server,
     values::{
-        Key, Vec3,
+        Id, Vec3,
         regval::{DimensionType, PaintingVariant, WolfVariant},
     },
 };
@@ -33,19 +33,19 @@ fn main() {
         .event(on_start_break)
         .event(on_swap_hands)
         .registries(|registries| {
-            registries.wolf_variant(Key::new("minecraft", "pale"), WolfVariant {
-                angry_texture: Key::empty(),
-                wild_texture: Key::empty(),
-                tame_texture: Key::empty(),
+            registries.wolf_variant(Id::new("minecraft", "pale"), WolfVariant {
+                angry_texture: Id::empty(),
+                wild_texture: Id::empty(),
+                tame_texture: Id::empty(),
                 biomes: Vec::new(),
             });
-            registries.painting_variant(Key::new("minecraft", "something_idk"), PaintingVariant {
-                asset: Key::empty(),
+            registries.painting_variant(Id::new("minecraft", "something_idk"), PaintingVariant {
+                asset: Id::empty(),
                 width: 1,
                 height: 1,
             });
             registries.dimension_type(
-                Key::new("minecraft", "overworld"),
+                Id::new("minecraft", "overworld"),
                 DimensionType::default().min_y(0).height(16),
             );
         })
@@ -53,9 +53,7 @@ fn main() {
 }
 
 fn on_server_start(event: Arc<ServerStartEvent>) -> ActorResult<()> {
-    event
-        .server
-        .create_dimension(key!(game_of_life:overworld))?;
+    event.server.create_dimension(id!(game_of_life:overworld))?;
     Ok(())
 }
 
@@ -72,7 +70,7 @@ fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
 }
 
 fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
-    event.new_dimension.set(key!(game_of_life:overworld));
+    event.new_dimension.set(id!(game_of_life:overworld));
     Ok(())
 }
 
@@ -101,7 +99,7 @@ fn on_swap_hands(event: Arc<SwapHandsEvent>) -> ActorResult<()> {
 
 #[allow(clippy::needless_range_loop)]
 fn run_tick(server: &Server) -> ActorResult<()> {
-    let dim = server.dimension(key![game_of_life:overworld])?;
+    let dim = server.dimension(id![game_of_life:overworld])?;
     let mut copies = std::array::from_fn::<_, { MAX_X }, _>(|_| {
         std::array::from_fn::<_, { MAX_Z }, _>(|_| BlockState::new(Blocks::AIR))
     });

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use blocks::BlockState;
 use chunk::{Chunk, ChunkSection};
-use entity::{Entity, EntityData, EntityType};
+use entity::{Entity, EntityData};
 use flume::Sender;
 use voxidian_protocol::{
     packet::s2c::play::{
@@ -20,7 +20,7 @@ use crate::{
     events::ChunkLoadEvent,
     runtime::Runtime,
     server::Server,
-    values::{Key, Vec2, Vec3, regval::DimensionType},
+    values::{Id, Vec2, Vec3},
 };
 
 pub mod blocks;
@@ -32,12 +32,12 @@ pub mod properties;
 #[crate::actor(Dimension, DimensionMessage)]
 pub struct DimensionData {
     #[allow(unused)]
-    pub(crate) name: Key<DimensionData>,
+    pub(crate) name: Id,
     pub(crate) chunks: HashMap<Vec2<i32>, Chunk>,
     pub(crate) entities: HashMap<Uuid, EntityData>,
     pub(crate) server: Option<Server>,
     pub(crate) sender: Sender<DimensionMessage>,
-    pub(crate) dim_type: Key<DimensionType>,
+    pub(crate) dim_type: Id,
     pub(crate) chunk_generator: fn(&mut Chunk, i32, i32),
     pub(crate) chunk_max: (u32, u32),
 }
@@ -55,8 +55,8 @@ impl Dimension {
 impl DimensionData {
     #[GetName]
     #[doc = "Get the name of this dimension."]
-    pub fn name(&self) -> ActorResult<Key<Dimension>> {
-        Ok(self.name.clone().retype())
+    pub fn name(&self) -> ActorResult<Id> {
+        Ok(self.name.clone())
     }
 
     #[GetServer]
@@ -123,7 +123,7 @@ impl DimensionData {
 
     #[GetDimType]
     #[doc = "Returns the Dimension Type value of this Dimension."]
-    pub fn dimension_type(&mut self) -> ActorResult<Key<DimensionType>> {
+    pub fn dimension_type(&mut self) -> ActorResult<Id> {
         Ok(self.dim_type.clone())
     }
 
@@ -140,7 +140,7 @@ impl DimensionData {
         Ok(self
             .entities
             .values()
-            .filter(|x| x.entity_type != Key::constant("minecraft", "player"))
+            .filter(|x| x.entity_type != Id::constant("minecraft", "player"))
             .map(|x| Entity {
                 dimension: Dimension {
                     sender: self.sender.clone(),
@@ -167,7 +167,7 @@ impl DimensionData {
 
     #[SpawnEntity]
     #[doc = "Spawns a new entity in the dimension with the given type, returning a handle to the entity."]
-    pub fn spawn_entity(&mut self, entity_type: Key<EntityType>) -> ActorResult<Entity> {
+    pub fn spawn_entity(&mut self, entity_type: Id) -> ActorResult<Entity> {
         let mut uuid = Uuid::new_v4();
         while self.entities.contains_key(&uuid) {
             uuid = Uuid::new_v4();
@@ -222,7 +222,7 @@ impl DimensionData {
     #[SpawnPlayerEntity]
     pub(crate) fn spawn_player_entity(&mut self, uuid: Uuid, id: i32) -> ActorResult<Entity> {
         self.entities.insert(uuid, EntityData {
-            entity_type: Key::constant("minecraft", "player"),
+            entity_type: Id::constant("minecraft", "player"),
             uuid,
             id,
             position: Vec3::new(0.0, 0.0, 0.0),
@@ -299,7 +299,7 @@ impl DimensionData {
     }
 
     #[EntityType]
-    pub(crate) fn entity_type(&mut self, uuid: Uuid) -> ActorResult<Key<EntityType>> {
+    pub(crate) fn entity_type(&mut self, uuid: Uuid) -> ActorResult<Id> {
         self.entities
             .get(&uuid)
             .ok_or(ActorError::ActorDoesNotExist)
@@ -384,7 +384,7 @@ impl DimensionData {
     pub fn players(&mut self) -> ActorResult<Vec<Uuid>> {
         let mut vec = Vec::new();
         for entity in &mut self.entities {
-            if entity.1.entity_type == Key::constant("minecraft", "player") {
+            if entity.1.entity_type == Id::constant("minecraft", "player") {
                 vec.push(entity.1.uuid);
             }
         }
@@ -400,11 +400,7 @@ impl DimensionData {
 }
 
 impl DimensionData {
-    pub(crate) fn new(
-        name: Key<DimensionData>,
-        server: Server,
-        dim_type: Key<DimensionType>,
-    ) -> DimensionData {
+    pub(crate) fn new(name: Id, server: Server, dim_type: Id) -> DimensionData {
         let chan = flume::unbounded();
         DimensionData {
             name,

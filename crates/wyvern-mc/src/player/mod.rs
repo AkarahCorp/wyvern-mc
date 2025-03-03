@@ -194,7 +194,7 @@ impl ConnectionData {
                     .connected_server
                     .registries()?
                     .entity_types
-                    .get_entry(entity.entity_type()?.retype())
+                    .get_entry(entity.entity_type()?)
                     .unwrap(),
                 x: position.0.x(),
                 y: position.0.x(),

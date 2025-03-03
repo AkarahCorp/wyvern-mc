@@ -4,7 +4,7 @@ use voxidian_protocol::value::{
 };
 
 use crate::values::{
-    Key, Registry,
+    Id, Registry,
     regval::{DimensionType, PaintingVariant, WolfVariant},
 };
 
@@ -47,15 +47,15 @@ impl From<RegistryContainerBuilder> for RegistryContainer {
 }
 
 impl RegistryContainerBuilder {
-    pub fn wolf_variant(&mut self, key: Key<WolfVariant>, value: WolfVariant) {
-        self.wolf_variants.insert(key.retype(), value.into());
+    pub fn wolf_variant(&mut self, key: Id, value: WolfVariant) {
+        self.wolf_variants.insert(key, value.into());
     }
 
-    pub fn painting_variant(&mut self, key: Key<PaintingVariant>, value: PaintingVariant) {
-        self.painting_variants.insert(key.retype(), value.into());
+    pub fn painting_variant(&mut self, key: Id, value: PaintingVariant) {
+        self.painting_variants.insert(key, value.into());
     }
 
-    pub fn dimension_type(&mut self, key: Key<DimensionType>, value: DimensionType) {
+    pub fn dimension_type(&mut self, key: Id, value: DimensionType) {
         self.dimension_types.insert(key, value);
     }
 }

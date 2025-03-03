@@ -13,12 +13,12 @@ use wyvern_mc::{
         BreakBlockEvent, ChatMessageEvent, DimensionCreateEvent, DropItemEvent, PlaceBlockEvent,
         PlayerCommandEvent, PlayerJoinEvent, ServerStartEvent, ServerTickEvent,
     },
+    id,
     inventory::{Inventory, ItemComponents, ItemStack},
-    key,
     runtime::Runtime,
     server::Server,
     values::{
-        Key, Text, TextColor, Texts, Vec3,
+        Id, Text, TextColor, Texts, Vec3,
         regval::{DimensionType, PaintingVariant, WolfVariant},
     },
 };
@@ -35,19 +35,19 @@ fn main() {
         .event(on_chat)
         .event(on_join)
         .registries(|registries| {
-            registries.wolf_variant(Key::new("minecraft", "pale"), WolfVariant {
-                angry_texture: Key::empty(),
-                wild_texture: Key::empty(),
-                tame_texture: Key::empty(),
+            registries.wolf_variant(Id::new("minecraft", "pale"), WolfVariant {
+                angry_texture: Id::empty(),
+                wild_texture: Id::empty(),
+                tame_texture: Id::empty(),
                 biomes: Vec::new(),
             });
-            registries.painting_variant(Key::new("minecraft", "something_idk"), PaintingVariant {
-                asset: Key::empty(),
+            registries.painting_variant(Id::new("minecraft", "something_idk"), PaintingVariant {
+                asset: Id::empty(),
                 width: 1,
                 height: 1,
             });
             registries.dimension_type(
-                Key::new("minecraft", "overworld"),
+                Id::new("minecraft", "overworld"),
                 DimensionType::default().min_y(-32).height(64),
             );
         })
@@ -60,7 +60,7 @@ fn on_command(event: Arc<PlayerCommandEvent>) -> ActorResult<()> {
     if event.command.as_str() == "overload" {
         let event = event.clone();
         Runtime::spawn(move || {
-            let state = BlockState::new(Key::new("minecraft", "grass_block"))
+            let state = BlockState::new(Id::new("minecraft", "grass_block"))
                 .with_property(BlockProperties::SNOWY, false);
             let dim = event.player.dimension().unwrap();
             for x in 1..100 {
@@ -74,12 +74,12 @@ fn on_command(event: Arc<PlayerCommandEvent>) -> ActorResult<()> {
     }
 
     if event.command == "rootdir" {
-        let dimension = event.player.server()?.dimension(key!(wyvern:root))?;
+        let dimension = event.player.server()?.dimension(id!(wyvern:root))?;
         event.player.set_dimension(dimension)?;
     }
 
     if event.command == "altdir" {
-        let dimension = event.player.server()?.dimension(key!(example:alternate))?;
+        let dimension = event.player.server()?.dimension(id!(example:alternate))?;
         event.player.set_dimension(dimension)?;
     }
 
@@ -88,10 +88,10 @@ fn on_command(event: Arc<PlayerCommandEvent>) -> ActorResult<()> {
 
         event
             .player
-            .set_screen_slot(0, ItemStack::new(key![minecraft:diamond]))?;
+            .set_screen_slot(0, ItemStack::new(id![minecraft:diamond]))?;
         event
             .player
-            .set_screen_slot(1, ItemStack::new(key![minecraft:iron_block]))?;
+            .set_screen_slot(1, ItemStack::new(id![minecraft:iron_block]))?;
     }
 
     Ok(())
@@ -147,7 +147,7 @@ fn on_server_tick(event: Arc<ServerTickEvent>) -> ActorResult<()> {
     for player in event.server.players()? {
         player.inventory()?.set_slot(
             38,
-            ItemStack::new(Key::new("minecraft", "netherite_axe"))
+            ItemStack::new(Id::new("minecraft", "netherite_axe"))
                 .with(ItemComponents::MAX_DAMAGE, 1500)
                 .with(ItemComponents::DAMAGE, 1),
         )?;
@@ -157,8 +157,8 @@ fn on_server_tick(event: Arc<ServerTickEvent>) -> ActorResult<()> {
 }
 
 fn on_server_start(event: Arc<ServerStartEvent>) -> ActorResult<()> {
-    event.server.create_dimension(key!(example:root))?;
-    event.server.create_dimension(key!(example:alternate))?;
+    event.server.create_dimension(id!(example:root))?;
+    event.server.create_dimension(id!(example:alternate))?;
 
     Ok(())
 }
@@ -196,27 +196,27 @@ fn on_chat(event: Arc<ChatMessageEvent>) -> ActorResult<()> {
 }
 
 fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
-    event.new_dimension.set(key!(example:root));
+    event.new_dimension.set(id!(example:root));
 
     event.player.inventory()?.set_slot(
         36,
-        ItemStack::new(Key::new("minecraft", "stone"))
+        ItemStack::new(Id::new("minecraft", "stone"))
             .with(ItemComponents::MAX_DAMAGE, 10)
             .with(ItemComponents::DAMAGE, 1)
             .with(
                 ItemComponents::ITEM_MODEL,
-                Key::constant("minecraft", "stone"),
+                Id::constant("minecraft", "stone"),
             ),
     )?;
 
     event.player.inventory()?.set_slot(
         37,
-        ItemStack::new(Key::new("minecraft", "diamond_sword"))
+        ItemStack::new(Id::new("minecraft", "diamond_sword"))
             .with(ItemComponents::MAX_DAMAGE, 20)
             .with(ItemComponents::DAMAGE, 6)
             .with(
                 ItemComponents::ITEM_MODEL,
-                Key::constant("minecraft", "diamond_sword"),
+                Id::constant("minecraft", "diamond_sword"),
             ),
     )?;
     Ok(())

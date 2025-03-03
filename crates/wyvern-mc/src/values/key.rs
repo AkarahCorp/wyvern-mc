@@ -1,43 +1,31 @@
-use std::{borrow::Cow, fmt::Debug, hash::Hash, marker::PhantomData};
+use std::{borrow::Cow, fmt::Debug, hash::Hash};
 
 use datafix::serialization::{CodecAdapters, CodecOps, DefaultCodec};
 use voxidian_protocol::value::Identifier;
 
-pub struct Key<T> {
+pub struct Id {
     namespace: Cow<'static, str>,
     path: Cow<'static, str>,
-    _phantom: PhantomData<T>,
 }
-impl<T> Key<T> {
-    pub fn new(namespace: &str, path: &str) -> Key<T> {
-        Key {
+impl Id {
+    pub fn new(namespace: &str, path: &str) -> Self {
+        Id {
             namespace: Cow::Owned(namespace.into()),
             path: Cow::Owned(path.into()),
-            _phantom: PhantomData,
         }
     }
 
-    pub const fn constant(namespace: &'static str, path: &'static str) -> Key<T> {
-        Key {
+    pub const fn constant(namespace: &'static str, path: &'static str) -> Self {
+        Id {
             namespace: Cow::Borrowed(namespace),
             path: Cow::Borrowed(path),
-            _phantom: PhantomData,
         }
     }
 
-    pub fn empty() -> Key<T> {
-        Key {
+    pub fn empty() -> Self {
+        Id {
             namespace: "".into(),
             path: "".into(),
-            _phantom: PhantomData,
-        }
-    }
-
-    pub fn retype<U>(self) -> Key<U> {
-        Key {
-            namespace: self.namespace,
-            path: self.path,
-            _phantom: PhantomData,
         }
     }
 
@@ -49,7 +37,7 @@ impl<T> Key<T> {
         &self.path
     }
 
-    pub fn from_string(string: &String) -> Key<T> {
+    pub fn from_string(string: &String) -> Self {
         Identifier::from(string).into()
     }
 
@@ -58,58 +46,57 @@ impl<T> Key<T> {
     }
 }
 
-impl<T> From<Identifier> for Key<T> {
+impl From<Identifier> for Id {
     fn from(value: Identifier) -> Self {
-        Key::new(&value.namespace, &value.path)
+        Id::new(&value.namespace, &value.path)
     }
 }
 
-impl<T> From<Key<T>> for Identifier {
-    fn from(value: Key<T>) -> Self {
+impl From<Id> for Identifier {
+    fn from(value: Id) -> Self {
         Identifier::new(value.namespace, value.path)
     }
 }
 
-impl<T> Eq for Key<T> {}
+impl Eq for Id {}
 
-impl<T> PartialEq for Key<T> {
+impl PartialEq for Id {
     fn eq(&self, other: &Self) -> bool {
         self.namespace == other.namespace && self.path == other.path
     }
 }
 
-impl<T> Hash for Key<T> {
+impl Hash for Id {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.namespace().hash(state);
         self.path().hash(state);
     }
 }
 
-impl<T> Debug for Key<T> {
+impl Debug for Id {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}:{}", self.namespace(), self.path())
     }
 }
 
-impl<T> Clone for Key<T> {
+impl Clone for Id {
     fn clone(&self) -> Self {
         Self {
             namespace: self.namespace.clone(),
             path: self.path.clone(),
-            _phantom: self._phantom,
         }
     }
 }
 
 #[macro_export]
-macro_rules! key {
+macro_rules! id {
     ($namespace:ident:$path:ident) => {
-        Key::constant(stringify!($namespace), stringify!($path));
+        $crate::values::Id::constant(stringify!($namespace), stringify!($path));
     };
 }
 
-impl<T, OT: Clone, O: CodecOps<OT>> DefaultCodec<OT, O> for Key<T> {
+impl<OT: Clone, O: CodecOps<OT>> DefaultCodec<OT, O> for Id {
     fn codec() -> impl datafix::serialization::Codec<Self, OT, O> {
-        String::codec().xmap(Key::from_string, Key::into_string)
+        String::codec().xmap(Id::from_string, Id::into_string)
     }
 }

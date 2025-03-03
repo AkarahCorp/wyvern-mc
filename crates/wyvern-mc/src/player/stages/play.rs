@@ -14,7 +14,7 @@ use voxidian_protocol::{
 
 use crate::{
     actors::{Actor, ActorError, ActorResult},
-    dimension::{Dimension, blocks::BlockState},
+    dimension::blocks::BlockState,
     events::{
         BreakBlockEvent, ChangeHeldSlotEvent, ChatMessageEvent, DropItemEvent, PlaceBlockEvent,
         PlayerCommandEvent, PlayerJoinEvent, PlayerMoveEvent, RightClickEvent,
@@ -23,7 +23,7 @@ use crate::{
     inventory::{Inventory, ItemComponents, ItemStack},
     player::{ConnectionData, Player},
     runtime::Runtime,
-    values::{Key, Vec3, cell::Token},
+    values::{Id, Vec3, cell::Token},
 };
 
 impl ConnectionData {
@@ -65,7 +65,7 @@ impl ConnectionData {
                             PlayerStatus::FinishedDigging => {
                                 this.associated_data.dimension.as_ref().unwrap().set_block(
                                     block,
-                                    BlockState::new(Key::constant("minecraft", "air")),
+                                    BlockState::new(Id::constant("minecraft", "air")),
                                 )?;
                                 if let Some(sender) = this.sender.upgrade() {
                                     this.connected_server.spawn_event(BreakBlockEvent {
@@ -239,7 +239,7 @@ impl ConnectionData {
                             .inventory
                             .get_slot(this.associated_data.held_slot as usize)?;
 
-                        let state = BlockState::new(held.kind().retype());
+                        let state = BlockState::new(held.kind());
                         let state_clone = state.clone();
                         let dim = this
                             .associated_data
@@ -337,8 +337,8 @@ impl ConnectionData {
     pub fn connect_to_new_dimension(&mut self) -> ActorResult<()> {
         log::debug!("Setting dimension...");
 
-        let key = Key::<Dimension>::constant("null", "null");
-        let token = Token::new(Key::<Dimension>::constant("null", "null"));
+        let key = Id::constant("null", "null");
+        let token = Token::new(Id::constant("null", "null"));
         let token_copy = token.clone();
         if let Some(sender) = self.sender.upgrade() {
             self.connected_server.spawn_event(PlayerJoinEvent {
@@ -456,7 +456,7 @@ impl ConnectionData {
                     .connected_server
                     .registries()?
                     .entity_types
-                    .get_entry(entity.entity_type()?.retype())
+                    .get_entry(entity.entity_type()?)
                     .unwrap(),
                 x: position.0.x(),
                 y: position.0.x(),

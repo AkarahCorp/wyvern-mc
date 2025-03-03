@@ -1,12 +1,12 @@
-use crate::values::{Key, resource::Texture};
+use crate::values::Id;
 use datafix::serialization::{CodecAdapters, CodecOps, DefaultCodec, MapCodecBuilder};
-use voxidian_protocol::value::{Biome, Identifier, WolfVariant as PtcWolfVariant};
+use voxidian_protocol::value::{Identifier, WolfVariant as PtcWolfVariant};
 
 pub struct WolfVariant {
-    pub angry_texture: Key<Texture>,
-    pub wild_texture: Key<Texture>,
-    pub tame_texture: Key<Texture>,
-    pub biomes: Vec<Key<Biome>>,
+    pub angry_texture: Id,
+    pub wild_texture: Id,
+    pub tame_texture: Id,
+    pub biomes: Vec<Id>,
 }
 
 impl From<WolfVariant> for PtcWolfVariant {
@@ -27,11 +27,11 @@ impl From<WolfVariant> for PtcWolfVariant {
 impl<OT: Clone, O: CodecOps<OT>> DefaultCodec<OT, O> for WolfVariant {
     fn codec() -> impl datafix::serialization::Codec<Self, OT, O> {
         MapCodecBuilder::new()
-            .field(Key::codec().field_of("angry", |w: &WolfVariant| &w.angry_texture))
-            .field(Key::codec().field_of("wild", |w: &WolfVariant| &w.wild_texture))
-            .field(Key::codec().field_of("tame", |w: &WolfVariant| &w.tame_texture))
+            .field(Id::codec().field_of("angry", |w: &WolfVariant| &w.angry_texture))
+            .field(Id::codec().field_of("wild", |w: &WolfVariant| &w.wild_texture))
+            .field(Id::codec().field_of("tame", |w: &WolfVariant| &w.tame_texture))
             .field(
-                Key::codec()
+                Id::codec()
                     .list_of()
                     .field_of("biomes", |w: &WolfVariant| &w.biomes),
             )

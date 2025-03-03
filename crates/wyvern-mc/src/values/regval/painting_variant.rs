@@ -1,8 +1,8 @@
-use crate::values::{Key, resource::Texture};
+use crate::values::Id;
 use voxidian_protocol::value::{PaintingVariant as PtcPaintingVariant, TextComponent};
 
 pub struct PaintingVariant {
-    pub asset: Key<Texture>,
+    pub asset: Id,
     pub width: u32,
     pub height: u32,
 }

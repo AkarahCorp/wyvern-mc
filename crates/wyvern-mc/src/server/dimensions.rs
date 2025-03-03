@@ -1,18 +1,18 @@
 use std::collections::HashMap;
 
-use crate::{dimension::Dimension, values::Key};
+use crate::{dimension::Dimension, values::Id};
 
 pub(crate) struct DimensionContainer {
-    pub(crate) dimensions: HashMap<Key<Dimension>, Dimension>,
+    pub(crate) dimensions: HashMap<Id, Dimension>,
 }
 
 #[allow(unused)]
 impl DimensionContainer {
-    pub(crate) fn get(&self, key: &Key<Dimension>) -> Option<&Dimension> {
+    pub(crate) fn get(&self, key: &Id) -> Option<&Dimension> {
         self.dimensions.get(key)
     }
 
-    pub(crate) fn insert(&mut self, key: Key<Dimension>, dim: Dimension) {
+    pub(crate) fn insert(&mut self, key: Id, dim: Dimension) {
         self.dimensions.insert(key, dim);
     }
 
@@ -25,7 +25,7 @@ impl DimensionContainer {
     }
 
     pub(crate) fn assert_root_dim_exists(&self) {
-        if !self.dimensions.contains_key(&Key::new("wyvern", "root")) {
+        if !self.dimensions.contains_key(&Id::new("wyvern", "root")) {
             log::error!(
                 "Server Setup Error
                 
