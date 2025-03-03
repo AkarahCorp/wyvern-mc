@@ -1,10 +1,13 @@
+use std::sync::Arc;
+
+use dyn_clone::clone_box;
 use voxidian_protocol::value::Uuid;
 
 use crate::{
-    actors::ActorResult,
-    components::DataComponentMap,
+    actors::{ActorError, ActorResult},
+    components::{ComponentElement, DataComponentMap, DataComponentType},
     dimension::Dimension,
-    values::{Id, Vec2, Vec3},
+    values::Id,
 };
 
 mod components;
@@ -30,24 +33,24 @@ impl Entity {
         Ok(())
     }
 
-    pub fn entity_id(&self) -> ActorResult<i32> {
-        self.dimension.entity_id(self.uuid)
+    pub fn get<T: ComponentElement>(&self, component: DataComponentType<T>) -> ActorResult<T> {
+        let component = self
+            .dimension
+            .get_entity_component_unchecked(self.uuid, component.id())?;
+
+        ((*component).as_any().downcast_ref::<T>())
+            .map(|x| clone_box(x))
+            .map(|x| *x)
+            .ok_or(ActorError::ComponentNotFound)
     }
 
-    pub fn entity_type(&self) -> ActorResult<Id> {
-        self.dimension.entity_type(self.uuid)
-    }
-
-    pub fn position(&self) -> ActorResult<(Vec3<f64>, Vec2<f32>)> {
-        self.dimension.entity_pos(self.uuid)
-    }
-
-    pub fn teleport(&mut self, position: Vec3<f64>) -> ActorResult<()> {
-        self.dimension.teleport_entity(self.uuid, position)
-    }
-
-    pub fn rotate(&mut self, heading: Vec2<f32>) -> ActorResult<()> {
-        self.dimension.rotate_entity(self.uuid, heading)
+    pub fn set<T: ComponentElement>(
+        &mut self,
+        component: DataComponentType<T>,
+        value: T,
+    ) -> ActorResult<()> {
+        self.dimension
+            .set_entity_component_unchecked(self.uuid, component.id(), Arc::new(value))
     }
 }
 

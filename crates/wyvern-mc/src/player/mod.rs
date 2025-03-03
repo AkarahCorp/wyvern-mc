@@ -29,6 +29,7 @@ use wyvern_macros::{actor, message};
 use crate::{
     actors::{ActorError, ActorResult},
     dimension::Dimension,
+    entities::EntityComponents,
     inventory::{DataInventory, Inventory},
     item::ItemStack,
     runtime::Runtime,
@@ -177,23 +178,28 @@ impl ConnectionData {
             pitch: 0.0,
         });
 
+        log::error!("ENTITIES: {:?}", dimension.entities());
+
         for entity in dimension.entities()? {
-            let position = entity.position()?;
+            let position = entity.get(EntityComponents::POSITION)?;
+            let direction = entity.get(EntityComponents::DIRECTION)?;
+            let id = entity.get(EntityComponents::ENTITY_ID)?;
+            let ty = entity.get(EntityComponents::ENTITY_TYPE)?;
             self.write_packet(AddEntityS2CPlayPacket {
-                id: entity.entity_id()?.into(),
+                id: id.into(),
                 uuid: *entity.uuid(),
                 kind: self
                     .connected_server
                     .registries()?
                     .entity_types
-                    .get_entry(entity.entity_type()?)
+                    .get_entry(ty)
                     .unwrap(),
-                x: position.0.x(),
-                y: position.0.x(),
-                z: position.0.x(),
-                pitch: Angle::of_deg(position.1.x()),
-                yaw: Angle::of_deg(position.1.y()),
-                head_yaw: Angle::of_deg(position.1.y()),
+                x: position.x(),
+                y: position.y(),
+                z: position.z(),
+                pitch: Angle::of_deg(direction.x()),
+                yaw: Angle::of_deg(direction.y()),
+                head_yaw: Angle::of_deg(direction.y()),
                 data: VarInt::from(0),
                 vel_x: 0,
                 vel_y: 0,
@@ -403,8 +409,8 @@ impl ConnectionData {
         let uuid = self.associated_data.uuid;
 
         Runtime::spawn_task(move || {
-            dim.get_entity(uuid).teleport(pos)?;
-            dim.get_entity(uuid).rotate(dir)
+            dim.get_entity(uuid).set(EntityComponents::POSITION, pos)?;
+            dim.get_entity(uuid).set(EntityComponents::DIRECTION, dir)
         });
     }
 }

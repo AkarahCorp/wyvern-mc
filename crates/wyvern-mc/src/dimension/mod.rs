@@ -1,16 +1,20 @@
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    sync::Arc,
+    time::{Duration, Instant},
+};
 
 use crate::{
+    actors::Actor,
     blocks::BlockState,
-    components::{DataComponentHolder, DataComponentMap},
+    components::{ComponentElement, DataComponentHolder, DataComponentMap},
     entities::{Entity, EntityComponents, EntityData},
 };
 use chunk::{Chunk, ChunkSection};
 use flume::Sender;
 use voxidian_protocol::{
     packet::s2c::play::{
-        AddEntityS2CPlayPacket, BlockUpdateS2CPlayPacket, EntityPositionSyncS2CPlayPacket,
-        RemoveEntitiesS2CPlayPacket,
+        AddEntityS2CPlayPacket, BlockUpdateS2CPlayPacket, RemoveEntitiesS2CPlayPacket,
     },
     registry::RegEntry,
     value::{Angle, BlockPos, EntityType as PtcEntityType, Identifier, Uuid, VarInt},
@@ -25,6 +29,7 @@ use crate::{
 };
 
 pub mod chunk;
+mod update;
 
 #[allow(dead_code)]
 #[crate::actor(Dimension, DimensionMessage)]
@@ -38,6 +43,7 @@ pub struct DimensionData {
     pub(crate) dim_type: Id,
     pub(crate) chunk_generator: fn(&mut Chunk, i32, i32),
     pub(crate) chunk_max: (u32, u32),
+    pub(crate) last_update: Instant,
 }
 
 impl Dimension {
@@ -45,6 +51,19 @@ impl Dimension {
         Entity {
             uuid: entity,
             dimension: self.clone(),
+        }
+    }
+}
+
+impl DimensionData {
+    pub fn event_loop(mut self) {
+        loop {
+            self.handle_messages();
+            if Instant::now().duration_since(self.last_update) > Duration::from_millis(50) {
+                log::error!("Propogating");
+                self.last_update = Instant::now();
+                let _ = self.propogate_entities();
+            }
         }
     }
 }
@@ -300,109 +319,30 @@ impl DimensionData {
         Ok(())
     }
 
-    #[EntityId]
-    pub(crate) fn entity_id(&mut self, uuid: Uuid) -> ActorResult<i32> {
-        self.entities
-            .get(&uuid)
-            .ok_or(ActorError::ActorDoesNotExist)
-            .map(|x| x.get(EntityComponents::ENTITY_ID).unwrap())
-    }
-
-    #[EntityType]
-    pub(crate) fn entity_type(&mut self, uuid: Uuid) -> ActorResult<Id> {
-        self.entities
-            .get(&uuid)
-            .ok_or(ActorError::ActorDoesNotExist)
-            .map(|x| x.get(EntityComponents::ENTITY_TYPE).unwrap())
-    }
-
-    #[EntityPos]
-    pub(crate) fn entity_pos(&mut self, uuid: Uuid) -> ActorResult<(Vec3<f64>, Vec2<f32>)> {
-        self.entities
-            .get(&uuid)
-            .ok_or(ActorError::ActorDoesNotExist)
-            .map(|x| {
-                (
-                    x.get(EntityComponents::POSITION).unwrap(),
-                    x.get(EntityComponents::DIRECTION).unwrap(),
-                )
-            })
-    }
-
-    #[TeleportEntity]
-    pub(crate) fn teleport_entity(&mut self, uuid: Uuid, position: Vec3<f64>) -> ActorResult<()> {
+    #[SetEntityComponent]
+    pub(crate) fn set_entity_component_unchecked(
+        &mut self,
+        uuid: Uuid,
+        id: u64,
+        value: Arc<dyn ComponentElement>,
+    ) -> ActorResult<()> {
         if let Some(entity) = self.entities.get_mut(&uuid) {
-            entity.set(EntityComponents::POSITION, position);
-            let entity = entity.clone();
-
-            let dim = Dimension {
-                sender: self.sender.clone(),
-            };
-
-            Runtime::spawn_task(move || {
-                let uuid = entity.get(EntityComponents::UUID).unwrap();
-                let id = entity.get(EntityComponents::ENTITY_ID).unwrap();
-                let heading = entity.get(EntityComponents::DIRECTION).unwrap();
-                for conn in dim.players().unwrap() {
-                    if conn != uuid {
-                        let conn = dim.server().unwrap().player(conn).unwrap();
-                        let _ = conn.write_packet(EntityPositionSyncS2CPlayPacket {
-                            entity_id: id.into(),
-                            x: position.x(),
-                            y: position.y(),
-                            z: position.z(),
-                            vx: 0.0,
-                            vy: 0.0,
-                            vz: 0.0,
-                            yaw: heading.x(),
-                            pitch: heading.y(),
-                            on_ground: false,
-                        });
-                    }
-                }
-                Ok(())
-            });
+            entity.components.inner.insert(id, value);
         }
         Ok(())
     }
 
-    #[RotateEntity]
-    pub(crate) fn rotate_entity(&mut self, uuid: Uuid, heading: Vec2<f32>) -> ActorResult<()> {
-        if let Some(entity) = self.entities.get_mut(&uuid) {
-            entity.set(EntityComponents::DIRECTION, heading);
-            let entity = entity.clone();
-            let dim = Dimension {
-                sender: self.sender.clone(),
-            };
-
-            let uuid = entity.get(EntityComponents::UUID).unwrap();
-
-            let position = entity.get(EntityComponents::POSITION).unwrap();
-            let heading = entity.get(EntityComponents::DIRECTION).unwrap();
-            let id = entity.get(EntityComponents::ENTITY_ID).unwrap();
-
-            Runtime::spawn_task(move || {
-                for conn in dim.players().unwrap() {
-                    if conn != uuid {
-                        let conn = dim.server().unwrap().player(conn).unwrap();
-                        let _ = conn.write_packet(EntityPositionSyncS2CPlayPacket {
-                            entity_id: id.into(),
-                            x: position.x(),
-                            y: position.y(),
-                            z: position.z(),
-                            vx: 0.0,
-                            vy: 0.0,
-                            vz: 0.0,
-                            yaw: heading.x(),
-                            pitch: heading.y(),
-                            on_ground: false,
-                        });
-                    }
-                }
-                Ok(())
-            });
-        }
-        Ok(())
+    #[GetEntityComponent]
+    pub(crate) fn get_entity_component_unchecked(
+        &mut self,
+        uuid: Uuid,
+        id: u64,
+    ) -> ActorResult<Arc<dyn ComponentElement>> {
+        self.entities
+            .get_mut(&uuid)
+            .and_then(|entity| entity.components.inner.get(&id))
+            .ok_or(ActorError::ComponentNotFound)
+            .cloned()
     }
 
     #[GetPlayers]
@@ -440,6 +380,7 @@ impl DimensionData {
             dim_type,
             chunk_generator: |_, _, _| {},
             chunk_max: (i32::MAX as u32, i32::MAX as u32),
+            last_update: Instant::now(),
         }
     }
 

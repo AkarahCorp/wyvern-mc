@@ -8,7 +8,7 @@ use super::{ComponentElement, DataComponentType};
 
 #[derive(Clone, Debug)]
 pub struct DataComponentMap {
-    inner: HashMap<u64, Arc<dyn ComponentElement>>,
+    pub(crate) inner: HashMap<u64, Arc<dyn ComponentElement>>,
 }
 
 impl DataComponentMap {

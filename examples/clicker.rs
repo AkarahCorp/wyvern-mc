@@ -7,7 +7,7 @@ use voxidian_protocol::packet::s2c::play::ScreenWindowKind;
 use wyvern_mc::{
     actors::ActorResult,
     blocks::BlockState,
-    entities::Entities,
+    entities::{Entities, EntityComponents},
     events::{
         DimensionCreateEvent, PlayerJoinEvent, RightClickEvent, ServerStartEvent, ServerTickEvent,
         SwapHandsEvent,
@@ -68,8 +68,8 @@ fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
     }
 
     let mut entity = event.dimension.spawn_entity(Entities::ZOMBIE)?;
-    entity.teleport(Vec3::new(1.0, 0.0, 2.0))?;
-    entity.rotate(Vec2::new(58.0, 32.5))?;
+    entity.set(EntityComponents::POSITION, Vec3::new(1.0, 0.0, 2.0))?;
+    entity.set(EntityComponents::DIRECTION, Vec2::new(58.0, 32.5))?;
     Ok(())
 }
 
@@ -84,9 +84,7 @@ fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
 }
 
 fn on_tick(event: Arc<ServerTickEvent>) -> ActorResult<()> {
-    log::error!("a");
     for player in event.server.players()? {
-        log::error!("b {:?}", player.username()?);
         let uuid = player.uuid()?;
 
         let count = {
@@ -104,11 +102,14 @@ fn on_tick(event: Arc<ServerTickEvent>) -> ActorResult<()> {
         player.send_action_bar(Texts::literal(format!("Clicks: {:?}", count)))?;
 
         for mut entity in player.dimension()?.entities()? {
-            entity.teleport(Vec3::new(
-                rand::random_range(0.0..1.0),
-                rand::random_range(0.0..1.0),
-                rand::random_range(0.0..1.0),
-            ))?;
+            entity.set(
+                EntityComponents::POSITION,
+                Vec3::new(
+                    rand::random_range(0.0..1.0),
+                    rand::random_range(0.0..1.0),
+                    rand::random_range(0.0..1.0),
+                ),
+            )?;
         }
     }
     Ok(())

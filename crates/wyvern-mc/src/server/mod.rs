@@ -101,7 +101,7 @@ impl ServerData {
     #[CreateDimension]
     pub fn create_dimension(&mut self, name: Id) -> ActorResult<Dimension> {
         log::debug!("Creating new dimension: {:?}", name);
-        let mut root_dim = DimensionData::new(
+        let root_dim = DimensionData::new(
             name.clone(),
             Server {
                 sender: self.sender.clone(),
@@ -114,9 +114,7 @@ impl ServerData {
         };
         self.dimensions.insert(name, dim.clone());
         Runtime::spawn_actor(move || {
-            loop {
-                root_dim.handle_messages();
-            }
+            root_dim.event_loop();
         });
 
         let dim_clone = dim.clone();

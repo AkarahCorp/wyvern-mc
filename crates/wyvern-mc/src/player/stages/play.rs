@@ -14,6 +14,7 @@ use crate::{
     actors::{Actor, ActorError, ActorResult},
     blocks::BlockState,
     components::DataComponentHolder,
+    entities::EntityComponents,
     events::{
         BreakBlockEvent, ChangeHeldSlotEvent, ChatMessageEvent, DropItemEvent, PlaceBlockEvent,
         PlayerCommandEvent, PlayerJoinEvent, PlayerMoveEvent, RightClickEvent,
@@ -23,7 +24,7 @@ use crate::{
     item::{ItemComponents, ItemStack},
     player::{ConnectionData, Player},
     runtime::Runtime,
-    values::{Id, Vec3, cell::Token},
+    values::{Id, Vec2, Vec3, cell::Token},
 };
 
 impl ConnectionData {
@@ -438,37 +439,44 @@ impl ConnectionData {
             }
         }
 
-        log::debug!("Sending all entities...");
-        for entity in self
+        let entities = self
             .associated_data
             .dimension
             .as_ref()
             .unwrap()
-            .all_entities()?
-        {
-            let position = entity.position()?;
-
-            log::debug!("Sending entity @ {:?}...", position);
+            .all_entities()?;
+        log::debug!("Sending all entities...");
+        log::error!("{:?}", entities);
+        for entity in entities {
+            let position = entity
+                .get(EntityComponents::POSITION)
+                .unwrap_or(Vec3::new(0.0, 0.0, 0.0));
+            let direction = entity
+                .get(EntityComponents::DIRECTION)
+                .unwrap_or(Vec2::new(0.0, 0.0));
+            let id = entity.get(EntityComponents::ENTITY_ID)?;
+            let ty = entity.get(EntityComponents::ENTITY_TYPE)?;
             self.write_packet(AddEntityS2CPlayPacket {
-                id: entity.entity_id()?.into(),
+                id: id.into(),
                 uuid: *entity.uuid(),
                 kind: self
                     .connected_server
                     .registries()?
                     .entity_types
-                    .get_entry(entity.entity_type()?)
+                    .get_entry(ty)
                     .unwrap(),
-                x: position.0.x(),
-                y: position.0.x(),
-                z: position.0.x(),
-                pitch: Angle::of_deg(position.1.x()),
-                yaw: Angle::of_deg(position.1.y()),
-                head_yaw: Angle::of_deg(position.1.y()),
+                x: position.x(),
+                y: position.y(),
+                z: position.z(),
+                pitch: Angle::of_deg(direction.x()),
+                yaw: Angle::of_deg(direction.y()),
+                head_yaw: Angle::of_deg(direction.y()),
                 data: VarInt::from(0),
                 vel_x: 0,
                 vel_y: 0,
                 vel_z: 0,
             });
+            log::error!("UUID: {:?}", entity.get(EntityComponents::UUID));
         }
 
         log::debug!("Spawning human...");

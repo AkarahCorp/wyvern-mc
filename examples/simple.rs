@@ -7,6 +7,7 @@ use wyvern_mc::{
     blocks::{BlockProperties, BlockState, Blocks},
     components::DataComponentHolder,
     dimension::chunk::Chunk,
+    entities::EntityComponents,
     events::{
         BreakBlockEvent, ChatMessageEvent, DimensionCreateEvent, DropItemEvent, PlaceBlockEvent,
         PlayerCommandEvent, PlayerJoinEvent, ServerStartEvent, ServerTickEvent,
@@ -142,7 +143,7 @@ fn on_server_tick(event: Arc<ServerTickEvent>) -> ActorResult<()> {
                 rand::random::<f64>() * 16.0,
                 rand::random::<f64>() * 128.0,
             );
-            entity.teleport(new_pos)?;
+            entity.set(EntityComponents::POSITION, new_pos)?;
         }
     }
 
