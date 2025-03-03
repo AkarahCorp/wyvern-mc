@@ -1,5 +1,3 @@
-use std::time::Instant;
-
 use voxidian_protocol::{
     packet::s2c::play::{
         ChunkBatchFinishedS2CPlayPacket, ChunkBatchStartS2CPlayPacket,
@@ -73,21 +71,19 @@ impl ConnectionData {
             Runtime::spawn_task(move || {
                 let dim_type_entry = dimension.dimension_type().unwrap();
 
-                let (min_y, max_y, height) = {
+                let (min_y, max_y) = {
                     let registries = server.registries().unwrap();
                     let dim_type = registries.dimension_types.get(dim_type_entry).unwrap();
 
                     let min_y = dim_type.min_y;
                     let max_y = dim_type.min_y + dim_type.height as i32;
-                    let height = dim_type.height;
 
-                    (min_y, max_y, height)
+                    (min_y, max_y)
                 };
 
                 let chunk_x = pos.x();
                 let chunk_z = pos.y();
 
-                let start = Instant::now();
                 let mut sections = Vec::new();
                 for y in (min_y..max_y).step_by(16) {
                     let pos = Vec3::new(chunk_x, y, chunk_z);
@@ -97,8 +93,6 @@ impl ConnectionData {
                     };
                     sections.push(chunk.as_protocol_section());
                 }
-
-                let end = Instant::now();
 
                 let packet = LevelChunkWithLightS2CPlayPacket {
                     chunk_x,
