@@ -7,6 +7,7 @@ use voxidian_protocol::packet::s2c::play::ScreenWindowKind;
 use wyvern_mc::{
     actors::ActorResult,
     blocks::BlockState,
+    components::DataComponentHolder,
     entities::{Entities, EntityComponents},
     events::{
         DimensionCreateEvent, PlayerJoinEvent, RightClickEvent, ServerStartEvent, ServerTickEvent,
@@ -14,10 +15,11 @@ use wyvern_mc::{
     },
     id,
     inventory::Inventory,
-    item::ItemStack,
+    item::{ItemComponents, ItemStack},
     server::Server,
     values::{
         Id, SoundCategory, Sounds, Texts, Uuid, Vec2, Vec3,
+        nbt::NbtCompound,
         regval::{DimensionType, PaintingVariant, WolfVariant},
     },
 };
@@ -76,10 +78,19 @@ fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
 fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
     event.new_dimension.set(id!(clicker:root));
 
-    event
-        .player
-        .inventory()?
-        .set_slot(40, ItemStack::new(Id::new("minecraft", "diamond")))?;
+    event.player.inventory()?.set_slot(
+        40,
+        ItemStack::new(Id::new("minecraft", "diamond"))
+            .with(ItemComponents::CUSTOM_DATA, {
+                let mut compound = NbtCompound::new();
+                compound.set("clicker_data", 10.into());
+                compound
+            })
+            .with(
+                ItemComponents::ITEM_NAME,
+                Texts::literal("Click me!").into(),
+            ),
+    )?;
     Ok(())
 }
 
@@ -137,6 +148,10 @@ fn on_right_click(event: Arc<RightClickEvent>) -> ActorResult<()> {
             .volume(0.7)
             .category(SoundCategory::Master),
     )?;
+
+    let item = event.player.inventory()?.get_slot(40)?;
+    log::error!("{:?}", item.get(ItemComponents::CUSTOM_DATA));
+    log::error!("{:?}", item.get(ItemComponents::ITEM_NAME));
 
     Ok(())
 }

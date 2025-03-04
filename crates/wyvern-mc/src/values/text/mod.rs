@@ -1,4 +1,4 @@
-use voxidian_protocol::value::TextComponent;
+use voxidian_protocol::value::{Text as PtcText, TextComponent, TextContent};
 
 mod kinds;
 pub use kinds::*;
@@ -33,5 +33,19 @@ impl Texts {
                 children: Vec::new(),
             },
         }
+    }
+}
+
+impl From<PtcText> for TextKinds {
+    fn from(value: PtcText) -> Self {
+        let mut group = Vec::new();
+        for component in value.into_components() {
+            group.push(match component.content {
+                TextContent::Literal { literal } => Texts::literal(literal).into(),
+                TextContent::Translate { .. } => todo!(),
+                TextContent::Keybind { .. } => todo!(),
+            });
+        }
+        TextKinds::Group(group)
     }
 }

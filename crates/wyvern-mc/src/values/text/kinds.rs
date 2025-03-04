@@ -1,16 +1,31 @@
-use voxidian_protocol::value::{TextColour, TextComponent};
+use voxidian_protocol::value::{Text as PtcText, TextColour, TextComponent};
 
 use super::{Text, TextMeta};
 
 #[derive(Debug, Clone)]
 pub enum TextKinds {
+    Group(Vec<TextKinds>),
     Literal(TextLiteral),
 }
 
-impl From<TextKinds> for TextComponent {
+impl From<TextKinds> for PtcText {
     fn from(value: TextKinds) -> Self {
         match value {
-            TextKinds::Literal(text_literal) => text_literal.into(),
+            TextKinds::Literal(text_literal) => {
+                let mut text = PtcText::new();
+                text.push(text_literal.into());
+                text
+            }
+            TextKinds::Group(items) => {
+                let mut text = PtcText::new();
+                for element in items {
+                    let text2: PtcText = element.into();
+                    for compound in text2.into_components() {
+                        text.push(compound);
+                    }
+                }
+                text
+            }
         }
     }
 }

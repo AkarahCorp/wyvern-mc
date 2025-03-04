@@ -1,7 +1,7 @@
 use crate::{
     components::DataComponentType,
     id,
-    values::{Id, TextKinds, nbt::Nbt},
+    values::{Id, TextKinds, nbt::NbtCompound},
 };
 
 pub struct ItemComponents;
@@ -14,7 +14,7 @@ impl ItemComponents {
     pub const DAMAGE: DataComponentType<i32> = DataComponentType::new(2, id![minecraft:damage]);
     pub const ITEM_MODEL: DataComponentType<Id> =
         DataComponentType::new(3, id![minecraft:item_model]);
-    pub const CUSTOM_DATA: DataComponentType<Nbt> =
+    pub const CUSTOM_DATA: DataComponentType<NbtCompound> =
         DataComponentType::new(4, id![minecraft:custom_data]);
     pub const ITEM_NAME: DataComponentType<TextKinds> =
         DataComponentType::new(5, id![minecraft:item_name]);

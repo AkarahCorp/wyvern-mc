@@ -140,6 +140,25 @@ impl From<Nbt> for PtcNbtElement {
     }
 }
 
+impl From<PtcNbtElement> for Nbt {
+    fn from(value: PtcNbtElement) -> Self {
+        match value {
+            PtcNbtElement::Byte(v) => Nbt::Byte(v),
+            PtcNbtElement::Short(v) => Nbt::Short(v),
+            PtcNbtElement::Int(v) => Nbt::Int(v),
+            PtcNbtElement::Long(v) => Nbt::Long(v),
+            PtcNbtElement::Float(v) => Nbt::Float(v),
+            PtcNbtElement::Double(v) => Nbt::Double(v),
+            PtcNbtElement::BArray(_items) => todo!(),
+            PtcNbtElement::String(v) => Nbt::String(v),
+            PtcNbtElement::List(_nbt_elements) => todo!(),
+            PtcNbtElement::Compound(_nbt_compound) => todo!(),
+            PtcNbtElement::IArray(_items) => todo!(),
+            PtcNbtElement::LArray(_items) => todo!(),
+        }
+    }
+}
+
 impl NbtArray {
     pub fn new() -> NbtArray {
         NbtArray { inner: Vec::new() }
@@ -174,6 +193,17 @@ impl Default for NbtArray {
 #[derive(Debug, Clone, PartialEq)]
 pub struct NbtCompound {
     inner: HashMap<String, Nbt>,
+}
+
+impl From<PtcNbtCompound> for NbtCompound {
+    fn from(value: PtcNbtCompound) -> Self {
+        let mut c = NbtCompound::new();
+        for entry in value.entries() {
+            let entry = (entry.0.clone(), entry.1.clone());
+            c.set(entry.0, entry.1.into());
+        }
+        c
+    }
 }
 
 impl NbtCompound {
