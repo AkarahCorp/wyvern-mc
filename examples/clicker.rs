@@ -37,17 +37,23 @@ fn main() {
         .event(on_right_click)
         .event(on_swap_hands)
         .registries(|registries| {
-            registries.wolf_variant(Id::new("minecraft", "pale"), WolfVariant {
-                angry_texture: Id::empty(),
-                wild_texture: Id::empty(),
-                tame_texture: Id::empty(),
-                biomes: Vec::new(),
-            });
-            registries.painting_variant(Id::new("minecraft", "something_idk"), PaintingVariant {
-                asset: Id::empty(),
-                width: 1,
-                height: 1,
-            });
+            registries.wolf_variant(
+                Id::new("minecraft", "pale"),
+                WolfVariant {
+                    angry_texture: Id::empty(),
+                    wild_texture: Id::empty(),
+                    tame_texture: Id::empty(),
+                    biomes: Vec::new(),
+                },
+            );
+            registries.painting_variant(
+                Id::new("minecraft", "something_idk"),
+                PaintingVariant {
+                    asset: Id::empty(),
+                    width: 1,
+                    height: 1,
+                },
+            );
             registries.dimension_type(Id::new("minecraft", "overworld"), DimensionType::default());
         })
         .run();
@@ -153,6 +159,7 @@ fn on_right_click(event: Arc<RightClickEvent>) -> ActorResult<()> {
     log::error!("{:?}", item.get(ItemComponents::CUSTOM_DATA));
     log::error!("{:?}", item.get(ItemComponents::ITEM_NAME));
 
+    log::error!("{:?}", item.component_map());
     Ok(())
 }
 

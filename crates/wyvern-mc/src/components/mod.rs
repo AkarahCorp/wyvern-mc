@@ -1,7 +1,7 @@
-mod types;
 use std::{any::Any, fmt::Debug};
 
 use dyn_clone::DynClone;
+mod types;
 pub use types::*;
 mod map;
 pub use map::*;

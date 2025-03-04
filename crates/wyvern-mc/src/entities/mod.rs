@@ -36,7 +36,7 @@ impl Entity {
     pub fn get<T: ComponentElement>(&self, component: DataComponentType<T>) -> ActorResult<T> {
         let component = self
             .dimension
-            .get_entity_component_unchecked(self.uuid, component.id())?;
+            .get_entity_component_unchecked(self.uuid, component.into_name())?;
 
         ((*component).as_any().downcast_ref::<T>())
             .map(|x| clone_box(x))
@@ -49,8 +49,11 @@ impl Entity {
         component: DataComponentType<T>,
         value: T,
     ) -> ActorResult<()> {
-        self.dimension
-            .set_entity_component_unchecked(self.uuid, component.id(), Arc::new(value))
+        self.dimension.set_entity_component_unchecked(
+            self.uuid,
+            component.into_name(),
+            Arc::new(value),
+        )
     }
 }
 

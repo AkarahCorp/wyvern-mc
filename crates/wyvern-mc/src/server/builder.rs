@@ -10,6 +10,7 @@ use voxidian_protocol::{
 
 use crate::{
     actors::ActorResult,
+    blocks::BLOCK_STATE_KEYS,
     events::{Event, EventBus},
 };
 
@@ -78,6 +79,7 @@ impl ServerBuilder {
         let _ = BLOCK_STATE_DEFAULTS.deref();
         let _ = BLOCK_STATE_TO_ID.deref();
         let _ = ID_TO_BLOCK_STATE.deref();
+        let _ = BLOCK_STATE_KEYS.deref();
 
         server.start();
     }

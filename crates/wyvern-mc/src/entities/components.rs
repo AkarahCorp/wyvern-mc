@@ -12,14 +12,13 @@ pub struct EntityComponents;
 
 impl EntityComponents {
     pub const ENTITY_TYPE: DataComponentType<Id> =
-        DataComponentType::new(0, id![minecraft:entity_id]);
+        DataComponentType::new(id![minecraft:entity_type]);
     pub const POSITION: DataComponentType<Vec3<f64>> =
-        DataComponentType::new(1, id![minecraft:position]);
+        DataComponentType::new(id![minecraft:position]);
     pub const DIRECTION: DataComponentType<Vec2<f32>> =
-        DataComponentType::new(2, id![minecraft:direction]);
-    pub const UUID: DataComponentType<Uuid> = DataComponentType::new(3, id![minecraft:uuid]);
-    pub const ENTITY_ID: DataComponentType<i32> =
-        DataComponentType::new(4, id![minecraft:entity_id]);
+        DataComponentType::new(id![minecraft:direction]);
+    pub const UUID: DataComponentType<Uuid> = DataComponentType::new(id![minecraft:uuid]);
+    pub const ENTITY_ID: DataComponentType<i32> = DataComponentType::new(id![minecraft:entity_id]);
 }
 
 impl DataComponentHolder for EntityData {

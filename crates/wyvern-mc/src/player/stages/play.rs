@@ -250,17 +250,20 @@ impl ConnectionData {
                             Ok(())
                         });
 
-                        if let Ok(item_count) = held.get(ItemComponents::ITEM_COUNT) {
-                            if item_count <= 1 {
-                                this.associated_data.inventory.set_slot(
-                                    this.associated_data.held_slot as usize,
-                                    ItemStack::air(),
-                                )?;
-                            } else {
-                                this.associated_data.inventory.set_slot(
-                                    this.associated_data.held_slot as usize,
-                                    held.with(ItemComponents::ITEM_COUNT, item_count - 1),
-                                )?;
+                        // TODO: make placement only occur if the item is placable
+                        if state.id_is_valid() {
+                            if let Ok(item_count) = held.get(ItemComponents::ITEM_COUNT) {
+                                if item_count <= 1 {
+                                    this.associated_data.inventory.set_slot(
+                                        this.associated_data.held_slot as usize,
+                                        ItemStack::air(),
+                                    )?;
+                                } else {
+                                    this.associated_data.inventory.set_slot(
+                                        this.associated_data.held_slot as usize,
+                                        held.with(ItemComponents::ITEM_COUNT, item_count - 1),
+                                    )?;
+                                }
                             }
                         }
 
@@ -392,13 +395,16 @@ impl ConnectionData {
 
             Runtime::spawn_task(move || {
                 let _ = player.write_packet(PlayerInfoUpdateS2CPlayPacket {
-                    actions: vec![(data.uuid, vec![
-                        PlayerActionEntry::AddPlayer {
-                            name: data.username.clone(),
-                            props,
-                        },
-                        PlayerActionEntry::Listed(true),
-                    ])],
+                    actions: vec![(
+                        data.uuid,
+                        vec![
+                            PlayerActionEntry::AddPlayer {
+                                name: data.username.clone(),
+                                props,
+                            },
+                            PlayerActionEntry::Listed(true),
+                        ],
+                    )],
                 });
                 Ok(())
             });
@@ -413,8 +419,9 @@ impl ConnectionData {
 
             if player.sender.same_channel(&sender) {
                 self.write_packet(PlayerInfoUpdateS2CPlayPacket {
-                    actions: vec![(self.associated_data.uuid, vec![
-                        PlayerActionEntry::AddPlayer {
+                    actions: vec![(
+                        self.associated_data.uuid,
+                        vec![PlayerActionEntry::AddPlayer {
                             name: self.associated_data.username.clone(),
                             props: self
                                 .props
@@ -426,15 +433,18 @@ impl ConnectionData {
                                 })
                                 .collect::<Vec<_>>()
                                 .into(),
-                        },
-                    ])],
+                        }],
+                    )],
                 });
             } else {
                 self.write_packet(PlayerInfoUpdateS2CPlayPacket {
-                    actions: vec![(player.uuid()?, vec![PlayerActionEntry::AddPlayer {
-                        name: player.username()?,
-                        props: player.auth_props()?.into(),
-                    }])],
+                    actions: vec![(
+                        player.uuid()?,
+                        vec![PlayerActionEntry::AddPlayer {
+                            name: player.username()?,
+                            props: player.auth_props()?.into(),
+                        }],
+                    )],
                 });
             }
         }

@@ -322,7 +322,7 @@ impl DimensionData {
     pub(crate) fn set_entity_component_unchecked(
         &mut self,
         uuid: Uuid,
-        id: u64,
+        id: Id,
         value: Arc<dyn ComponentElement>,
     ) -> ActorResult<()> {
         if let Some(entity) = self.entities.get_mut(&uuid) {
@@ -335,7 +335,7 @@ impl DimensionData {
     pub(crate) fn get_entity_component_unchecked(
         &mut self,
         uuid: Uuid,
-        id: u64,
+        id: Id,
     ) -> ActorResult<Arc<dyn ComponentElement>> {
         self.entities
             .get_mut(&uuid)
