@@ -11,3 +11,4 @@ log = { workspace = true }
 flume = { workspace = true }
 rand = { workspace = true }
 dyn-clone = { workspace = true }
+rustc-hash = { workspace = true }

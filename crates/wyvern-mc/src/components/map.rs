@@ -1,6 +1,7 @@
-use std::{collections::HashMap, sync::Arc};
+use std::sync::Arc;
 
 use dyn_clone::clone_box;
+use rustc_hash::FxHashMap;
 
 use crate::{
     actors::{ActorError, ActorResult},
@@ -11,13 +12,13 @@ use super::{ComponentElement, DataComponentType};
 
 #[derive(Clone, Debug)]
 pub struct DataComponentMap {
-    pub(crate) inner: HashMap<Id, Arc<dyn ComponentElement>>,
+    pub(crate) inner: FxHashMap<Id, Arc<dyn ComponentElement>>,
 }
 
 impl DataComponentMap {
     pub fn new() -> DataComponentMap {
         DataComponentMap {
-            inner: HashMap::new(),
+            inner: FxHashMap::default(),
         }
     }
 
@@ -47,5 +48,38 @@ impl DataComponentMap {
 impl Default for DataComponentMap {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::time::Instant;
+
+    use rustc_hash::FxHashMap;
+
+    use crate::item::ItemComponents;
+
+    use super::DataComponentMap;
+
+    #[test]
+    fn benchmark_maps() {
+        let t1 = Instant::now();
+        let mut hm = FxHashMap::default();
+        hm.insert("minecraft:damage", 10);
+        hm.insert("minecraft:max_damage", 20);
+
+        hm.get("minecraft:damage").unwrap();
+        hm.get("minecraft:max_damage").unwrap();
+
+        let t2 = Instant::now();
+        let mut cm = DataComponentMap::new();
+        cm.set(ItemComponents::DAMAGE, 10);
+        cm.set(ItemComponents::MAX_DAMAGE, 20);
+
+        cm.get(ItemComponents::DAMAGE).unwrap();
+        cm.get(ItemComponents::MAX_DAMAGE).unwrap();
+        let t3 = Instant::now();
+
+        eprintln!("HashMap: {:?}\nDataComponentMap:{:?}", t2 - t1, t3 - t2)
     }
 }

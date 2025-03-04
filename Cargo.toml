@@ -16,6 +16,7 @@ env_logger = { version = "*" }
 flume = { version = "*" }
 rand = { version = "*" }
 dyn-clone = "1.0.18"
+rustc-hash = { version = "*" }
 
 [profile.release]
 debug = true
