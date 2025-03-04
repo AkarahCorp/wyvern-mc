@@ -30,33 +30,6 @@ pub struct BlockState {
     pub(crate) components: DataComponentMap,
 }
 
-#[allow(unused)]
-fn components_to_array(components: &DataComponentMap) -> Vec<(String, String)> {
-    let mut arr = Vec::new();
-    // The keys of the matches *must* be in alphabetical order.
-    if let Ok(value) = components.get(BlockComponents::SNOWY) {
-        arr.push(("snowy", value.to_string()));
-    }
-    arr.into_iter().map(|x| (x.0.to_string(), x.1)).collect()
-}
-
-#[allow(unused)]
-fn array_to_components(array: &[(String, String)]) -> DataComponentMap {
-    let mut map = DataComponentMap::new();
-    for element in array {
-        #[allow(clippy::single_match)]
-        match element.0.as_str() {
-            "snowy" => {
-                if let Ok(value) = element.1.parse::<bool>() {
-                    map.set(BlockComponents::SNOWY, value)
-                }
-            }
-            _ => {}
-        }
-    }
-    map
-}
-
 impl DataComponentHolder for BlockState {
     fn component_map(&self) -> &DataComponentMap {
         &self.components
@@ -99,12 +72,12 @@ impl BlockState {
     pub fn as_valid(&self) -> Self {
         let mut underlying = ProtocolState {
             id: self.block.clone().into(),
-            properties: components_to_array(&self.components),
+            properties: components::components_to_array(&self.components),
         };
         let _ = underlying.make_valid();
         BlockState {
             block: underlying.id.into(),
-            components: array_to_components(&underlying.properties),
+            components: components::array_to_components(&underlying.properties),
         }
     }
 }
@@ -113,7 +86,7 @@ impl From<&ProtocolState> for BlockState {
     fn from(value: &ProtocolState) -> Self {
         BlockState {
             block: value.id.clone().into(),
-            components: array_to_components(&value.properties),
+            components: components::array_to_components(&value.properties),
         }
     }
 }
@@ -122,7 +95,7 @@ impl From<&BlockState> for ProtocolState {
     fn from(value: &BlockState) -> Self {
         ProtocolState {
             id: value.block.clone().into(),
-            properties: components_to_array(&value.components),
+            properties: components::components_to_array(&value.components),
         }
     }
 }

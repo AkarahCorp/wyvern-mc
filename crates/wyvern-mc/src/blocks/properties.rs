@@ -7,6 +7,7 @@ macro_rules! make_enum {
                 $key:ident as $value:expr,
             )*
     ) => {
+        #[derive(Debug, Clone, PartialEq)]
         pub enum $name {
             $($key),*
         }
