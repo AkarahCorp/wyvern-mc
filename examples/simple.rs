@@ -4,7 +4,7 @@ use noise::{NoiseFn, Simplex};
 use voxidian_protocol::packet::s2c::play::ScreenWindowKind;
 use wyvern_mc::{
     actors::ActorResult,
-    blocks::{BlockProperties, BlockState, Blocks},
+    blocks::{BlockComponents, BlockState, Blocks},
     components::DataComponentHolder,
     dimension::chunk::Chunk,
     entities::EntityComponents,
@@ -63,7 +63,7 @@ fn on_command(event: Arc<PlayerCommandEvent>) -> ActorResult<()> {
         let event = event.clone();
         Runtime::spawn_task(move || {
             let state = BlockState::new(Id::new("minecraft", "grass_block"))
-                .with_property(BlockProperties::SNOWY, false);
+                .with(BlockComponents::SNOWY, false);
             let dim = event.player.dimension().unwrap();
             for x in 1..100 {
                 for y in 1..10 {

@@ -8,7 +8,11 @@ use voxidian_protocol::{
     },
 };
 
-use crate::values::{Vec3, nbt::NbtCompound};
+use crate::{
+    blocks::BlockComponents,
+    components::DataComponentHolder,
+    values::{Vec3, nbt::Nbt},
+};
 
 use crate::blocks::BlockState;
 
@@ -69,7 +73,7 @@ impl Chunk {
 pub(crate) struct ChunkSection {
     block_count: i16,
     blocks: [[[ChunkBlock; 16]; 16]; 16],
-    block_meta: HashMap<Vec3<usize>, NbtCompound>,
+    block_meta: HashMap<Vec3<usize>, Nbt>,
 }
 
 #[derive(Clone, Debug, Copy)]
@@ -113,8 +117,8 @@ impl ChunkSection {
         self.blocks[pos.x()][pos.y()][pos.z()] = ChunkBlock {
             block_state: new_block.id() as u16,
         };
-        if !block.custom_data.is_empty() {
-            self.block_meta.insert(pos, block.custom_data);
+        if let Ok(data) = block.get(BlockComponents::CUSTOM_DATA) {
+            self.block_meta.insert(pos, data);
         }
     }
 
