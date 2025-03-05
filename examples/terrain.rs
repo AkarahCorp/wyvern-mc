@@ -5,6 +5,7 @@ use wyvern_mc::{
     actors::ActorResult,
     blocks::{BlockComponents, BlockState, Blocks},
     components::DataComponentHolder,
+    dimension::chunk::Chunk,
     events::{DimensionCreateEvent, PlayerJoinEvent, ServerStartEvent},
     id,
     server::Server,
@@ -39,7 +40,7 @@ static SIMPLEX: LazyLock<Simplex> = LazyLock::new(|| Simplex::new(0));
 fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
     event
         .dimension
-        .set_chunk_generator(Box::new(move |chunk, x, z| {
+        .set_chunk_generator(move |chunk: &mut Chunk, x, z| {
             for x2 in 0..16 {
                 for z2 in 0..16 {
                     let y = SIMPLEX.get([
@@ -67,7 +68,7 @@ fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
                     }
                 }
             }
-        }))?;
+        })?;
     Ok(())
 }
 

@@ -146,7 +146,7 @@ impl DimensionData {
 
     #[SetChunkGenerator]
     #[doc = "Overrides the function that will be called whenever a new Chunk is generated. The default chunk generator is a no-op."]
-    pub fn set_chunk_generator(
+    pub fn set_boxed_chunk_generator(
         &mut self,
         function: Box<dyn Fn(&mut Chunk, i32, i32) + Send>,
     ) -> ActorResult<()> {
@@ -366,6 +366,15 @@ impl DimensionData {
     pub fn max_chunks(&mut self, x: u32, y: u32) -> ActorResult<()> {
         self.chunk_max = (x, y);
         Ok(())
+    }
+}
+
+impl Dimension {
+    pub fn set_chunk_generator(
+        &self,
+        function: impl Fn(&mut Chunk, i32, i32) + Send + 'static,
+    ) -> ActorResult<()> {
+        self.set_boxed_chunk_generator(Box::new(function))
     }
 }
 

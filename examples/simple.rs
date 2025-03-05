@@ -90,7 +90,7 @@ fn on_command(event: Arc<PlayerCommandEvent>) -> ActorResult<()> {
 fn dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
     event
         .dimension
-        .set_chunk_generator(Box::new(move |chunk: &mut Chunk, x, z| {
+        .set_chunk_generator(move |chunk: &mut Chunk, x, z| {
             for x2 in 0..16 {
                 for z2 in 0..16 {
                     let y = SIMPLEX.get([
@@ -108,7 +108,7 @@ fn dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
                     }
                 }
             }
-        }))?;
+        })?;
 
     event.dimension.max_chunks(3, 3)?;
 
