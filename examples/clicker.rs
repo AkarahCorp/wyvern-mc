@@ -17,11 +17,7 @@ use wyvern_mc::{
     inventory::Inventory,
     item::{ItemComponents, ItemStack},
     server::Server,
-    values::{
-        Id, SoundCategory, Sounds, Texts, Uuid, Vec2, Vec3,
-        nbt::NbtCompound,
-        regval::{DimensionType, PaintingVariant, WolfVariant},
-    },
+    values::{Id, SoundCategory, Sounds, Texts, Uuid, Vec2, Vec3, nbt::NbtCompound},
 };
 
 static COUNTER: LazyLock<Mutex<HashMap<Uuid, i32>>> = LazyLock::new(|| Mutex::new(HashMap::new()));
@@ -37,24 +33,7 @@ fn main() {
         .event(on_right_click)
         .event(on_swap_hands)
         .registries(|registries| {
-            registries.wolf_variant(
-                Id::new("minecraft", "pale"),
-                WolfVariant {
-                    angry_texture: Id::empty(),
-                    wild_texture: Id::empty(),
-                    tame_texture: Id::empty(),
-                    biomes: Vec::new(),
-                },
-            );
-            registries.painting_variant(
-                Id::new("minecraft", "empty_painting"),
-                PaintingVariant {
-                    asset: Id::empty(),
-                    width: 1,
-                    height: 1,
-                },
-            );
-            registries.dimension_type(Id::new("minecraft", "overworld"), DimensionType::default());
+            registries.add_defaults();
         })
         .run();
 }

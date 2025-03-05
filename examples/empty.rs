@@ -7,10 +7,7 @@ use wyvern_mc::{
     events::{DimensionCreateEvent, PlayerJoinEvent, ServerStartEvent},
     id,
     server::Server,
-    values::{
-        Id, Vec3,
-        regval::{DimensionType, PaintingVariant, WolfVariant},
-    },
+    values::Vec3,
 };
 
 fn main() {
@@ -21,27 +18,7 @@ fn main() {
         .event(on_dim_init)
         .event(on_join)
         .registries(|registries| {
-            registries.wolf_variant(
-                Id::new("minecraft", "pale"),
-                WolfVariant {
-                    angry_texture: Id::empty(),
-                    wild_texture: Id::empty(),
-                    tame_texture: Id::empty(),
-                    biomes: Vec::new(),
-                },
-            );
-            registries.painting_variant(
-                Id::new("minecraft", "empty_painting"),
-                PaintingVariant {
-                    asset: Id::empty(),
-                    width: 1,
-                    height: 1,
-                },
-            );
-            registries.dimension_type(
-                Id::new("minecraft", "overworld"),
-                DimensionType::default().min_y(0).height(256),
-            );
+            registries.add_defaults();
         })
         .run();
 }
