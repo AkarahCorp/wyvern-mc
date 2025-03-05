@@ -41,7 +41,7 @@ pub struct DimensionData {
     pub(crate) server: Option<Server>,
     pub(crate) sender: Sender<DimensionMessage>,
     pub(crate) dim_type: Id,
-    pub(crate) chunk_generator: fn(&mut Chunk, i32, i32),
+    pub(crate) chunk_generator: Box<dyn Fn(&mut Chunk, i32, i32) + Send>,
     pub(crate) chunk_max: (u32, u32),
     pub(crate) last_update: Instant,
 }
@@ -146,7 +146,10 @@ impl DimensionData {
 
     #[SetChunkGenerator]
     #[doc = "Overrides the function that will be called whenever a new Chunk is generated. The default chunk generator is a no-op."]
-    pub fn set_chunk_generator(&mut self, function: fn(&mut Chunk, i32, i32)) -> ActorResult<()> {
+    pub fn set_chunk_generator(
+        &mut self,
+        function: Box<dyn Fn(&mut Chunk, i32, i32) + Send>,
+    ) -> ActorResult<()> {
         self.chunk_generator = function;
         Ok(())
     }
@@ -377,7 +380,7 @@ impl DimensionData {
             receiver: chan.1,
             sender: chan.0,
             dim_type,
-            chunk_generator: |_, _, _| {},
+            chunk_generator: Box::new(|_, _, _| {}),
             chunk_max: (i32::MAX as u32, i32::MAX as u32),
             last_update: Instant::now(),
         }

@@ -4,7 +4,7 @@ use crate::{
     values::nbt::Nbt,
 };
 
-use super::BlockDirection;
+use super::{Axis, BlockDirection};
 
 macro_rules! generate_block_components {
     (
@@ -57,6 +57,7 @@ generate_block_components! {
     pub const AGE: i32 = id![minecraft:age], "age";
     pub const FACING: BlockDirection = id![minecraft:facing], "facing";
     pub const BANNER_ROTATION: i32 = id![minecraft:banner_rotation], "rotation";
+    pub const AXIS: Axis = id![minecraft:axis], "axis";
     pub const SNOWY: bool = id![minecraft:snowy], "snowy";
 }
 

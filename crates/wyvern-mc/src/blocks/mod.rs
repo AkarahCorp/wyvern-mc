@@ -94,7 +94,7 @@ impl From<&ProtocolState> for BlockState {
 impl From<&BlockState> for ProtocolState {
     fn from(value: &BlockState) -> Self {
         ProtocolState {
-            id: value.block.clone().into(),
+            id: value.as_valid().block.clone().into(),
             properties: components::components_to_array(&value.components),
         }
     }
