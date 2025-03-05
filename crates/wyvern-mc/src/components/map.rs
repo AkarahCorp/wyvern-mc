@@ -43,6 +43,14 @@ impl DataComponentMap {
             .map(|x| *x)
             .ok_or(ActorError::ComponentNotFound)
     }
+
+    pub fn contains(&self, key: &Id) -> bool {
+        self.inner.contains_key(&key)
+    }
+
+    pub fn keys(&self) -> Vec<&Id> {
+        self.inner.keys().collect()
+    }
 }
 
 impl Default for DataComponentMap {

@@ -7,6 +7,8 @@ mod map;
 pub use map::*;
 mod holder;
 pub use holder::*;
+mod patch;
+pub use patch::*;
 
 pub trait ComponentElement: Any + Sync + Send + DynClone + Debug {
     fn as_any(&self) -> &dyn Any;
