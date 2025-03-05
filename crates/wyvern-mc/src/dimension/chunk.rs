@@ -124,7 +124,13 @@ impl ChunkSection {
 
     pub fn get_block_at(&mut self, pos: Vec3<usize>) -> BlockState {
         let ptc = self.blocks[pos.x()][pos.y()][pos.z()];
-        BlockState::from_protocol_id(ptc.id() as i32)
+        let mut state = BlockState::from_protocol_id(ptc.id() as i32);
+
+        if let Some(cdata) = self.block_meta.get(&pos) {
+            state.set(BlockComponents::CUSTOM_DATA, cdata.clone());
+        }
+
+        state
     }
 
     pub fn flatten_blocks(&self) -> [RegEntry<ProtocolState>; 4096] {
