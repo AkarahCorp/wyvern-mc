@@ -12,10 +12,6 @@ log = { workspace = true }
 env_logger = { workspace = true }
 
 [[example]]
-name = "simple"
-path = "./simple.rs"
-
-[[example]]
 name = "clicker"
 path = "./clicker.rs"
 

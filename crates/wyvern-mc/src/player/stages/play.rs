@@ -396,29 +396,29 @@ impl ConnectionData {
         log::debug!("Broadcasting this player info...");
         for player in self.connected_server.connections()? {
             let data = self.associated_data.clone();
-            let props = self
-                .props
-                .iter()
-                .map(|x| ProfileProperty {
-                    name: x.name.clone(),
-                    value: x.value.clone(),
-                    sig: Some(x.sig.clone()),
-                })
-                .collect::<Vec<_>>()
-                .into();
+            let props = if let Some(mojauth) = self.mojauth.as_ref() {
+                mojauth
+                    .props
+                    .iter()
+                    .map(|x| ProfileProperty {
+                        name: x.name.clone(),
+                        value: x.value.clone(),
+                        sig: Some(x.sig.clone()),
+                    })
+                    .collect::<Vec<_>>()
+            } else {
+                Vec::new()
+            };
 
             Runtime::spawn_task(move || {
                 let _ = player.write_packet(PlayerInfoUpdateS2CPlayPacket {
-                    actions: vec![(
-                        data.uuid,
-                        vec![
-                            PlayerActionEntry::AddPlayer {
-                                name: data.username.clone(),
-                                props,
-                            },
-                            PlayerActionEntry::Listed(true),
-                        ],
-                    )],
+                    actions: vec![(data.uuid, vec![
+                        PlayerActionEntry::AddPlayer {
+                            name: data.username.clone(),
+                            props: props.into(),
+                        },
+                        PlayerActionEntry::Listed(true),
+                    ])],
                 });
                 Ok(())
             });
@@ -432,33 +432,34 @@ impl ConnectionData {
             };
 
             if player.sender.same_channel(&sender) {
+                let props = if let Some(mojauth) = self.mojauth.as_ref() {
+                    mojauth
+                        .props
+                        .iter()
+                        .map(|x| ProfileProperty {
+                            name: x.name.clone(),
+                            value: x.value.clone(),
+                            sig: Some(x.sig.clone()),
+                        })
+                        .collect::<Vec<_>>()
+                } else {
+                    Vec::new()
+                };
+
                 self.write_packet(PlayerInfoUpdateS2CPlayPacket {
-                    actions: vec![(
-                        self.associated_data.uuid,
-                        vec![PlayerActionEntry::AddPlayer {
+                    actions: vec![(self.associated_data.uuid, vec![
+                        PlayerActionEntry::AddPlayer {
                             name: self.associated_data.username.clone(),
-                            props: self
-                                .props
-                                .iter()
-                                .map(|x| ProfileProperty {
-                                    name: x.name.clone(),
-                                    value: x.value.clone(),
-                                    sig: Some(x.sig.clone()),
-                                })
-                                .collect::<Vec<_>>()
-                                .into(),
-                        }],
-                    )],
+                            props: props.into(),
+                        },
+                    ])],
                 });
             } else {
                 self.write_packet(PlayerInfoUpdateS2CPlayPacket {
-                    actions: vec![(
-                        player.uuid()?,
-                        vec![PlayerActionEntry::AddPlayer {
-                            name: player.username()?,
-                            props: player.auth_props()?.into(),
-                        }],
-                    )],
+                    actions: vec![(player.uuid()?, vec![PlayerActionEntry::AddPlayer {
+                        name: player.username()?,
+                        props: player.auth_props().unwrap_or(Vec::new()).into(),
+                    }])],
                 });
             }
         }

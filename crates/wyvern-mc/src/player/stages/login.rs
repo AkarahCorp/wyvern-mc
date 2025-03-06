@@ -16,7 +16,8 @@ use voxidian_protocol::{
 
 use crate::{
     actors::{ActorError, ActorResult},
-    player::ConnectionData,
+    player::{ConnectionData, MojauthData},
+    server::Server,
 };
 
 impl ConnectionData {
@@ -38,6 +39,9 @@ impl ConnectionData {
                 }
                 C2SLoginPackets::Key(packet) => {
                     let Ok(decrypted_verify_token) = this
+                        .mojauth
+                        .as_ref()
+                        .ok_or(ActorError::ActorIsNotLoaded)?
                         .private_key
                         .as_ref()
                         .unwrap()
@@ -45,11 +49,21 @@ impl ConnectionData {
                     else {
                         return Err(ActorError::ActorDoesNotExist);
                     };
-                    if decrypted_verify_token != this.verify_token.as_slice() {
+                    if decrypted_verify_token
+                        != this
+                            .mojauth
+                            .as_ref()
+                            .ok_or(ActorError::ActorIsNotLoaded)?
+                            .verify_token
+                            .as_slice()
+                    {
                         return Err(ActorError::ActorDoesNotExist);
                     }
 
                     let Ok(secret_key) = this
+                        .mojauth
+                        .as_ref()
+                        .ok_or(ActorError::ActorIsNotLoaded)?
                         .private_key
                         .as_ref()
                         .unwrap()
@@ -66,7 +80,12 @@ impl ConnectionData {
                         this.associated_data.username.clone(),
                         "WyvernMC",
                         this.packet_processing.secret_cipher.key().unwrap(),
-                        this.public_key.as_ref().unwrap(),
+                        this.mojauth
+                            .as_ref()
+                            .ok_or(ActorError::ActorIsNotLoaded)?
+                            .public_key
+                            .as_ref()
+                            .unwrap(),
                     ) {
                         Ok(mojauth) => mojauth,
                         Err(err) => {
@@ -80,7 +99,10 @@ impl ConnectionData {
 
                     this.associated_data.username = mojauth.name;
                     this.associated_data.uuid = mojauth.uuid;
-                    this.props = mojauth.props;
+                    this.mojauth
+                        .as_mut()
+                        .ok_or(ActorError::ActorIsNotLoaded)?
+                        .props = mojauth.props;
 
                     this.write_packet(LoginFinishedS2CLoginPacket {
                         uuid: this.associated_data.uuid,
@@ -97,20 +119,58 @@ impl ConnectionData {
                     this.associated_data.username = packet.username.clone();
                     this.associated_data.uuid = packet.uuid;
 
-                    let (private, public) = generate_key_pair::<1024>();
-                    let verify_token =
-                        std::array::from_fn::<_, 4, _>(|_| rand::random::<u8>()).to_vec();
+                    if Server::get()?.mojauth_enabled()? {
+                        this.mojauth = Some(MojauthData {
+                            private_key: None,
+                            verify_token: Vec::new(),
+                            public_key: None,
+                            props: Vec::new(),
+                        });
 
-                    this.private_key = Some(private);
-                    this.public_key = Some(public);
-                    this.verify_token = verify_token;
+                        let (private, public) = generate_key_pair::<1024>();
+                        let verify_token =
+                            std::array::from_fn::<_, 4, _>(|_| rand::random::<u8>()).to_vec();
 
-                    this.write_packet(HelloS2CLoginPacket {
-                        server_id: "WyvernMC".to_string(),
-                        public_key: this.public_key.as_ref().unwrap().der_bytes().into(),
-                        verify_token: this.verify_token.clone().into(),
-                        should_auth: true,
-                    });
+                        this.mojauth
+                            .as_mut()
+                            .ok_or(ActorError::ActorIsNotLoaded)?
+                            .private_key = Some(private);
+                        this.mojauth
+                            .as_mut()
+                            .ok_or(ActorError::ActorIsNotLoaded)?
+                            .public_key = Some(public);
+                        this.mojauth
+                            .as_mut()
+                            .ok_or(ActorError::ActorIsNotLoaded)?
+                            .verify_token = verify_token;
+
+                        this.write_packet(HelloS2CLoginPacket {
+                            server_id: "WyvernMC".to_string(),
+                            public_key: this
+                                .mojauth
+                                .as_ref()
+                                .ok_or(ActorError::ActorIsNotLoaded)?
+                                .public_key
+                                .as_ref()
+                                .unwrap()
+                                .der_bytes()
+                                .into(),
+                            verify_token: this
+                                .mojauth
+                                .as_ref()
+                                .ok_or(ActorError::ActorIsNotLoaded)?
+                                .verify_token
+                                .clone()
+                                .into(),
+                            should_auth: true,
+                        });
+                    } else {
+                        this.write_packet(LoginFinishedS2CLoginPacket {
+                            uuid: this.associated_data.uuid,
+                            username: this.associated_data.username.clone(),
+                            props: LengthPrefixHashMap::new(),
+                        });
+                    }
                 }
                 C2SLoginPackets::CookieResponse(_packet) => todo!(),
             }

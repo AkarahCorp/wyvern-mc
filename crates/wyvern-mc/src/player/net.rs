@@ -72,10 +72,7 @@ impl ConnectionData {
             stage,
             connected_server: server,
             associated_data: PlayerData::default(),
-            private_key: None,
-            verify_token: Vec::new(),
-            public_key: None,
-            props: Vec::new(),
+            mojauth: None,
         };
 
         conn.event_loop();

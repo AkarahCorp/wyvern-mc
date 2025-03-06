@@ -20,6 +20,7 @@ pub struct ServerBuilder {
     events: EventBus,
     registries: RegistryContainerBuilder,
     dimensions: DimensionContainer,
+    mojauth_enabled: bool,
 }
 
 impl Default for ServerBuilder {
@@ -43,6 +44,7 @@ impl ServerBuilder {
             dimensions: DimensionContainer {
                 dimensions: HashMap::new(),
             },
+            mojauth_enabled: true,
         }
     }
 
@@ -50,6 +52,11 @@ impl ServerBuilder {
         let handler = Box::new(f) as Box<dyn Fn(Arc<E>) -> ActorResult<()> + Send + Sync>;
         E::add_handler(&mut self.events, handler);
 
+        self
+    }
+
+    pub fn mojauth_enabled(mut self, status: bool) -> Self {
+        self.mojauth_enabled = status;
         self
     }
 
@@ -71,6 +78,7 @@ impl ServerBuilder {
             events: Arc::new(self.events),
 
             last_entity_id: 0,
+            mojauth_enabled: self.mojauth_enabled,
         };
 
         log::info!("Initializing some lazy values...");

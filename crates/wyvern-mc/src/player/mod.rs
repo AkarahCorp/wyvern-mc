@@ -56,6 +56,10 @@ pub(crate) struct ConnectionData {
     pub(crate) stage: Arc<Mutex<Stage>>,
     pub(crate) associated_data: PlayerData,
     pub(crate) sender: WeakSender<PlayerMessage>,
+    pub(crate) mojauth: Option<MojauthData>,
+}
+
+pub(crate) struct MojauthData {
     pub(crate) public_key: Option<PublicKey>,
     pub(crate) private_key: Option<PrivateKey>,
     pub(crate) verify_token: Vec<u8>,
@@ -98,6 +102,9 @@ impl ConnectionData {
     #[MojAuthProps]
     pub fn auth_props(&self) -> ActorResult<Vec<ProfileProperty>> {
         Ok(self
+            .mojauth
+            .as_ref()
+            .ok_or(ActorError::ActorIsNotLoaded)?
             .props
             .iter()
             .map(|x| ProfileProperty {

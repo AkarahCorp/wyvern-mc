@@ -79,7 +79,7 @@ impl DimensionData {
                 dimension: Dimension {
                     sender: self.sender.clone(),
                 },
-                uuid: x.0.clone(),
+                uuid: *x.0,
             })
             .ok_or(ActorError::IndexOutOfBounds)
     }
@@ -227,13 +227,10 @@ impl DimensionData {
         components.set(EntityComponents::DIRECTION, Vec2::new(0.0, 0.0));
         components.set(EntityComponents::VELOCITY, Vec3::new(0.0, 0.0, 0.0));
 
-        self.entities.insert(
-            uuid,
-            EntityData {
-                last_components: DataComponentMap::new(),
-                components,
-            },
-        );
+        self.entities.insert(uuid, EntityData {
+            last_components: DataComponentMap::new(),
+            components,
+        });
 
         let dim = Dimension {
             sender: self.sender.clone(),
@@ -285,13 +282,10 @@ impl DimensionData {
         components.set(EntityComponents::DIRECTION, Vec2::new(0.0, 0.0));
         components.set(EntityComponents::VELOCITY, Vec3::new(0.0, 0.0, 0.0));
 
-        self.entities.insert(
-            uuid,
-            EntityData {
-                last_components: DataComponentMap::new(),
-                components,
-            },
-        );
+        self.entities.insert(uuid, EntityData {
+            last_components: DataComponentMap::new(),
+            components,
+        });
 
         let dim = Dimension {
             sender: self.sender.clone(),

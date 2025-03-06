@@ -38,6 +38,7 @@ pub(crate) struct ServerData {
     pub(crate) sender: Sender<ServerMessage>,
     pub(crate) events: Arc<EventBus>,
     pub(crate) last_entity_id: i32,
+    pub(crate) mojauth_enabled: bool,
 }
 
 impl Server {
@@ -60,6 +61,11 @@ impl Server {
 
 #[message(Server, ServerMessage)]
 impl ServerData {
+    #[MojauthEnabled]
+    pub fn mojauth_enabled(&self) -> ActorResult<bool> {
+        Ok(self.mojauth_enabled)
+    }
+
     #[NewEntityId]
     pub fn new_entity_id(&mut self) -> ActorResult<i32> {
         self.last_entity_id += 1;
