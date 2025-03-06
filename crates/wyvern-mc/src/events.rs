@@ -4,6 +4,7 @@ use crate::{
     actors::ActorResult,
     blocks::BlockState,
     dimension::Dimension,
+    entities::Entity,
     item::ItemStack,
     player::Player,
     server::Server,
@@ -61,6 +62,7 @@ event_bus! {
     on_block_break: BreakBlockEvent
     on_chat: ChatMessageEvent
     on_right_click: RightClickEvent
+    on_attack_entity: PlayerAttackEntityEvent
 }
 
 impl Debug for EventBus {
@@ -169,4 +171,10 @@ pub struct ChatMessageEvent {
 pub struct PlayerJoinEvent {
     pub player: Player,
     pub new_dimension: Token<Id>,
+}
+
+#[derive(Debug, Clone)]
+pub struct PlayerAttackEntityEvent {
+    pub player: Player,
+    pub entity: Entity,
 }

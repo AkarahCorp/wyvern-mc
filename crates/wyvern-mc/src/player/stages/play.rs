@@ -1,6 +1,6 @@
 use voxidian_protocol::{
     packet::{
-        c2s::play::{BlockFace, C2SPlayPackets, PlayerStatus},
+        c2s::play::{BlockFace, C2SPlayPackets, InteractAction, PlayerStatus},
         s2c::play::{
             AddEntityS2CPlayPacket, ContainerSlotGroup, DisconnectS2CPlayPacket, GameEvent,
             GameEventS2CPlayPacket, Hand, PlayerActionEntry, PlayerInfoUpdateS2CPlayPacket,
@@ -17,8 +17,8 @@ use crate::{
     entities::EntityComponents,
     events::{
         BreakBlockEvent, ChangeHeldSlotEvent, ChatMessageEvent, DropItemEvent, PlaceBlockEvent,
-        PlayerCommandEvent, PlayerJoinEvent, PlayerMoveEvent, RightClickEvent,
-        StartBreakBlockEvent, SwapHandsEvent,
+        PlayerAttackEntityEvent, PlayerCommandEvent, PlayerJoinEvent, PlayerMoveEvent,
+        RightClickEvent, StartBreakBlockEvent, SwapHandsEvent,
     },
     inventory::Inventory,
     item::{ItemComponents, ItemStack},
@@ -324,6 +324,20 @@ impl ConnectionData {
                         this.associated_data.cursor_item = ItemStack::air();
                         this.associated_data.screen = None;
                     }
+                    C2SPlayPackets::Interact(packet) => match packet.action {
+                        InteractAction::Interact(_hand) => {}
+                        InteractAction::Attack => {
+                            if let Some(sender) = this.sender.upgrade() {
+                                this.connected_server.spawn_event(PlayerAttackEntityEvent {
+                                    player: Player { sender },
+                                    entity: this
+                                        .dimension()?
+                                        .get_entity_by_id(packet.entity_id.as_i32())?,
+                                })?;
+                            }
+                        }
+                        InteractAction::InteractAt(_, _, _, _hand) => {}
+                    },
                     packet => {
                         log::warn!(
                             "Received unknown play packet, this packet will be ignored. {:?}",

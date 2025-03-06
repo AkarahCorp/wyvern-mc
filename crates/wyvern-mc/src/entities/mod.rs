@@ -13,7 +13,7 @@ use crate::{
 mod components;
 pub use components::*;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Entity {
     pub(crate) dimension: Dimension,
     pub(crate) uuid: Uuid,

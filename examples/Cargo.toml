@@ -34,3 +34,7 @@ path = "./parkour.rs"
 [[example]]
 name = "empty"
 path = "./empty.rs"
+
+[[example]]
+name = "combat"
+path = "./combat.rs"

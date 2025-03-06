@@ -8,7 +8,7 @@ use crate::{
 use super::EntityComponents;
 
 impl DimensionData {
-    pub fn propogate_entities(&mut self) -> ActorResult<()> {
+    pub fn propogate_entity_packets(&mut self) -> ActorResult<()> {
         let players = self.players()?.clone();
         for entity in &mut self.entities {
             let patch =
@@ -47,6 +47,10 @@ impl DimensionData {
 
             entity.1.last_components = entity.1.components.clone();
         }
+        Ok(())
+    }
+
+    pub fn auto_apply_entity_properties(&mut self) -> ActorResult<()> {
         Ok(())
     }
 }

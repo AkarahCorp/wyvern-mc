@@ -61,7 +61,8 @@ impl DimensionData {
             self.handle_messages();
             if Instant::now().duration_since(self.last_update) > Duration::from_millis(50) {
                 self.last_update = Instant::now();
-                let _ = self.propogate_entities();
+                let _ = self.propogate_entity_packets();
+                let _ = self.auto_apply_entity_properties();
             }
         }
     }
@@ -69,6 +70,20 @@ impl DimensionData {
 
 #[crate::message(Dimension, DimensionMessage)]
 impl DimensionData {
+    #[GetEntityById]
+    pub fn get_entity_by_id(&self, id: i32) -> ActorResult<Entity> {
+        self.entities
+            .iter()
+            .find(|x| x.1.get(EntityComponents::ENTITY_ID) == Ok(id))
+            .map(|x| Entity {
+                dimension: Dimension {
+                    sender: self.sender.clone(),
+                },
+                uuid: x.0.clone(),
+            })
+            .ok_or(ActorError::IndexOutOfBounds)
+    }
+
     #[GetName]
     #[doc = "Get the name of this dimension."]
     pub fn name(&self) -> ActorResult<Id> {
@@ -322,7 +337,7 @@ impl DimensionData {
                 .clone();
 
             Runtime::spawn_task(move || {
-                for conn in server.connections().unwrap() {
+                for conn in server.players()? {
                     let _ = conn.write_packet(RemoveEntitiesS2CPlayPacket {
                         entities: vec![VarInt::new(
                             entry.get(EntityComponents::ENTITY_ID).unwrap(),
