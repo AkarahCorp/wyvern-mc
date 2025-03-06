@@ -3,15 +3,16 @@ use std::{collections::HashMap, mem::MaybeUninit};
 use voxidian_protocol::{
     registry::RegEntry,
     value::{
-        Biome, BlockState as ProtocolState, ChunkSection as ProtocolSection, Identifier,
-        PaletteFormat, PalettedContainer,
+        BlockState as ProtocolState, ChunkSection as ProtocolSection, PaletteFormat,
+        PalettedContainer,
     },
 };
 
 use crate::{
     blocks::BlockComponents,
     components::DataComponentHolder,
-    values::{Vec3, nbt::Nbt},
+    server::Server,
+    values::{Id, Vec3, nbt::Nbt},
 };
 
 use crate::blocks::BlockState;
@@ -168,8 +169,12 @@ impl ChunkSection {
             biomes: PalettedContainer {
                 bits_per_entry: 0,
                 format: PaletteFormat::SingleValued {
-                    entry: Biome::vanilla_registry()
-                        .get_entry(&Identifier::new("minecraft", "plains"))
+                    entry: Server::get()
+                        .unwrap()
+                        .registries()
+                        .unwrap()
+                        .biomes
+                        .get_entry(Id::new("minecraft", "plains"))
                         .unwrap(),
                 },
             },
