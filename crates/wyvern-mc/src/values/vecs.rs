@@ -1,11 +1,6 @@
 use datafix::serialization::{CodecAdapters, CodecOps, DefaultCodec};
 
 #[derive(PartialEq, Eq, Hash, Copy, Clone, Debug)]
-pub struct Vec1<T: Copy> {
-    inner: [T; 1],
-}
-
-#[derive(PartialEq, Eq, Hash, Copy, Clone, Debug)]
 pub struct Vec2<T: Copy> {
     inner: [T; 2],
 }
@@ -13,33 +8,6 @@ pub struct Vec2<T: Copy> {
 #[derive(PartialEq, Eq, Hash, Copy, Clone, Debug)]
 pub struct Vec3<T: Copy> {
     inner: [T; 3],
-}
-
-impl<T: Copy> Vec1<T> {
-    pub fn new(x: T) -> Self {
-        Vec1 { inner: [x] }
-    }
-
-    pub fn x(&self) -> T {
-        unsafe { *self.inner.get_unchecked(0) }
-    }
-
-    pub fn with_x(&self, value: T) -> Self {
-        let mut new = *self;
-        unsafe { *new.inner.get_unchecked_mut(0) = value }
-        new
-    }
-}
-
-impl<T: Copy + Default + DefaultCodec<OT, O>, OT: Clone, O: CodecOps<OT>> DefaultCodec<OT, O>
-    for Vec1<T>
-{
-    fn codec() -> impl datafix::serialization::Codec<Self, OT, O> {
-        T::codec().list_of().xmap(
-            |vec| Vec1::new(*vec.first().unwrap_or(&T::default())),
-            |vec1| Vec::from([vec1.x()]),
-        )
-    }
 }
 
 impl<T: Copy> Vec2<T> {
@@ -65,6 +33,23 @@ impl<T: Copy> Vec2<T> {
         let mut new = *self;
         unsafe { *new.inner.get_unchecked_mut(1) = value }
         new
+    }
+}
+
+impl Vec2<f32> {
+    // TODO: fix weirdness with direction calculation
+    pub fn to_3d_direction(&self) -> Vec3<f64> {
+        Vec3::new(
+            self.x().cos() as f64 * self.y().cos() as f64,
+            self.y().cos() as f64,
+            self.x().sin() as f64 * self.y().cos() as f64,
+        )
+    }
+}
+
+impl Vec2<f64> {
+    pub fn magnitude(&self) -> f64 {
+        f64::sqrt(self.x().powi(2) + self.y().powi(2))
     }
 }
 
@@ -118,11 +103,23 @@ impl<T: Copy> Vec3<T> {
         unsafe { *new.inner.get_unchecked_mut(2) = value }
         new
     }
+
+    pub fn map<U: Copy>(&self, f: impl Fn(T) -> U) -> Vec3<U> {
+        Vec3::new(f(self.x()), f(self.y()), f(self.z()))
+    }
 }
 
 impl Vec3<f64> {
     pub fn floor(&self) -> Vec3<i32> {
-        Vec3::new(self.x() as i32, self.y() as i32, self.z() as i32)
+        Vec3::new(
+            self.x().floor() as i32,
+            self.y().floor() as i32,
+            self.z().floor() as i32,
+        )
+    }
+
+    pub fn magnitude(&self) -> f64 {
+        f64::sqrt(self.x().powi(2) + self.y().powi(2) + self.z().powi(2))
     }
 }
 

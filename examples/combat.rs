@@ -66,9 +66,12 @@ fn on_attack(event: Arc<PlayerAttackEntityEvent>) -> ActorResult<()> {
     event
         .player
         .send_message(Texts::literal("HI YOU HIT AN ENTITY WOW"))?;
+
+    let dir = event.player.direction()?.to_3d_direction().map(|x| x / 2.0);
+
     event
         .entity
-        .set(EntityComponents::VELOCITY, Vec3::new(0.1, 0.4, 0.1))?;
+        .set(EntityComponents::VELOCITY, dir.with_y(0.3))?;
 
     event.entity.set(EntityComponents::GRAVITY_ENABLED, true)?;
     event.entity.set(EntityComponents::PHYSICS_ENABLED, true)?;

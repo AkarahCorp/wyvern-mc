@@ -148,8 +148,12 @@ impl DimensionData {
     #[GetBlock]
     #[doc = "Returns a copy of the block state at the provided coordinates."]
     pub fn get_block(&mut self, position: Vec3<i32>) -> ActorResult<BlockState> {
-        let chunk = Vec2::new(position.x() / 16, position.z() / 16);
-        let pos_in_chunk = Vec3::new(position.x() % 16, position.y(), position.z() % 16);
+        let chunk = Vec2::new(position.x().div_euclid(16), position.z().div_euclid(16));
+        let pos_in_chunk = Vec3::new(
+            position.x().rem_euclid(16),
+            position.y(),
+            position.z().rem_euclid(16),
+        );
 
         self.try_initialize_chunk(&chunk)?;
 
