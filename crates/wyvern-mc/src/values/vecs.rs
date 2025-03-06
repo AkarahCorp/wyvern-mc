@@ -37,13 +37,16 @@ impl<T: Copy> Vec2<T> {
 }
 
 impl Vec2<f32> {
-    // TODO: fix weirdness with direction calculation
     pub fn to_3d_direction(&self) -> Vec3<f64> {
-        Vec3::new(
-            self.x().cos() as f64 * self.y().cos() as f64,
-            self.y().cos() as f64,
-            self.x().sin() as f64 * self.y().cos() as f64,
-        )
+        let yaw = (self.inner[0].to_radians() as f64) + 90.0;
+        let pitch = self.inner[1].to_radians() as f64;
+
+        let cos_pitch = pitch.cos();
+        let sin_pitch = pitch.sin();
+        let cos_yaw = yaw.cos();
+        let sin_yaw = yaw.sin();
+
+        Vec3::new(cos_pitch * cos_yaw, sin_pitch, cos_pitch * sin_yaw)
     }
 }
 

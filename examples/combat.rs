@@ -76,6 +76,5 @@ fn on_attack(event: Arc<PlayerAttackEntityEvent>) -> ActorResult<()> {
     event.entity.set(EntityComponents::GRAVITY_ENABLED, true)?;
     event.entity.set(EntityComponents::PHYSICS_ENABLED, true)?;
 
-    log::error!("{:?}", event.entity.get(EntityComponents::POSITION));
     Ok(())
 }
