@@ -43,5 +43,6 @@ fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
 
 fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
     event.new_dimension.set(id![example:root]);
+    event.player.set_creative()?;
     Ok(())
 }

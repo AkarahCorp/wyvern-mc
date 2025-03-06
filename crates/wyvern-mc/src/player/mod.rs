@@ -102,6 +102,27 @@ impl ConnectionData {
             Stage::Transfer => Ok(()),
         }
     }
+
+    #[SetCreative]
+    pub fn set_creative(&mut self) -> ActorResult<()> {
+        self.associated_data.gamemode = Gamemode::Creative;
+        self.write_packet(GameEventS2CPlayPacket {
+            event: GameEvent::ChangeGameMode,
+            value: 1.0,
+        });
+        Ok(())
+    }
+
+    #[SetSurvival]
+    pub fn set_survival(&mut self) -> ActorResult<()> {
+        self.associated_data.gamemode = Gamemode::Survival;
+        self.write_packet(GameEventS2CPlayPacket {
+            event: GameEvent::ChangeGameMode,
+            value: 0.0,
+        });
+        Ok(())
+    }
+
     #[SetStage]
     pub fn set_stage(&mut self, stage: Stage) -> ActorResult<()> {
         *self.stage.lock().unwrap() = stage;

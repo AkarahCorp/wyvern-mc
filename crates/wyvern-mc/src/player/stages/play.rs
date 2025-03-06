@@ -3,8 +3,8 @@ use voxidian_protocol::{
         c2s::play::{BlockFace, C2SPlayPackets, InteractAction, PlayerStatus},
         s2c::play::{
             AddEntityS2CPlayPacket, ContainerSlotGroup, DisconnectS2CPlayPacket, GameEvent,
-            GameEventS2CPlayPacket, Hand, PlayerActionEntry, PlayerInfoUpdateS2CPlayPacket,
-            PongResponseS2CPlayPacket,
+            GameEventS2CPlayPacket, Gamemode, Hand, PlayerActionEntry,
+            PlayerInfoUpdateS2CPlayPacket, PongResponseS2CPlayPacket,
         },
     },
     value::{Angle, ProfileProperty, Text, TextComponent, VarInt},
@@ -57,18 +57,32 @@ impl ConnectionData {
                                         position: block,
                                     })?;
                                 }
+                                if this.associated_data.gamemode == Gamemode::Creative {
+                                    this.associated_data.dimension.as_ref().unwrap().set_block(
+                                        block,
+                                        BlockState::new(Id::constant("minecraft", "air")),
+                                    )?;
+                                    if let Some(sender) = this.sender.upgrade() {
+                                        this.connected_server.spawn_event(BreakBlockEvent {
+                                            player: Player { sender },
+                                            position: block,
+                                        })?;
+                                    }
+                                }
                             }
                             PlayerStatus::CancelledDigging => {}
                             PlayerStatus::FinishedDigging => {
-                                this.associated_data.dimension.as_ref().unwrap().set_block(
-                                    block,
-                                    BlockState::new(Id::constant("minecraft", "air")),
-                                )?;
-                                if let Some(sender) = this.sender.upgrade() {
-                                    this.connected_server.spawn_event(BreakBlockEvent {
-                                        player: Player { sender },
-                                        position: block,
-                                    })?;
+                                if this.associated_data.gamemode != Gamemode::Creative {
+                                    this.associated_data.dimension.as_ref().unwrap().set_block(
+                                        block,
+                                        BlockState::new(Id::constant("minecraft", "air")),
+                                    )?;
+                                    if let Some(sender) = this.sender.upgrade() {
+                                        this.connected_server.spawn_event(BreakBlockEvent {
+                                            player: Player { sender },
+                                            position: block,
+                                        })?;
+                                    }
                                 }
                             }
                             PlayerStatus::DropItemStack => {

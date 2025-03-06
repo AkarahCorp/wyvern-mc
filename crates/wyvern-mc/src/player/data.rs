@@ -7,7 +7,10 @@ use crate::{
     values::{Vec2, Vec3},
 };
 use voxidian_protocol::{
-    packet::{c2s::play::InputFlags, s2c::play::ScreenWindowKind},
+    packet::{
+        c2s::play::InputFlags,
+        s2c::play::{Gamemode, ScreenWindowKind},
+    },
     value::Uuid,
 };
 
@@ -36,6 +39,7 @@ pub struct PlayerData {
     pub(crate) held_slot: i16,
 
     pub(crate) cursor_item: ItemStack,
+    pub(crate) gamemode: Gamemode,
 }
 
 impl Default for PlayerData {
@@ -71,6 +75,7 @@ impl Default for PlayerData {
 
             cursor_item: ItemStack::air(),
             window_id: 0,
+            gamemode: Gamemode::Survival,
         }
     }
 }
