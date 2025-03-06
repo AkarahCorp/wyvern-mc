@@ -21,10 +21,10 @@ use crate::{
         RightClickEvent, StartBreakBlockEvent, SwapHandsEvent,
     },
     inventory::Inventory,
-    item::{ItemComponents, ItemStack},
+    item::{ITEM_REGISTRY, ItemComponents, ItemStack},
     player::{ConnectionData, Player},
     runtime::Runtime,
-    values::{Id, Vec2, Vec3, cell::Token},
+    values::{Id, Texts, Vec2, Vec3, cell::Token},
 };
 
 impl ConnectionData {
@@ -205,11 +205,15 @@ impl ConnectionData {
                     }
                     C2SPlayPackets::ChunkBatchReceived(_packet) => {}
                     C2SPlayPackets::SetCreativeModeSlot(packet) => {
-                        let stack = ItemStack::from(packet.new_item);
+                        let item_id = ITEM_REGISTRY.lookup(&packet.new_item.id).unwrap();
+                        let stack = ItemStack::from(packet.new_item)
+                            .with(ItemComponents::ITEM_MODEL, item_id.id.clone().into())
+                            .with(
+                                ItemComponents::ITEM_NAME,
+                                Texts::literal("Creative Mode Item").into(),
+                            );
 
-                        this.associated_data
-                            .inventory
-                            .set_slot(packet.slot as usize, stack)?;
+                        this.set_inv_slot(packet.slot as usize, stack.clone())?;
                     }
                     C2SPlayPackets::SetCarriedItem(packet) => {
                         this.associated_data.held_slot = packet.slot + 36;

@@ -1,6 +1,6 @@
 use voxidian_protocol::value::{
-    CustomData, Damage, DataComponents, ItemModel, ItemName, LengthPrefixVec, Lore, MaxDamage,
-    Nbt as PtcNbt, NbtElement, SlotData, Text, VarInt,
+    CustomData, Damage, DataComponentTypes, DataComponents, ItemModel, ItemName, LengthPrefixVec,
+    Lore, MaxDamage, Nbt as PtcNbt, NbtElement, SlotData, Text, VarInt,
 };
 
 use crate::{
@@ -13,21 +13,25 @@ use super::{ITEM_REGISTRY, ItemComponents, ItemStack};
 impl From<ItemStack> for SlotData {
     fn from(value: ItemStack) -> Self {
         let mut components: Vec<DataComponents> = Vec::new();
-
+        let mut filtered_components: Vec<DataComponentTypes> = Vec::new();
         if let Ok(c) = value.get(ItemComponents::DAMAGE) {
             components.push(DataComponents::Damage(Damage {
                 damage: VarInt::new(c),
             }));
+            filtered_components.push(DataComponentTypes::Damage);
         }
         if let Ok(amount) = value.get(ItemComponents::MAX_DAMAGE) {
             components.push(DataComponents::MaxDamage(MaxDamage {
                 amount: VarInt::new(amount),
             }));
+            filtered_components.push(DataComponentTypes::MaxDamage);
         }
         if let Ok(asset) = value.get(ItemComponents::ITEM_MODEL) {
             components.push(DataComponents::ItemModel(ItemModel {
                 asset: asset.into(),
             }));
+
+            filtered_components.push(DataComponentTypes::ItemModel);
         }
         if let Ok(data) = value.get(ItemComponents::CUSTOM_DATA) {
             if let NbtElement::Compound(root) = NbtElement::from(Nbt::Compound(data)) {
@@ -37,12 +41,15 @@ impl From<ItemStack> for SlotData {
                         root,
                     },
                 }));
+                filtered_components.push(DataComponentTypes::CustomData);
             }
         }
         if let Ok(name) = value.get(ItemComponents::ITEM_NAME) {
             components.push(DataComponents::ItemName(ItemName {
                 name: Into::<Text>::into(name).to_nbt(),
             }));
+
+            filtered_components.push(DataComponentTypes::ItemName);
         }
         if let Ok(lore) = value.get(ItemComponents::LORE) {
             components.push(DataComponents::Lore(Lore {
@@ -54,17 +61,25 @@ impl From<ItemStack> for SlotData {
                     LengthPrefixVec::from(vec)
                 },
             }));
+
+            filtered_components.push(DataComponentTypes::Lore);
         }
 
         let count = value
             .get(ItemComponents::ITEM_COUNT)
             .expect("All items must have an ItemComponents::ITEM_COUNT component")
             as i32;
+
+        let removed_components = DataComponentTypes::all_types()
+            .into_iter()
+            .filter(|x| !filtered_components.contains(x))
+            .collect();
+
         SlotData {
             id: ITEM_REGISTRY.get_entry(&value.id.into()).unwrap(),
             count: count.into(),
             components,
-            removed_components: Vec::new(),
+            removed_components,
         }
     }
 }
