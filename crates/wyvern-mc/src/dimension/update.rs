@@ -2,10 +2,13 @@ use voxidian_protocol::packet::s2c::play::EntityPositionSyncS2CPlayPacket;
 
 use crate::{
     actors::ActorResult,
+    blocks::Blocks,
     components::{DataComponentHolder, DataComponentPatch},
-    dimension::DimensionData,
+    dimension::{Dimension, DimensionData},
+    entities::Entity,
     runtime::Runtime,
     server::Server,
+    values::Vec3,
 };
 
 use super::EntityComponents;
@@ -54,19 +57,46 @@ impl DimensionData {
     }
 
     pub fn auto_apply_entity_properties(&mut self) -> ActorResult<()> {
-        for entity in self.entities.iter_mut().map(|x| x.1) {
-            log::error!("e: {:?}", entity.get(EntityComponents::UUID));
-            if let Ok(true) = entity.components.get(EntityComponents::PHYSICS_ENABLED) {
-                if let Ok(velocity) = entity.components.get(EntityComponents::VELOCITY) {
-                    let pos = entity.get(EntityComponents::POSITION)?;
-                    entity.set(
-                        EntityComponents::POSITION,
-                        pos.with_x(pos.x() + velocity.x())
+        for entity in &self.entities {
+            let entity = Entity {
+                dimension: Dimension {
+                    sender: self.sender.clone(),
+                },
+                uuid: *entity.0,
+            };
+            let dimension = Dimension {
+                sender: self.sender.clone(),
+            };
+            Runtime::spawn_task(move || {
+                if let Ok(true) = entity.get(EntityComponents::PHYSICS_ENABLED) {
+                    if let Ok(velocity) = entity.get(EntityComponents::VELOCITY) {
+                        let pos = entity.get(EntityComponents::POSITION)?;
+                        let new_pos = pos
+                            .with_x(pos.x() + velocity.x())
                             .with_y(pos.y() + velocity.y())
-                            .with_z(pos.z() + velocity.z()),
-                    );
+                            .with_z(pos.z() + velocity.z());
+                        if dimension
+                            .get_block(Vec3::new(
+                                new_pos.x().floor() as i32,
+                                new_pos.y().floor() as i32,
+                                new_pos.z().floor() as i32,
+                            ))?
+                            .name()
+                            == &Blocks::AIR
+                        {
+                            entity.set(EntityComponents::POSITION, new_pos)?;
+                        } else {
+                            entity.set(EntityComponents::VELOCITY, Vec3::new(0.0, 0.0, 0.0))?;
+                        }
+                    }
+
+                    if let Ok(true) = entity.get(EntityComponents::GRAVITY_ENABLED) {
+                        let vel = entity.get(EntityComponents::VELOCITY)?;
+                        entity.set(EntityComponents::VELOCITY, vel.with_y(vel.y() - 0.08))?;
+                    }
                 }
-            }
+                Ok(())
+            });
         }
         Ok(())
     }

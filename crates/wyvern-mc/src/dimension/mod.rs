@@ -221,6 +221,7 @@ impl DimensionData {
         components.set(EntityComponents::ENTITY_TYPE, entity_type.clone());
         components.set(EntityComponents::POSITION, Vec3::new(0.0, 0.0, 0.0));
         components.set(EntityComponents::DIRECTION, Vec2::new(0.0, 0.0));
+        components.set(EntityComponents::VELOCITY, Vec3::new(0.0, 0.0, 0.0));
 
         self.entities.insert(
             uuid,
@@ -278,6 +279,7 @@ impl DimensionData {
         );
         components.set(EntityComponents::POSITION, Vec3::new(0.0, 0.0, 0.0));
         components.set(EntityComponents::DIRECTION, Vec2::new(0.0, 0.0));
+        components.set(EntityComponents::VELOCITY, Vec3::new(0.0, 0.0, 0.0));
 
         self.entities.insert(
             uuid,

@@ -7,6 +7,7 @@ use wyvern_mc::{
     entities::EntityComponents,
     events::{DimensionCreateEvent, PlayerAttackEntityEvent, PlayerJoinEvent, ServerStartEvent},
     id,
+    runtime::Runtime,
     server::Server,
     values::{Texts, Vec3},
 };
@@ -41,14 +42,23 @@ fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
         }
     }
 
-    let entity = event.dimension.spawn_entity(id![minecraft:zombie])?;
-    entity.set(EntityComponents::POSITION, Vec3::new(3.0, 1.0, 3.0))?;
-    entity.set(EntityComponents::PHYSICS_ENABLED, true)?;
     Ok(())
 }
 
 fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
     event.new_dimension.set(id![example:root]);
+    event.player.teleport(Vec3::new(0.0, 1.0, 0.0))?;
+
+    Runtime::spawn_task(move || {
+        let entity = event
+            .player
+            .dimension()?
+            .spawn_entity(id![minecraft:zombie])?;
+        entity.set(EntityComponents::POSITION, Vec3::new(3.0, 1.0, 3.0))?;
+        entity.set(EntityComponents::PHYSICS_ENABLED, false)?;
+        Ok(())
+    });
+
     Ok(())
 }
 
@@ -58,7 +68,11 @@ fn on_attack(event: Arc<PlayerAttackEntityEvent>) -> ActorResult<()> {
         .send_message(Texts::literal("HI YOU HIT AN ENTITY WOW"))?;
     event
         .entity
-        .set(EntityComponents::VELOCITY, Vec3::new(0.0, 0.1, 0.0))?;
+        .set(EntityComponents::VELOCITY, Vec3::new(0.0, 0.4, 0.0))?;
+
+    event.entity.set(EntityComponents::GRAVITY_ENABLED, true)?;
+    event.entity.set(EntityComponents::PHYSICS_ENABLED, true)?;
+
     log::error!("{:?}", event.entity.get(EntityComponents::POSITION));
     Ok(())
 }
