@@ -54,7 +54,7 @@ fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
         }
     }
 
-    let mut entity = event.dimension.spawn_entity(Entities::ZOMBIE)?;
+    let entity = event.dimension.spawn_entity(Entities::ZOMBIE)?;
     entity.set(EntityComponents::POSITION, Vec3::new(1.0, 0.0, 2.0))?;
     entity.set(EntityComponents::DIRECTION, Vec2::new(58.0, 32.5))?;
     Ok(())
@@ -97,7 +97,7 @@ fn on_tick(event: Arc<ServerTickEvent>) -> ActorResult<()> {
 
         player.send_action_bar(Texts::literal(format!("Clicks: {:?}", count)))?;
 
-        for mut entity in player.dimension()?.entities()? {
+        for entity in player.dimension()?.entities()? {
             entity.set(
                 EntityComponents::POSITION,
                 Vec3::new(

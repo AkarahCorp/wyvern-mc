@@ -19,6 +19,14 @@ impl EntityComponents {
         DataComponentType::new(id![minecraft:direction]);
     pub const UUID: DataComponentType<Uuid> = DataComponentType::new(id![minecraft:uuid]);
     pub const ENTITY_ID: DataComponentType<i32> = DataComponentType::new(id![minecraft:entity_id]);
+
+    pub const VELOCITY: DataComponentType<Vec3<f64>> =
+        DataComponentType::new(id![minecraft:velocity]);
+    pub const PHYSICS_ENABLED: DataComponentType<bool> =
+        DataComponentType::new(id![minecraft:physics]);
+    pub const GRAVITY_ENABLED: DataComponentType<bool> =
+        DataComponentType::new(id![minecraft:gravity]);
+    pub const DRAG_ENABLED: DataComponentType<bool> = DataComponentType::new(id![minecraft:drag]);
 }
 
 impl DataComponentHolder for EntityData {

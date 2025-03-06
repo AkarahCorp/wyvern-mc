@@ -1,8 +1,11 @@
 use voxidian_protocol::packet::s2c::play::EntityPositionSyncS2CPlayPacket;
 
 use crate::{
-    actors::ActorResult, components::DataComponentPatch, dimension::DimensionData,
-    runtime::Runtime, server::Server,
+    actors::ActorResult,
+    components::{DataComponentHolder, DataComponentPatch},
+    dimension::DimensionData,
+    runtime::Runtime,
+    server::Server,
 };
 
 use super::EntityComponents;
@@ -51,6 +54,20 @@ impl DimensionData {
     }
 
     pub fn auto_apply_entity_properties(&mut self) -> ActorResult<()> {
+        for entity in self.entities.iter_mut().map(|x| x.1) {
+            log::error!("e: {:?}", entity.get(EntityComponents::UUID));
+            if let Ok(true) = entity.components.get(EntityComponents::PHYSICS_ENABLED) {
+                if let Ok(velocity) = entity.components.get(EntityComponents::VELOCITY) {
+                    let pos = entity.get(EntityComponents::POSITION)?;
+                    entity.set(
+                        EntityComponents::POSITION,
+                        pos.with_x(pos.x() + velocity.x())
+                            .with_y(pos.y() + velocity.y())
+                            .with_z(pos.z() + velocity.z()),
+                    );
+                }
+            }
+        }
         Ok(())
     }
 }

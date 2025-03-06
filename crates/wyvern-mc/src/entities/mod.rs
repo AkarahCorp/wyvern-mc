@@ -45,7 +45,7 @@ impl Entity {
     }
 
     pub fn set<T: ComponentElement>(
-        &mut self,
+        &self,
         component: DataComponentType<T>,
         value: T,
     ) -> ActorResult<()> {

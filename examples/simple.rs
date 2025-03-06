@@ -118,7 +118,7 @@ fn dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
 fn on_server_tick(event: Arc<ServerTickEvent>) -> ActorResult<()> {
     for dim in event.server.dimensions()? {
         log::debug!("Dim players: {:?}", dim.players());
-        for mut entity in dim.entities()? {
+        for entity in dim.entities()? {
             let new_pos = Vec3::new(
                 rand::random::<f64>() * 128.0,
                 rand::random::<f64>() * 16.0,
