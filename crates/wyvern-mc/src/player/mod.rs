@@ -13,12 +13,16 @@ use voxidian_protocol::{
     packet::{
         PacketBuf, PacketEncode, PrefixedPacketEncode, Stage,
         processing::{PacketProcessing, PrivateKey, PublicKey},
-        s2c::play::{
-            AddEntityS2CPlayPacket, ContainerSetSlotS2CPlayPacket, ForgetLevelChunkS2CPlayPacket,
-            GameEvent, GameEventS2CPlayPacket, Gamemode, OpenScreenS2CPlayPacket,
-            PlayerPositionS2CPlayPacket, PlayerRotationS2CPlayPacket, RespawnDataKept,
-            RespawnS2CPlayPacket, ScreenWindowKind, SoundCategory, SoundEntityS2CPlayPacket,
-            SystemChatS2CPlayPacket, TeleportFlags,
+        s2c::{
+            config::DisconnectS2CConfigPacket,
+            login::LoginDisconnectS2CLoginPacket,
+            play::{
+                AddEntityS2CPlayPacket, ContainerSetSlotS2CPlayPacket, DisconnectS2CPlayPacket,
+                ForgetLevelChunkS2CPlayPacket, GameEvent, GameEventS2CPlayPacket, Gamemode,
+                OpenScreenS2CPlayPacket, PlayerPositionS2CPlayPacket, PlayerRotationS2CPlayPacket,
+                RespawnDataKept, RespawnS2CPlayPacket, ScreenWindowKind, SoundCategory,
+                SoundEntityS2CPlayPacket, SystemChatS2CPlayPacket, TeleportFlags,
+            },
         },
     },
     registry::RegEntry,
@@ -34,7 +38,7 @@ use crate::{
     item::ItemStack,
     runtime::Runtime,
     server::Server,
-    values::{Sound, Text, Vec2, Vec3},
+    values::{Sound, Text, TextKinds, Vec2, Vec3},
 };
 
 pub mod chunkload;
@@ -68,6 +72,36 @@ pub(crate) struct MojauthData {
 
 #[message(Player, PlayerMessage)]
 impl ConnectionData {
+    #[Disconnect]
+    pub(crate) fn disconnect_internal(&mut self, message: TextKinds) -> ActorResult<()> {
+        let stage = *self.stage.lock().unwrap();
+        match stage {
+            Stage::Handshake => Ok(()),
+            Stage::Status => Ok(()),
+            Stage::Login => {
+                let text: PtcText = message.into();
+                self.write_packet(LoginDisconnectS2CLoginPacket {
+                    reason: text.to_json(),
+                });
+                Ok(())
+            }
+            Stage::Config => {
+                let text: PtcText = message.into();
+                self.write_packet(DisconnectS2CConfigPacket {
+                    reason: text.to_nbt(),
+                });
+                Ok(())
+            }
+            Stage::Play => {
+                let text: PtcText = message.into();
+                self.write_packet(DisconnectS2CPlayPacket {
+                    reason: text.to_nbt(),
+                });
+                Ok(())
+            }
+            Stage::Transfer => Ok(()),
+        }
+    }
     #[SetStage]
     pub fn set_stage(&mut self, stage: Stage) -> ActorResult<()> {
         *self.stage.lock().unwrap() = stage;
@@ -421,6 +455,10 @@ impl Player {
 
     pub fn send_action_bar(&self, text: impl Text) -> ActorResult<()> {
         self.send_action_bar_component(text.into())
+    }
+
+    pub fn kick(&mut self, text: impl Text) -> ActorResult<()> {
+        self.disconnect_internal(text.into())
     }
 }
 
