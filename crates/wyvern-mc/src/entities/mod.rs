@@ -62,6 +62,7 @@ pub struct EntityType;
 #[allow(unused)]
 #[derive(Debug, Clone)]
 pub struct EntityData {
+    pub(crate) last_components: DataComponentMap,
     pub(crate) components: DataComponentMap,
 }
 

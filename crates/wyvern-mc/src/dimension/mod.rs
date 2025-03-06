@@ -207,7 +207,13 @@ impl DimensionData {
         components.set(EntityComponents::POSITION, Vec3::new(0.0, 0.0, 0.0));
         components.set(EntityComponents::DIRECTION, Vec2::new(0.0, 0.0));
 
-        self.entities.insert(uuid, EntityData { components });
+        self.entities.insert(
+            uuid,
+            EntityData {
+                last_components: DataComponentMap::new(),
+                components,
+            },
+        );
 
         let dim = Dimension {
             sender: self.sender.clone(),
@@ -258,7 +264,13 @@ impl DimensionData {
         components.set(EntityComponents::POSITION, Vec3::new(0.0, 0.0, 0.0));
         components.set(EntityComponents::DIRECTION, Vec2::new(0.0, 0.0));
 
-        self.entities.insert(uuid, EntityData { components });
+        self.entities.insert(
+            uuid,
+            EntityData {
+                last_components: DataComponentMap::new(),
+                components,
+            },
+        );
 
         let dim = Dimension {
             sender: self.sender.clone(),

@@ -48,6 +48,10 @@ impl DataComponentMap {
         self.inner.contains_key(key)
     }
 
+    pub fn contains_type<T>(&self, ty: &DataComponentType<T>) -> bool {
+        self.inner.contains_key(ty.name())
+    }
+
     pub fn keys(&self) -> Vec<&Id> {
         self.inner.keys().collect()
     }
