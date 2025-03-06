@@ -3,7 +3,7 @@ use voxidian_protocol::packet::s2c::play::EntityPositionSyncS2CPlayPacket;
 use crate::{
     actors::ActorResult,
     blocks::Blocks,
-    components::{DataComponentHolder, DataComponentPatch},
+    components::DataComponentPatch,
     dimension::{Dimension, DimensionData},
     entities::Entity,
     runtime::Runtime,

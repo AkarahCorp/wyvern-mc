@@ -68,7 +68,7 @@ fn on_attack(event: Arc<PlayerAttackEntityEvent>) -> ActorResult<()> {
         .send_message(Texts::literal("HI YOU HIT AN ENTITY WOW"))?;
     event
         .entity
-        .set(EntityComponents::VELOCITY, Vec3::new(0.0, 0.4, 0.0))?;
+        .set(EntityComponents::VELOCITY, Vec3::new(0.1, 0.4, 0.1))?;
 
     event.entity.set(EntityComponents::GRAVITY_ENABLED, true)?;
     event.entity.set(EntityComponents::PHYSICS_ENABLED, true)?;

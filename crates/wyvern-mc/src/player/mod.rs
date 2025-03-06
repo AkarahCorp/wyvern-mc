@@ -297,6 +297,11 @@ impl ConnectionData {
         Ok(self.associated_data.last_position)
     }
 
+    #[Direction]
+    pub fn direction(&self) -> ActorResult<Vec2<f32>> {
+        Ok(self.associated_data.last_direction)
+    }
+
     #[SendMessage]
     pub(crate) fn send_message_component(&mut self, message: TextComponent) -> ActorResult<()> {
         self.write_packet(SystemChatS2CPlayPacket {
