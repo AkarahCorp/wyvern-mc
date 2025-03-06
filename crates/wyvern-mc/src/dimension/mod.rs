@@ -99,8 +99,12 @@ impl DimensionData {
     #[SetBlock]
     #[doc = "Sets a block in this dimension at the given coordinates to the provided block state."]
     pub fn set_block(&mut self, position: Vec3<i32>, block_state: BlockState) -> ActorResult<()> {
-        let chunk_pos = Vec2::new(position.x() / 16, position.z() / 16);
-        let pos_in_chunk = Vec3::new(position.x() % 16, position.y(), position.z() % 16);
+        let chunk_pos = Vec2::new(position.x().div_euclid(16), position.z().div_euclid(16));
+        let pos_in_chunk = Vec3::new(
+            position.x().rem_euclid(16),
+            position.y(),
+            position.z().rem_euclid(16),
+        );
 
         self.try_initialize_chunk(&chunk_pos)?;
 

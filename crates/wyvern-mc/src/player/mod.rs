@@ -108,6 +108,33 @@ impl ConnectionData {
             .collect::<Vec<_>>())
     }
 
+    #[Teleport]
+    pub fn teleport(&mut self, location: Vec3<f64>) -> ActorResult<()> {
+        self.write_packet(PlayerPositionS2CPlayPacket {
+            teleport_id: VarInt::from(18384),
+            x: location.x(),
+            y: location.y(),
+            z: location.z(),
+            vx: 0.0,
+            vy: 0.0,
+            vz: 0.0,
+            adyaw_deg: 0.0,
+            adpitch_deg: 0.0,
+            flags: TeleportFlags {
+                relative_x: false,
+                relative_y: false,
+                relative_z: false,
+                relative_pitch: true,
+                relative_yaw: true,
+                relative_vx: true,
+                relative_vy: true,
+                relative_vz: true,
+                rotate_velocity: false,
+            },
+        });
+        Ok(())
+    }
+
     #[ChangeDimension]
     pub fn set_dimension(&mut self, dimension: Dimension) -> ActorResult<()> {
         for chunk in self.associated_data.loaded_chunks.clone() {

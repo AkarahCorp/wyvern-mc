@@ -28,5 +28,9 @@ name = "terrain"
 path = "./terrain.rs"
 
 [[example]]
+name = "parkour"
+path = "./parkour.rs"
+
+[[example]]
 name = "empty"
 path = "./empty.rs"

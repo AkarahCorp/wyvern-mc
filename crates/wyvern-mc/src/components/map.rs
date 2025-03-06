@@ -45,7 +45,7 @@ impl DataComponentMap {
     }
 
     pub fn contains(&self, key: &Id) -> bool {
-        self.inner.contains_key(&key)
+        self.inner.contains_key(key)
     }
 
     pub fn keys(&self) -> Vec<&Id> {
