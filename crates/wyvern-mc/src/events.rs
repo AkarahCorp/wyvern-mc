@@ -63,6 +63,7 @@ event_bus! {
     on_chat: ChatMessageEvent
     on_right_click: RightClickEvent
     on_attack_entity: PlayerAttackEntityEvent
+    on_attack_player: PlayerAttackPlayerEvent
 }
 
 impl Debug for EventBus {
@@ -175,6 +176,12 @@ pub struct PlayerJoinEvent {
 
 #[derive(Debug, Clone)]
 pub struct PlayerAttackEntityEvent {
-    pub player: Player,
-    pub entity: Entity,
+    pub attacker: Player,
+    pub victim: Entity,
+}
+
+#[derive(Debug, Clone)]
+pub struct PlayerAttackPlayerEvent {
+    pub attacker: Player,
+    pub victim: Player,
 }

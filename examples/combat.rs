@@ -5,7 +5,10 @@ use wyvern_mc::{
     blocks::{BlockComponents, BlockState},
     components::DataComponentHolder,
     entities::{AttributeContainer, Attributes, EntityComponents},
-    events::{DimensionCreateEvent, PlayerAttackEntityEvent, PlayerJoinEvent, ServerStartEvent},
+    events::{
+        DimensionCreateEvent, PlayerAttackEntityEvent, PlayerAttackPlayerEvent, PlayerJoinEvent,
+        ServerStartEvent,
+    },
     id,
     inventory::Inventory,
     item::{ItemComponents, ItemStack},
@@ -23,6 +26,7 @@ fn main() {
         .event(on_dim_init)
         .event(on_join)
         .event(on_attack)
+        .event(on_attack_player)
         .registries(|registries| {
             registries.add_defaults();
         })
@@ -90,16 +94,28 @@ fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
 
 fn on_attack(event: Arc<PlayerAttackEntityEvent>) -> ActorResult<()> {
     let dir = event
-        .player
+        .attacker
         .get(PlayerComponents::DIRECTION)?
         .to_3d_direction()
         .map(|x| x / 2.0);
 
     event
-        .entity
+        .victim
         .set(EntityComponents::VELOCITY, dir.with_y(0.3))?;
 
-    event.player.play_sound(Sounds::ENTITY_PLAYER_ATTACK_CRIT)?;
+    event
+        .attacker
+        .play_sound(Sounds::ENTITY_PLAYER_ATTACK_CRIT)?;
+
+    Ok(())
+}
+
+fn on_attack_player(event: Arc<PlayerAttackPlayerEvent>) -> ActorResult<()> {
+    event
+        .attacker
+        .play_sound(Sounds::ENTITY_PLAYER_ATTACK_CRIT)?;
+
+    event.victim.play_sound(Sounds::ENTITY_PLAYER_HURT)?;
 
     Ok(())
 }

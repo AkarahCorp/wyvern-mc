@@ -17,13 +17,14 @@ use crate::{
     entities::EntityComponents,
     events::{
         BreakBlockEvent, ChangeHeldSlotEvent, ChatMessageEvent, DropItemEvent, PlaceBlockEvent,
-        PlayerAttackEntityEvent, PlayerCommandEvent, PlayerJoinEvent, PlayerMoveEvent,
-        RightClickEvent, StartBreakBlockEvent, SwapHandsEvent,
+        PlayerAttackEntityEvent, PlayerAttackPlayerEvent, PlayerCommandEvent, PlayerJoinEvent,
+        PlayerMoveEvent, RightClickEvent, StartBreakBlockEvent, SwapHandsEvent,
     },
     inventory::Inventory,
     item::{ITEM_REGISTRY, ItemComponents, ItemStack},
     player::{ConnectionData, Player, PlayerComponents},
     runtime::Runtime,
+    server::Server,
     values::{Id, Texts, Vec2, Vec3, cell::Token},
 };
 
@@ -360,20 +361,37 @@ impl ConnectionData {
                         this.associated_data.cursor_item = ItemStack::air();
                         this.associated_data.screen = None;
                     }
-                    C2SPlayPackets::Interact(packet) => match packet.action {
-                        InteractAction::Interact(_hand) => {}
-                        InteractAction::Attack => {
-                            if let Some(sender) = this.sender.upgrade() {
-                                this.connected_server.spawn_event(PlayerAttackEntityEvent {
-                                    player: Player { sender },
-                                    entity: this
+                    C2SPlayPackets::Interact(packet) => {
+                        let Some(sender) = this.sender.upgrade() else {
+                            return Ok(());
+                        };
+                        let player = Player {
+                            sender: sender.clone(),
+                        };
+                        Runtime::spawn_task(move || {
+                            match packet.action {
+                                InteractAction::Interact(_hand) => {}
+                                InteractAction::Attack => {
+                                    let victim = player
                                         .dimension()?
-                                        .get_entity_by_id(packet.entity_id.as_i32())?,
-                                })?;
+                                        .get_entity_by_id(packet.entity_id.into())?;
+                                    if let Ok(victim) = Server::get()?.player(*victim.uuid()) {
+                                        Server::get()?.spawn_event(PlayerAttackPlayerEvent {
+                                            attacker: Player { sender },
+                                            victim,
+                                        })?;
+                                    } else {
+                                        Server::get()?.spawn_event(PlayerAttackEntityEvent {
+                                            attacker: Player { sender },
+                                            victim,
+                                        })?;
+                                    }
+                                }
+                                InteractAction::InteractAt(_, _, _, _hand) => {}
                             }
-                        }
-                        InteractAction::InteractAt(_, _, _, _hand) => {}
-                    },
+                            Ok(())
+                        });
+                    }
                     packet => {
                         log::warn!(
                             "Received unknown play packet, this packet will be ignored. {:?}",
