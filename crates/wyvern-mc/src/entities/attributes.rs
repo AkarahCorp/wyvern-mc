@@ -9,7 +9,7 @@ use crate::{
     id,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct AttributeContainer {
     #[allow(unused)]
     attributes: DataComponentMap,

@@ -15,10 +15,19 @@ impl DataComponentPatch {
     ) -> DataComponentPatch {
         let mut added_fields = DataComponentMap::new();
         for key in new_form.keys() {
+            let Some(new_form_value) = new_form.inner.get(key) else {
+                continue;
+            };
+            let Some(prototype_value) = prototype.inner.get(key) else {
+                continue;
+            };
+
             // TODO: allow equality checking in CompnentElement
-            added_fields
-                .inner
-                .insert(key.clone(), new_form.inner.get(key).unwrap().clone());
+            if new_form_value.compare(prototype_value.as_ref()) {
+                added_fields
+                    .inner
+                    .insert(key.clone(), new_form.inner.get(key).unwrap().clone());
+            }
         }
         let mut removed_fields = Vec::new();
         for key in prototype.keys() {

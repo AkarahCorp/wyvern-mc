@@ -15,6 +15,21 @@ pub struct DataComponentMap {
     pub(crate) inner: FxHashMap<Id, Arc<dyn ComponentElement>>,
 }
 
+impl PartialEq for DataComponentMap {
+    fn eq(&self, other: &Self) -> bool {
+        if self.inner.keys().collect::<Vec<_>>() != other.inner.keys().collect::<Vec<_>>() {
+            return false;
+        }
+        for key in self.inner.keys() {
+            let other_value = other.inner.get(key).unwrap();
+            if !self.inner.get(key).unwrap().compare(other_value.as_ref()) {
+                return false;
+            }
+        }
+        true
+    }
+}
+
 impl DataComponentMap {
     pub fn new() -> DataComponentMap {
         DataComponentMap {

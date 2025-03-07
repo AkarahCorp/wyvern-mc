@@ -2,7 +2,7 @@ use voxidian_protocol::value::{Text as PtcText, TextColour, TextComponent};
 
 use super::{Text, TextMeta};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TextKinds {
     Group(Vec<TextKinds>),
     Literal(TextLiteral),
@@ -29,7 +29,7 @@ impl From<TextKinds> for PtcText {
         }
     }
 }
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TextLiteral {
     pub(crate) content: String,
     pub(crate) meta: TextMeta,
