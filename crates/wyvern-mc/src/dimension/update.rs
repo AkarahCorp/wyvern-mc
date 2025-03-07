@@ -96,11 +96,12 @@ impl DimensionData {
                         entity.set(EntityComponents::POSITION, pos)?;
                         entity.set(EntityComponents::VELOCITY, velocity)?;
                     }
-
-                    if let Ok(true) = entity.get(EntityComponents::GRAVITY_ENABLED) {
-                        let vel = entity.get(EntityComponents::VELOCITY)?;
-                        entity.set(EntityComponents::VELOCITY, vel.with_y(vel.y() - 0.08))?;
-                    }
+                }
+                if let Ok(true) = entity.get(EntityComponents::GRAVITY_ENABLED) {
+                    let vel = entity
+                        .get(EntityComponents::VELOCITY)
+                        .unwrap_or(Vec3::new(0.0, 0.0, 0.0));
+                    entity.set(EntityComponents::VELOCITY, vel.with_y(vel.y() - 0.08))?;
                 }
                 Ok(())
             });

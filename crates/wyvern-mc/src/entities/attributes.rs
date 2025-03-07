@@ -7,7 +7,7 @@ use voxidian_protocol::{
 
 use crate::{
     components::{DataComponentHolder, DataComponentMap, DataComponentType},
-    id,
+    values::Id,
     values::Registry,
 };
 
@@ -64,11 +64,4 @@ impl Default for AttributeContainer {
 }
 
 pub struct Attributes;
-impl Attributes {
-    pub const MAX_HEALTH: DataComponentType<f64> =
-        DataComponentType::new(id![minecraft:max_health]);
-    pub const ATTACK_SPEED: DataComponentType<f64> =
-        DataComponentType::new(id![minecraft:attack_speed]);
-    pub const FOLLOW_RANGE: DataComponentType<f64> =
-        DataComponentType::new(id![minecraft:follow_range]);
-}
+wyvern_macros::generate_attrs_types!();

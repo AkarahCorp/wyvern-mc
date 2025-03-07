@@ -63,21 +63,25 @@ fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
             )
             .with(ItemComponents::ITEM_MODEL, id![minecraft:diamond_sword]),
     )?;
-    Runtime::spawn_task(move || {
-        event.player.set(
-            PlayerComponents::ATTRIBUTES,
-            AttributeContainer::new()
-                .with(Attributes::MAX_HEALTH, 30.0)
-                .with(Attributes::ATTACK_SPEED, 100.0)
-                .with(Attributes::FOLLOW_RANGE, 0.0),
-        )?;
 
+    event.player.set(
+        PlayerComponents::ATTRIBUTES,
+        AttributeContainer::new()
+            .with(Attributes::MAX_HEALTH, 30.0)
+            .with(Attributes::ATTACK_SPEED, 100.0)
+            .with(Attributes::FOLLOW_RANGE, 0.0)
+            .with(Attributes::ENTITY_INTERACTION_RANGE, 20.0),
+    )?;
+
+    Runtime::spawn_task(move || {
         let entity = event
             .player
             .dimension()?
             .spawn_entity(id![minecraft:zombie])?;
         entity.set(EntityComponents::POSITION, Vec3::new(3.0, 10.0, 3.0))?;
         entity.set(EntityComponents::PHYSICS_ENABLED, true)?;
+        entity.set(EntityComponents::GRAVITY_ENABLED, true)?;
+
         Ok(())
     });
 
@@ -94,9 +98,6 @@ fn on_attack(event: Arc<PlayerAttackEntityEvent>) -> ActorResult<()> {
     event
         .entity
         .set(EntityComponents::VELOCITY, dir.with_y(0.3))?;
-
-    event.entity.set(EntityComponents::GRAVITY_ENABLED, true)?;
-    event.entity.set(EntityComponents::PHYSICS_ENABLED, true)?;
 
     event.player.play_sound(Sounds::ENTITY_PLAYER_ATTACK_CRIT)?;
 
