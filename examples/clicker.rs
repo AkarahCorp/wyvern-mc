@@ -138,7 +138,6 @@ fn on_right_click(event: Arc<RightClickEvent>) -> ActorResult<()> {
     let item = event.player.inventory()?.get_slot(40)?;
     log::error!("{:?}", item.get(ItemComponents::CUSTOM_DATA));
     log::error!("{:?}", item.get(ItemComponents::ITEM_NAME));
-
     log::error!("{:?}", item.component_map());
     Ok(())
 }

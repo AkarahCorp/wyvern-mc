@@ -63,21 +63,21 @@ fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
             )
             .with(ItemComponents::ITEM_MODEL, id![minecraft:diamond_sword]),
     )?;
-
-    event.player.set(
-        PlayerComponents::ATTRIBUTES,
-        AttributeContainer::new()
-            .with(Attributes::MAX_HEALTH, 30.0)
-            .with(Attributes::ATTACK_SPEED, 900.0)
-            .with(Attributes::FOLLOW_RANGE, 0.0),
-    )?;
     Runtime::spawn_task(move || {
+        event.player.set(
+            PlayerComponents::ATTRIBUTES,
+            AttributeContainer::new()
+                .with(Attributes::MAX_HEALTH, 30.0)
+                .with(Attributes::ATTACK_SPEED, 100.0)
+                .with(Attributes::FOLLOW_RANGE, 0.0),
+        )?;
+
         let entity = event
             .player
             .dimension()?
             .spawn_entity(id![minecraft:zombie])?;
-        entity.set(EntityComponents::POSITION, Vec3::new(3.0, 1.0, 3.0))?;
-        entity.set(EntityComponents::PHYSICS_ENABLED, false)?;
+        entity.set(EntityComponents::POSITION, Vec3::new(3.0, 10.0, 3.0))?;
+        entity.set(EntityComponents::PHYSICS_ENABLED, true)?;
         Ok(())
     });
 

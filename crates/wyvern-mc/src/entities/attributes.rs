@@ -1,13 +1,18 @@
+use std::sync::LazyLock;
+
 use voxidian_protocol::{
     packet::s2c::play::{Attribute, UpdateAttributesS2CPlayPacket},
-    registry::RegEntry,
-    value::{LengthPrefixVec, VarInt},
+    value::{AttributeType, LengthPrefixVec, VarInt},
 };
 
 use crate::{
     components::{DataComponentHolder, DataComponentMap, DataComponentType},
     id,
+    values::Registry,
 };
+
+pub static ATTRIBUTES: LazyLock<Registry<AttributeType>> =
+    LazyLock::new(|| AttributeType::vanilla_registry().into());
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct AttributeContainer {
@@ -35,31 +40,16 @@ impl AttributeContainer {
     pub fn into_packet(&self, entity_id: i32) -> UpdateAttributesS2CPlayPacket {
         let mut properties = LengthPrefixVec::new();
 
-        if let Ok(attack_speed) = self.get(Attributes::ATTACK_SPEED) {
-            const ATTACK_SPEED: u32 = 0x04;
-            properties.push(Attribute {
-                id: unsafe { RegEntry::new_unchecked(ATTACK_SPEED) },
-                value: attack_speed,
-                mods: LengthPrefixVec::new(),
-            });
+        for attr in &self.attributes.inner {
+            let float = (*attr.1.as_any()).downcast_ref::<f64>().unwrap_or(&0.0);
+            if let Some(entry) = ATTRIBUTES.get_entry(attr.0.clone()) {
+                properties.push(Attribute {
+                    id: entry,
+                    value: *float,
+                    mods: LengthPrefixVec::new(),
+                });
+            }
         }
-        if let Ok(max_health) = self.get(Attributes::MAX_HEALTH) {
-            const MAX_HEALTH: u32 = 0x10;
-            properties.push(Attribute {
-                id: unsafe { RegEntry::new_unchecked(MAX_HEALTH) },
-                value: max_health,
-                mods: LengthPrefixVec::new(),
-            });
-        }
-        if let Ok(follow_range) = self.get(Attributes::FOLLOW_RANGE) {
-            const FOLLOW_RANGE: u32 = 0x0A;
-            properties.push(Attribute {
-                id: unsafe { RegEntry::new_unchecked(FOLLOW_RANGE) },
-                value: follow_range,
-                mods: LengthPrefixVec::new(),
-            });
-        }
-
         UpdateAttributesS2CPlayPacket {
             entity: VarInt::new(entity_id),
             properties,

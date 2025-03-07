@@ -13,10 +13,9 @@ use super::{Player, PlayerComponents};
 
 impl Player {
     pub(crate) fn update_components(&mut self) -> ActorResult<()> {
-        let last_components = self.get_saved_components()?;
         let current_components = self.get_current_components()?;
+        let last_components = self.get_saved_components()?;
         let patch = DataComponentPatch::from_maps(&last_components, &current_components);
-        self.set_saved_components(current_components.clone())?;
 
         if patch
             .added_fields()
@@ -77,6 +76,8 @@ impl Player {
                 })?;
             }
         }
+
+        self.set_saved_components(current_components.clone())?;
 
         Ok(())
     }
