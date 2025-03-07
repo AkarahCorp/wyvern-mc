@@ -22,8 +22,9 @@ impl DataComponentPatch {
                 continue;
             };
 
+            //  ((*component).as_any().downcast_ref::<T>())
             // TODO: allow equality checking in CompnentElement
-            if new_form_value.compare(prototype_value.as_ref()) {
+            if !new_form_value.compare(prototype_value.as_ref()) {
                 added_fields
                     .inner
                     .insert(key.clone(), new_form.inner.get(key).unwrap().clone());

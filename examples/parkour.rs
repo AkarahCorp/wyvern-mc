@@ -3,8 +3,12 @@ use std::sync::Arc;
 use wyvern_mc::{
     actors::ActorResult,
     blocks::{BlockState, Blocks},
-    events::{DimensionCreateEvent, PlayerJoinEvent, ServerStartEvent, ServerTickEvent},
+    events::{
+        DimensionCreateEvent, PlayerCommandEvent, PlayerJoinEvent, ServerStartEvent,
+        ServerTickEvent,
+    },
     id,
+    player::PlayerComponents,
     server::Server,
     values::{Vec3, regval::DimensionType},
 };
@@ -17,6 +21,7 @@ fn main() {
         .event(on_dim_init)
         .event(on_join)
         .event(tick)
+        .event(on_command)
         .registries(|registries| {
             registries.add_defaults();
             registries.dimension_type(
@@ -35,9 +40,22 @@ fn on_server_start(event: Arc<ServerStartEvent>) -> ActorResult<()> {
 
 fn tick(event: Arc<ServerTickEvent>) -> ActorResult<()> {
     for player in event.server.players()? {
-        if player.position()?.y() < -64.0 {
-            player.teleport(Vec3::new(0.0, 11.0, 0.0))?;
+        if player.get(PlayerComponents::POSITION)?.y() < -64.0 {
+            player.set(
+                PlayerComponents::TELEPORT_POSITION,
+                Vec3::new(0.0, 11.0, 0.0),
+            )?;
         }
+    }
+    Ok(())
+}
+
+fn on_command(event: Arc<PlayerCommandEvent>) -> ActorResult<()> {
+    if event.command == "restart" {
+        event.player.set(
+            PlayerComponents::TELEPORT_POSITION,
+            Vec3::new(0.0, 11.0, 0.0),
+        )?;
     }
     Ok(())
 }
@@ -106,6 +124,9 @@ fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
 
 fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
     event.new_dimension.set(id![example:root]);
-    event.player.teleport(Vec3::new(0.0, 11.0, 0.0))?;
+    event.player.set(
+        PlayerComponents::TELEPORT_POSITION,
+        Vec3::new(0.0, 11.0, 0.0),
+    )?;
     Ok(())
 }

@@ -16,7 +16,8 @@ use voxidian_protocol::{
 
 use crate::{
     actors::{ActorError, ActorResult},
-    player::{ConnectionData, MojauthData},
+    components::DataComponentHolder,
+    player::{ConnectionData, MojauthData, PlayerComponents},
     server::Server,
 };
 
@@ -77,7 +78,7 @@ impl ConnectionData {
 
                     let mojauth = match MojAuth::start_blocking(
                         None,
-                        this.associated_data.username.clone(),
+                        this.get(PlayerComponents::USERNAME)?,
                         "WyvernMC",
                         this.packet_processing.secret_cipher.key().unwrap(),
                         this.mojauth
@@ -97,16 +98,16 @@ impl ConnectionData {
                         }
                     };
 
-                    this.associated_data.username = mojauth.name;
-                    this.associated_data.uuid = mojauth.uuid;
+                    this.set(PlayerComponents::USERNAME, mojauth.name);
+                    this.set(PlayerComponents::UUID, mojauth.uuid);
                     this.mojauth
                         .as_mut()
                         .ok_or(ActorError::ActorIsNotLoaded)?
                         .props = mojauth.props;
 
                     this.write_packet(LoginFinishedS2CLoginPacket {
-                        uuid: this.associated_data.uuid,
-                        username: this.associated_data.username.clone(),
+                        uuid: this.get(PlayerComponents::UUID)?,
+                        username: this.get(PlayerComponents::USERNAME)?,
                         props: LengthPrefixHashMap::new(),
                     });
                 }
@@ -116,8 +117,8 @@ impl ConnectionData {
                     });
                     this.packet_processing.compression = CompressionMode::ZLib { threshold: 128 };
 
-                    this.associated_data.username = packet.username.clone();
-                    this.associated_data.uuid = packet.uuid;
+                    this.set(PlayerComponents::USERNAME, packet.username);
+                    this.set(PlayerComponents::UUID, packet.uuid);
 
                     if Server::get()?.mojauth_enabled()? {
                         this.mojauth = Some(MojauthData {
@@ -166,8 +167,8 @@ impl ConnectionData {
                         });
                     } else {
                         this.write_packet(LoginFinishedS2CLoginPacket {
-                            uuid: this.associated_data.uuid,
-                            username: this.associated_data.username.clone(),
+                            uuid: this.get(PlayerComponents::UUID)?,
+                            username: this.get(PlayerComponents::USERNAME)?,
                             props: LengthPrefixHashMap::new(),
                         });
                     }

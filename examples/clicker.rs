@@ -16,6 +16,7 @@ use wyvern_mc::{
     id,
     inventory::Inventory,
     item::{ItemComponents, ItemStack},
+    player::PlayerComponents,
     server::Server,
     values::{Id, SoundCategory, Sounds, Texts, Uuid, Vec2, Vec3, nbt::NbtCompound},
 };
@@ -81,7 +82,7 @@ fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
 
 fn on_tick(event: Arc<ServerTickEvent>) -> ActorResult<()> {
     for player in event.server.players()? {
-        let uuid = player.uuid()?;
+        let uuid = player.get(PlayerComponents::UUID)?;
 
         let count = {
             let mut counter = COUNTER.lock().unwrap();
@@ -119,7 +120,7 @@ fn on_tick(event: Arc<ServerTickEvent>) -> ActorResult<()> {
 }
 
 fn on_right_click(event: Arc<RightClickEvent>) -> ActorResult<()> {
-    let uuid = event.player.uuid()?;
+    let uuid = event.player.get(PlayerComponents::UUID)?;
     {
         let mut counter = COUNTER.lock().unwrap();
         if let Some(number) = counter.get_mut(&uuid) {

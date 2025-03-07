@@ -7,21 +7,23 @@ use voxidian_protocol::{
 };
 
 use crate::{
+    actors::ActorResult,
+    components::DataComponentHolder,
     runtime::Runtime,
     values::{Vec2, Vec3},
 };
 
-use super::{ConnectionData, Player};
+use super::{ConnectionData, Player, PlayerComponents};
 
 impl ConnectionData {
-    pub fn send_chunks(&mut self) {
+    pub fn send_chunks(&mut self) -> ActorResult<()> {
         let Some(dimension) = self.associated_data.dimension.clone() else {
-            return;
+            return Ok(());
         };
 
         let chunk_center = Vec2::new(
-            f64::floor(self.associated_data.last_position.x() / 16.0) as i32,
-            f64::floor(self.associated_data.last_position.z() / 16.0) as i32,
+            f64::floor(self.get(PlayerComponents::POSITION)?.x() / 16.0) as i32,
+            f64::floor(self.get(PlayerComponents::POSITION)?.z() / 16.0) as i32,
         );
 
         self.associated_data.last_chunk_position = chunk_center;
@@ -124,5 +126,7 @@ impl ConnectionData {
                 Ok(())
             });
         }
+
+        Ok(())
     }
 }

@@ -10,15 +10,18 @@ use std::{
 
 use crate::{
     actors::{Actor, ActorResult},
-    components::DataComponentMap,
+    components::{DataComponentHolder, DataComponentMap},
     runtime::Runtime,
 };
 use flume::{Receiver, Sender};
-use voxidian_protocol::packet::{
-    DecodeError, PrefixedPacketDecode, Stage,
-    c2s::handshake::C2SHandshakePackets,
-    processing::PacketProcessing,
-    s2c::play::{Gamemode, KeepAliveS2CPlayPacket},
+use voxidian_protocol::{
+    packet::{
+        DecodeError, PrefixedPacketDecode, Stage,
+        c2s::handshake::C2SHandshakePackets,
+        processing::PacketProcessing,
+        s2c::play::{Gamemode, KeepAliveS2CPlayPacket},
+    },
+    value::Uuid,
 };
 
 use crate::{player::PlayerMessage, server::Server};
@@ -89,7 +92,8 @@ impl ConnectionData {
                 log::info!("A player has disconnected. Stopping their connection data...");
 
                 if let Some(dim) = &self.associated_data.dimension {
-                    let _ = dim.remove_entity(self.associated_data.uuid);
+                    let _ = dim
+                        .remove_entity(self.get(PlayerComponents::UUID).unwrap_or(Uuid::new_v4()));
                 }
                 self.signal.send(ConnectionStoppedSignal).unwrap();
                 drop(self);

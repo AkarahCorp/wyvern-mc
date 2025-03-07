@@ -1,13 +1,17 @@
 use std::sync::Arc;
 
 use dyn_clone::clone_box;
-use voxidian_protocol::packet::{c2s::play::InputFlags, s2c::play::Gamemode};
+use voxidian_protocol::{
+    packet::{c2s::play::InputFlags, s2c::play::Gamemode},
+    value::Uuid,
+};
 
 use crate::{
     actors::{ActorError, ActorResult},
     components::{ComponentElement, DataComponentType},
     entities::AttributeContainer,
     id,
+    values::{Vec2, Vec3},
 };
 
 use super::Player;
@@ -15,12 +19,25 @@ use super::Player;
 pub struct PlayerComponents;
 
 impl PlayerComponents {
+    pub const USERNAME: DataComponentType<String> = DataComponentType::new(id![minecraft:username]);
+    pub const UUID: DataComponentType<Uuid> = DataComponentType::new(id![minecraft:uuid]);
+    pub const TELEPORT_POSITION: DataComponentType<Vec3<f64>> =
+        DataComponentType::new(id![minecraft:tp_position]);
+    pub const POSITION: DataComponentType<Vec3<f64>> =
+        DataComponentType::new(id![minecraft:position]);
+    pub const DIRECTION: DataComponentType<Vec2<f32>> =
+        DataComponentType::new(id![minecraft:direction]);
     pub const ATTRIBUTES: DataComponentType<AttributeContainer> =
         DataComponentType::new(id![minecraft:attributes]);
     pub const INPUT_FLAGS: DataComponentType<InputFlags> =
         DataComponentType::new(id![minecraft:input_flags]);
     pub const GAMEMODE: DataComponentType<Gamemode> =
         DataComponentType::new(id![minecraft:gamemode]);
+
+    pub const TELEPORT_SYNC_SENT: DataComponentType<i32> =
+        DataComponentType::new(id![minecraft:teleport_sent]);
+    pub const TELEPORT_SYNC_RECEIVED: DataComponentType<i32> =
+        DataComponentType::new(id![minecraft:teleport_sync]);
 }
 
 impl Player {

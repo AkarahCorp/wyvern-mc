@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use voxidian_protocol::packet::s2c::play::Gamemode;
 use wyvern_mc::{
     actors::ActorResult,
     blocks::{BlockComponents, BlockState},
@@ -51,7 +50,19 @@ fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
 
 fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
     event.new_dimension.set(id![example:root]);
-    event.player.teleport(Vec3::new(0.0, 1.0, 0.0))?;
+    event
+        .player
+        .set(PlayerComponents::POSITION, Vec3::new(0.0, 1.0, 0.0))?;
+
+    event.player.inventory()?.set_slot(
+        36,
+        ItemStack::new(id![minecraft:diamond_sword])
+            .with(
+                ItemComponents::ITEM_NAME,
+                Texts::literal("Diamond Sword").into(),
+            )
+            .with(ItemComponents::ITEM_MODEL, id![minecraft:diamond_sword]),
+    )?;
 
     event.player.set(
         PlayerComponents::ATTRIBUTES,
@@ -74,21 +85,11 @@ fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
 }
 
 fn on_attack(event: Arc<PlayerAttackEntityEvent>) -> ActorResult<()> {
-    event
+    let dir = event
         .player
-        .send_message(Texts::literal("HI YOU HIT AN ENTITY WOW"))?;
-
-    event.player.inventory()?.set_slot(
-        36,
-        ItemStack::new(id![minecraft:diamond_sword])
-            .with(
-                ItemComponents::ITEM_NAME,
-                Texts::literal("Diamond Sword").into(),
-            )
-            .with(ItemComponents::ITEM_MODEL, id![minecraft:diamond_sword]),
-    )?;
-
-    let dir = event.player.direction()?.to_3d_direction().map(|x| x / 2.0);
+        .get(PlayerComponents::DIRECTION)?
+        .to_3d_direction()
+        .map(|x| x / 2.0);
 
     event
         .entity
@@ -99,14 +100,5 @@ fn on_attack(event: Arc<PlayerAttackEntityEvent>) -> ActorResult<()> {
 
     event.player.play_sound(Sounds::ENTITY_PLAYER_ATTACK_CRIT)?;
 
-    if event.player.get(PlayerComponents::GAMEMODE)? == Gamemode::Survival {
-        event
-            .player
-            .set(PlayerComponents::GAMEMODE, Gamemode::Creative)?;
-    } else {
-        event
-            .player
-            .set(PlayerComponents::GAMEMODE, Gamemode::Survival)?;
-    }
     Ok(())
 }

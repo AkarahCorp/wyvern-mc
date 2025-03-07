@@ -26,7 +26,7 @@ use voxidian_protocol::{
         },
     },
     registry::RegEntry,
-    value::{Angle, ProfileProperty, Text as PtcText, TextComponent, Uuid, VarInt},
+    value::{Angle, ProfileProperty, Text as PtcText, TextComponent, VarInt},
 };
 use wyvern_macros::{actor, message};
 
@@ -161,23 +161,8 @@ impl ConnectionData {
     #[SetGamemode]
     pub fn set_gamemode(&mut self, gamemode: Gamemode) -> ActorResult<()> {
         self.set(PlayerComponents::GAMEMODE, gamemode);
-        // self.associated_data.gamemode = Gamemode::Creative;
-        // self.write_packet(GameEventS2CPlayPacket {
-        //     event: GameEvent::ChangeGameMode,
-        //     value: 1.0,
-        // });
         Ok(())
     }
-
-    // #[SetSurvival]
-    // pub fn set_survival(&mut self) -> ActorResult<()> {
-    //     // self.associated_data.gamemode = Gamemode::Survival;
-    //     // self.write_packet(GameEventS2CPlayPacket {
-    //     //     event: GameEvent::ChangeGameMode,
-    //     //     value: 0.0,
-    //     // });
-    //     Ok(())
-    // }
 
     #[SetStage]
     pub fn set_stage(&mut self, stage: Stage) -> ActorResult<()> {
@@ -226,33 +211,6 @@ impl ConnectionData {
             .collect::<Vec<_>>())
     }
 
-    #[Teleport]
-    pub fn teleport(&mut self, location: Vec3<f64>) -> ActorResult<()> {
-        self.write_packet(PlayerPositionS2CPlayPacket {
-            teleport_id: VarInt::from(18384),
-            x: location.x(),
-            y: location.y(),
-            z: location.z(),
-            vx: 0.0,
-            vy: 0.0,
-            vz: 0.0,
-            adyaw_deg: 0.0,
-            adpitch_deg: 0.0,
-            flags: TeleportFlags {
-                relative_x: false,
-                relative_y: false,
-                relative_z: false,
-                relative_pitch: true,
-                relative_yaw: true,
-                relative_vx: true,
-                relative_vy: true,
-                relative_vz: true,
-                rotate_velocity: false,
-            },
-        });
-        Ok(())
-    }
-
     #[ChangeDimension]
     pub fn set_dimension(&mut self, dimension: Dimension) -> ActorResult<()> {
         for chunk in self.associated_data.loaded_chunks.clone() {
@@ -264,8 +222,8 @@ impl ConnectionData {
 
         self.associated_data.dimension = Some(dimension.clone());
         self.associated_data.loaded_chunks.clear();
-        self.associated_data.last_position = Vec3::new(0.0, 0.0, 0.0);
-        self.associated_data.last_direction = Vec2::new(0.0, 0.0);
+        self.set(PlayerComponents::POSITION, Vec3::new(0.0, 0.0, 0.0));
+        self.set(PlayerComponents::DIRECTION, Vec2::new(0.0, 0.0));
 
         self.write_packet(RespawnS2CPlayPacket {
             dim: unsafe {
@@ -297,7 +255,7 @@ impl ConnectionData {
             value: 0.0,
         });
         self.write_packet(PlayerPositionS2CPlayPacket {
-            teleport_id: VarInt::from(18383),
+            teleport_id: VarInt::from(-1),
             x: 1.0,
             y: 1.0,
             z: 1.0,
@@ -322,8 +280,6 @@ impl ConnectionData {
             yaw: 0.0,
             pitch: 0.0,
         });
-
-        log::error!("ENTITIES: {:?}", dimension.entities());
 
         for entity in dimension.entities()? {
             let position = entity.get(EntityComponents::POSITION)?;
@@ -398,26 +354,6 @@ impl ConnectionData {
         };
         self.write_packet(packet);
         Ok(())
-    }
-
-    #[Username]
-    pub fn username(&self) -> ActorResult<String> {
-        Ok(self.associated_data.username.clone())
-    }
-
-    #[Uuid]
-    pub fn uuid(&self) -> ActorResult<Uuid> {
-        Ok(self.associated_data.uuid)
-    }
-
-    #[Position]
-    pub fn position(&self) -> ActorResult<Vec3<f64>> {
-        Ok(self.associated_data.last_position)
-    }
-
-    #[Direction]
-    pub fn direction(&self) -> ActorResult<Vec2<f32>> {
-        Ok(self.associated_data.last_direction)
     }
 
     #[SendMessage]
@@ -561,16 +497,18 @@ impl ConnectionData {
         let _ = self.send_packet_buf(buf);
     }
 
-    pub fn update_self_entity(&mut self) {
+    pub fn update_self_entity(&mut self) -> ActorResult<()> {
         let dim = self.associated_data.dimension.clone().unwrap();
-        let pos = self.associated_data.last_position;
-        let dir = self.associated_data.last_direction;
-        let uuid = self.associated_data.uuid;
+        let pos = self.get(PlayerComponents::POSITION)?;
+        let dir = self.get(PlayerComponents::DIRECTION)?;
+        let uuid = self.get(PlayerComponents::UUID)?;
 
         Runtime::spawn_task(move || {
             dim.get_entity(uuid).set(EntityComponents::POSITION, pos)?;
             dim.get_entity(uuid).set(EntityComponents::DIRECTION, dir)
         });
+
+        Ok(())
     }
 }
 

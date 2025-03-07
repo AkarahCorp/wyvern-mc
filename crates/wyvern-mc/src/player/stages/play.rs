@@ -33,7 +33,7 @@ impl ConnectionData {
             |packet: C2SPlayPackets, this: &mut Self| -> ActorResult<()> {
                 log::debug!(
                     "Player {:?} has sent packet: {:?}",
-                    this.associated_data.username,
+                    this.get(PlayerComponents::USERNAME)?,
                     packet
                 );
 
@@ -126,72 +126,90 @@ impl ConnectionData {
                     C2SPlayPackets::AcceptTeleportation(packet) => {
                         if packet.teleport_id.as_i32() == 0 {
                             this.connect_to_new_dimension()?;
+                        } else if packet.teleport_id.as_i32() != -1 {
+                            this.set(
+                                PlayerComponents::TELEPORT_SYNC_RECEIVED,
+                                packet.teleport_id.as_i32(),
+                            );
                         }
 
-                        this.send_chunks();
+                        this.send_chunks()?;
                     }
                     C2SPlayPackets::MovePlayerPos(packet) => {
-                        this.associated_data.last_position = this
-                            .associated_data
-                            .last_position
-                            .with_x(packet.x)
-                            .with_y(packet.y)
-                            .with_z(packet.z);
+                        if this.get(PlayerComponents::TELEPORT_SYNC_SENT).unwrap_or(0)
+                            > this
+                                .get(PlayerComponents::TELEPORT_SYNC_RECEIVED)
+                                .unwrap_or(1)
+                        {
+                            return Ok(());
+                        }
+                        this.set(
+                            PlayerComponents::POSITION,
+                            Vec3::new(packet.x, packet.y, packet.z),
+                        );
 
-                        this.send_chunks();
+                        this.send_chunks()?;
 
                         if let Some(sender) = this.sender.upgrade() {
                             this.connected_server.spawn_event(PlayerMoveEvent {
                                 player: Player { sender },
-                                new_position: this.associated_data.last_position,
-                                new_direction: this.associated_data.last_direction,
+                                new_position: this.get(PlayerComponents::POSITION)?,
+                                new_direction: this.get(PlayerComponents::DIRECTION)?,
                             })?;
                         }
 
-                        this.update_self_entity();
+                        this.update_self_entity()?;
                     }
                     C2SPlayPackets::MovePlayerPosRot(packet) => {
-                        this.associated_data.last_position = this
-                            .associated_data
-                            .last_position
-                            .with_x(packet.x)
-                            .with_y(packet.y)
-                            .with_z(packet.z);
-
-                        this.associated_data.last_direction = this
-                            .associated_data
-                            .last_direction
-                            .with_x(packet.pitch)
-                            .with_y(packet.yaw);
-
-                        this.update_self_entity();
+                        if this.get(PlayerComponents::TELEPORT_SYNC_SENT).unwrap_or(0)
+                            > this
+                                .get(PlayerComponents::TELEPORT_SYNC_RECEIVED)
+                                .unwrap_or(1)
+                        {
+                            return Ok(());
+                        }
+                        this.set(
+                            PlayerComponents::POSITION,
+                            Vec3::new(packet.x, packet.y, packet.z),
+                        );
+                        this.set(
+                            PlayerComponents::DIRECTION,
+                            Vec2::new(packet.pitch, packet.yaw),
+                        );
 
                         if let Some(sender) = this.sender.upgrade() {
                             this.connected_server.spawn_event(PlayerMoveEvent {
                                 player: Player { sender },
-                                new_position: this.associated_data.last_position,
-                                new_direction: this.associated_data.last_direction,
+                                new_position: this.get(PlayerComponents::POSITION)?,
+                                new_direction: this.get(PlayerComponents::DIRECTION)?,
                             })?;
                         }
 
-                        this.send_chunks();
+                        this.update_self_entity()?;
+                        this.send_chunks()?;
                     }
                     C2SPlayPackets::MovePlayerRot(packet) => {
-                        this.associated_data.last_direction = this
-                            .associated_data
-                            .last_direction
-                            .with_x(packet.pitch)
-                            .with_y(packet.yaw);
+                        if this.get(PlayerComponents::TELEPORT_SYNC_SENT).unwrap_or(0)
+                            > this
+                                .get(PlayerComponents::TELEPORT_SYNC_RECEIVED)
+                                .unwrap_or(10)
+                        {
+                            return Ok(());
+                        }
+                        this.set(
+                            PlayerComponents::DIRECTION,
+                            Vec2::new(packet.pitch, packet.yaw),
+                        );
 
                         if let Some(sender) = this.sender.upgrade() {
                             this.connected_server.spawn_event(PlayerMoveEvent {
                                 player: Player { sender },
-                                new_position: this.associated_data.last_position,
-                                new_direction: this.associated_data.last_direction,
+                                new_position: this.get(PlayerComponents::POSITION)?,
+                                new_direction: this.get(PlayerComponents::DIRECTION)?,
                             })?;
                         }
 
-                        this.update_self_entity();
+                        this.update_self_entity()?;
                     }
                     C2SPlayPackets::ClientInformation(packet) => {
                         this.associated_data.render_distance = packet.info.view_distance as i32;
@@ -413,7 +431,8 @@ impl ConnectionData {
 
         log::debug!("Broadcasting this player info...");
         for player in self.connected_server.connections()? {
-            let data = self.associated_data.clone();
+            let uuid = self.get(PlayerComponents::UUID)?;
+            let username = self.get(PlayerComponents::USERNAME)?;
             let props = if let Some(mojauth) = self.mojauth.as_ref() {
                 mojauth
                     .props
@@ -430,9 +449,9 @@ impl ConnectionData {
 
             Runtime::spawn_task(move || {
                 let _ = player.write_packet(PlayerInfoUpdateS2CPlayPacket {
-                    actions: vec![(data.uuid, vec![
+                    actions: vec![(uuid, vec![
                         PlayerActionEntry::AddPlayer {
-                            name: data.username.clone(),
+                            name: username.clone(),
                             props: props.into(),
                         },
                         PlayerActionEntry::Listed(true),
@@ -444,6 +463,9 @@ impl ConnectionData {
 
         log::debug!("All done!");
         log::debug!("Sending over current player info...");
+
+        let uuid = self.get(PlayerComponents::UUID)?;
+        let username = self.get(PlayerComponents::USERNAME)?;
         for player in self.connected_server.connections()? {
             let Some(sender) = self.sender.upgrade() else {
                 continue;
@@ -465,17 +487,17 @@ impl ConnectionData {
                 };
 
                 self.write_packet(PlayerInfoUpdateS2CPlayPacket {
-                    actions: vec![(self.associated_data.uuid, vec![
-                        PlayerActionEntry::AddPlayer {
-                            name: self.associated_data.username.clone(),
-                            props: props.into(),
-                        },
-                    ])],
+                    actions: vec![(uuid, vec![PlayerActionEntry::AddPlayer {
+                        name: username.clone(),
+                        props: props.into(),
+                    }])],
                 });
             } else {
+                let uuid = player.get(PlayerComponents::UUID)?;
+                let username = player.get(PlayerComponents::USERNAME)?;
                 self.write_packet(PlayerInfoUpdateS2CPlayPacket {
-                    actions: vec![(player.uuid()?, vec![PlayerActionEntry::AddPlayer {
-                        name: player.username()?,
+                    actions: vec![(uuid, vec![PlayerActionEntry::AddPlayer {
+                        name: username.clone(),
                         props: player.auth_props().unwrap_or(Vec::new()).into(),
                     }])],
                 });
@@ -522,9 +544,11 @@ impl ConnectionData {
 
         log::debug!("Spawning human...");
         let dim = self.associated_data.dimension.as_ref().unwrap().clone();
-        let data = self.associated_data.clone();
+        let uuid = self.get(PlayerComponents::UUID)?;
+        let entity_id = self.associated_data.entity_id;
+
         Runtime::spawn_task(move || {
-            let _ = dim.spawn_player_entity(data.uuid, data.entity_id);
+            let _ = dim.spawn_player_entity(uuid, entity_id);
             Ok(())
         });
 

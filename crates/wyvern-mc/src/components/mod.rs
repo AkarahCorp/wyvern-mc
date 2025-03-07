@@ -25,7 +25,7 @@ impl<T: Any + Sync + Send + DynClone + Debug + PartialEq> ComponentElement for T
     }
 
     fn compare(&self, other: &dyn ComponentElement) -> bool {
-        let Some(other) = (*other.as_any()).downcast_ref::<T>() else {
+        let Some(other) = (*other).as_any().downcast_ref::<T>() else {
             return false;
         };
         self == other
