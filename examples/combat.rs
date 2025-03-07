@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use voxidian_protocol::packet::s2c::play::Gamemode;
 use wyvern_mc::{
     actors::ActorResult,
     blocks::{BlockComponents, BlockState},
@@ -9,6 +10,7 @@ use wyvern_mc::{
     id,
     inventory::Inventory,
     item::{ItemComponents, ItemStack},
+    player::PlayerComponents,
     runtime::Runtime,
     server::Server,
     values::{Sounds, Texts, Vec3},
@@ -51,7 +53,8 @@ fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
     event.new_dimension.set(id![example:root]);
     event.player.teleport(Vec3::new(0.0, 1.0, 0.0))?;
 
-    event.player.set_attributes(
+    event.player.set(
+        PlayerComponents::ATTRIBUTES,
         AttributeContainer::new()
             .with(Attributes::MAX_HEALTH, 30.0)
             .with(Attributes::ATTACK_SPEED, 900.0)
@@ -96,5 +99,14 @@ fn on_attack(event: Arc<PlayerAttackEntityEvent>) -> ActorResult<()> {
 
     event.player.play_sound(Sounds::ENTITY_PLAYER_ATTACK_CRIT)?;
 
+    if event.player.get(PlayerComponents::GAMEMODE)? == Gamemode::Survival {
+        event
+            .player
+            .set(PlayerComponents::GAMEMODE, Gamemode::Creative)?;
+    } else {
+        event
+            .player
+            .set(PlayerComponents::GAMEMODE, Gamemode::Survival)?;
+    }
     Ok(())
 }

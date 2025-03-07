@@ -200,6 +200,13 @@ impl ServerData {
                 let _ = server.spawn_event(ServerTickEvent {
                     server: server.clone(),
                 });
+
+                for player in self.connections.iter() {
+                    let mut player = player.lower();
+                    if player.stage().unwrap_or(Stage::Handshake) == Stage::Play {
+                        Runtime::spawn_task(move || player.update_components());
+                    }
+                }
             }
         }
     }

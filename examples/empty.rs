@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use voxidian_protocol::packet::s2c::play::Gamemode;
 use wyvern_mc::{
     actors::ActorResult,
     blocks::{BlockComponents, BlockState},
@@ -43,6 +44,6 @@ fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
 
 fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
     event.new_dimension.set(id![example:root]);
-    event.player.set_creative()?;
+    event.player.set_gamemode(Gamemode::Creative)?;
     Ok(())
 }

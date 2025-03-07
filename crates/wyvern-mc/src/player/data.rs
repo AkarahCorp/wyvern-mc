@@ -2,18 +2,11 @@ use std::time::Instant;
 
 use crate::{
     dimension::Dimension,
-    entities::AttributeContainer,
     inventory::DataInventory,
     item::ItemStack,
     values::{Vec2, Vec3},
 };
-use voxidian_protocol::{
-    packet::{
-        c2s::play::InputFlags,
-        s2c::play::{Gamemode, ScreenWindowKind},
-    },
-    value::Uuid,
-};
+use voxidian_protocol::{packet::s2c::play::ScreenWindowKind, value::Uuid};
 
 #[derive(Debug, Clone)]
 pub struct PlayerData {
@@ -29,7 +22,6 @@ pub struct PlayerData {
     pub(crate) loaded_chunks: Vec<Vec2<i32>>,
     pub(crate) render_distance: i32,
 
-    pub(crate) input_flags: InputFlags,
     pub(crate) entity_id: i32,
 
     pub(crate) last_sent_keep_alive: Instant,
@@ -40,8 +32,6 @@ pub struct PlayerData {
     pub(crate) held_slot: i16,
 
     pub(crate) cursor_item: ItemStack,
-    pub(crate) gamemode: Gamemode,
-    pub(crate) attributes: AttributeContainer,
 }
 
 impl Default for PlayerData {
@@ -59,14 +49,6 @@ impl Default for PlayerData {
             loaded_chunks: Vec::new(),
 
             render_distance: 2,
-            input_flags: InputFlags {
-                forward: false,
-                backward: false,
-                left: false,
-                right: false,
-                sneak: false,
-                sprint: false,
-            },
             entity_id: 0,
             last_sent_keep_alive: Instant::now(),
 
@@ -77,8 +59,6 @@ impl Default for PlayerData {
 
             cursor_item: ItemStack::air(),
             window_id: 0,
-            gamemode: Gamemode::Survival,
-            attributes: AttributeContainer::new(),
         }
     }
 }

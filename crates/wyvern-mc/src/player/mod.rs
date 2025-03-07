@@ -32,20 +32,25 @@ use wyvern_macros::{actor, message};
 
 use crate::{
     actors::{ActorError, ActorResult},
+    components::{ComponentElement, DataComponentHolder, DataComponentMap},
     dimension::Dimension,
-    entities::{AttributeContainer, EntityComponents},
+    entities::EntityComponents,
     inventory::{DataInventory, Inventory},
     item::ItemStack,
     runtime::Runtime,
     server::Server,
-    values::{Sound, Text, TextKinds, Vec2, Vec3},
+    values::{Id, Sound, Text, TextKinds, Vec2, Vec3},
 };
+
+mod components;
+pub use components::*;
 
 pub mod chunkload;
 pub mod data;
 pub mod inventory;
 pub mod net;
 pub mod stages;
+pub mod update;
 
 #[actor(Player, PlayerMessage)]
 pub(crate) struct ConnectionData {
@@ -61,6 +66,18 @@ pub(crate) struct ConnectionData {
     pub(crate) associated_data: PlayerData,
     pub(crate) sender: WeakSender<PlayerMessage>,
     pub(crate) mojauth: Option<MojauthData>,
+    pub(crate) last_saved_components: DataComponentMap,
+    pub(crate) components: DataComponentMap,
+}
+
+impl DataComponentHolder for ConnectionData {
+    fn component_map(&self) -> &DataComponentMap {
+        &self.components
+    }
+
+    fn component_map_mut(&mut self) -> &mut DataComponentMap {
+        &mut self.components
+    }
 }
 
 pub(crate) struct MojauthData {
@@ -72,12 +89,42 @@ pub(crate) struct MojauthData {
 
 #[message(Player, PlayerMessage)]
 impl ConnectionData {
-    #[SetAttributes]
-    pub fn set_attributes(&mut self, container: AttributeContainer) -> ActorResult<()> {
-        self.associated_data.attributes = container;
-        let id = self.associated_data.entity_id;
-        self.write_packet(self.associated_data.attributes.clone().into_packet(id));
+    #[SetSavedComponents]
+    pub(crate) fn set_saved_components(&mut self, map: DataComponentMap) -> ActorResult<()> {
+        self.last_saved_components = map;
         Ok(())
+    }
+
+    #[GetSavedComponents]
+    pub(crate) fn get_saved_components(&mut self) -> ActorResult<DataComponentMap> {
+        Ok(self.last_saved_components.clone())
+    }
+
+    #[GetCurrentComponents]
+    pub(crate) fn get_current_components(&mut self) -> ActorResult<DataComponentMap> {
+        Ok(self.components.clone())
+    }
+
+    #[SetComponent]
+    pub(crate) fn set_component_unchecked(
+        &mut self,
+        id: Id,
+        value: Arc<dyn ComponentElement>,
+    ) -> ActorResult<()> {
+        self.components.inner.insert(id, value);
+        Ok(())
+    }
+
+    #[GetComponent]
+    pub(crate) fn get_component_unchecked(
+        &mut self,
+        id: Id,
+    ) -> ActorResult<Arc<dyn ComponentElement>> {
+        self.components
+            .inner
+            .get(&id)
+            .ok_or(ActorError::ComponentNotFound)
+            .cloned()
     }
 
     #[Disconnect]
@@ -111,25 +158,26 @@ impl ConnectionData {
         }
     }
 
-    #[SetCreative]
-    pub fn set_creative(&mut self) -> ActorResult<()> {
-        self.associated_data.gamemode = Gamemode::Creative;
-        self.write_packet(GameEventS2CPlayPacket {
-            event: GameEvent::ChangeGameMode,
-            value: 1.0,
-        });
+    #[SetGamemode]
+    pub fn set_gamemode(&mut self, gamemode: Gamemode) -> ActorResult<()> {
+        self.set(PlayerComponents::GAMEMODE, gamemode);
+        // self.associated_data.gamemode = Gamemode::Creative;
+        // self.write_packet(GameEventS2CPlayPacket {
+        //     event: GameEvent::ChangeGameMode,
+        //     value: 1.0,
+        // });
         Ok(())
     }
 
-    #[SetSurvival]
-    pub fn set_survival(&mut self) -> ActorResult<()> {
-        self.associated_data.gamemode = Gamemode::Survival;
-        self.write_packet(GameEventS2CPlayPacket {
-            event: GameEvent::ChangeGameMode,
-            value: 0.0,
-        });
-        Ok(())
-    }
+    // #[SetSurvival]
+    // pub fn set_survival(&mut self) -> ActorResult<()> {
+    //     // self.associated_data.gamemode = Gamemode::Survival;
+    //     // self.write_packet(GameEventS2CPlayPacket {
+    //     //     event: GameEvent::ChangeGameMode,
+    //     //     value: 0.0,
+    //     // });
+    //     Ok(())
+    // }
 
     #[SetStage]
     pub fn set_stage(&mut self, stage: Stage) -> ActorResult<()> {
@@ -447,6 +495,11 @@ impl ConnectionData {
             seed: 0,
         });
         Ok(())
+    }
+
+    #[EntityId]
+    pub(crate) fn entity_id(&self) -> ActorResult<i32> {
+        Ok(self.associated_data.entity_id)
     }
 }
 

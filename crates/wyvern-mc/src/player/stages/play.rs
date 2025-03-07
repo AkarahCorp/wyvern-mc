@@ -22,7 +22,7 @@ use crate::{
     },
     inventory::Inventory,
     item::{ITEM_REGISTRY, ItemComponents, ItemStack},
-    player::{ConnectionData, Player},
+    player::{ConnectionData, Player, PlayerComponents},
     runtime::Runtime,
     values::{Id, Texts, Vec2, Vec3, cell::Token},
 };
@@ -57,7 +57,7 @@ impl ConnectionData {
                                         position: block,
                                     })?;
                                 }
-                                if this.associated_data.gamemode == Gamemode::Creative {
+                                if this.get(PlayerComponents::GAMEMODE) == Ok(Gamemode::Creative) {
                                     this.associated_data.dimension.as_ref().unwrap().set_block(
                                         block,
                                         BlockState::new(Id::constant("minecraft", "air")),
@@ -72,7 +72,7 @@ impl ConnectionData {
                             }
                             PlayerStatus::CancelledDigging => {}
                             PlayerStatus::FinishedDigging => {
-                                if this.associated_data.gamemode != Gamemode::Creative {
+                                if this.get(PlayerComponents::GAMEMODE) != Ok(Gamemode::Creative) {
                                     this.associated_data.dimension.as_ref().unwrap().set_block(
                                         block,
                                         BlockState::new(Id::constant("minecraft", "air")),
@@ -197,7 +197,7 @@ impl ConnectionData {
                         this.associated_data.render_distance = packet.info.view_distance as i32;
                     }
                     C2SPlayPackets::PlayerInput(packet) => {
-                        this.associated_data.input_flags = packet.flags;
+                        this.set(PlayerComponents::INPUT_FLAGS, packet.flags);
                     }
                     C2SPlayPackets::ClientTickEnd(_) => {}
                     C2SPlayPackets::PingRequest(packet) => {

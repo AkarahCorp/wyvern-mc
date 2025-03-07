@@ -10,17 +10,20 @@ use std::{
 
 use crate::{
     actors::{Actor, ActorResult},
+    components::DataComponentMap,
     runtime::Runtime,
 };
 use flume::{Receiver, Sender};
 use voxidian_protocol::packet::{
-    DecodeError, PrefixedPacketDecode, Stage, c2s::handshake::C2SHandshakePackets,
-    processing::PacketProcessing, s2c::play::KeepAliveS2CPlayPacket,
+    DecodeError, PrefixedPacketDecode, Stage,
+    c2s::handshake::C2SHandshakePackets,
+    processing::PacketProcessing,
+    s2c::play::{Gamemode, KeepAliveS2CPlayPacket},
 };
 
 use crate::{player::PlayerMessage, server::Server};
 
-use super::{ConnectionData, ConnectionWithSignal, Player, data::PlayerData};
+use super::{ConnectionData, ConnectionWithSignal, Player, PlayerComponents, data::PlayerData};
 
 pub struct ConnectionStoppedSignal;
 
@@ -37,9 +40,7 @@ impl ConnectionData {
         let stage2 = stage.clone();
         let data_tx2 = data_tx.clone();
         Runtime::spawn_actor(move || {
-            ConnectionData::execute_connection(
-                stream, addr, data_tx2, data_rx, signal_tx, server, stage2,
-            )
+            ConnectionData::new_conn(stream, addr, data_tx2, data_rx, signal_tx, server, stage2)
         });
 
         ConnectionWithSignal {
@@ -50,7 +51,7 @@ impl ConnectionData {
     }
 
     #[allow(clippy::too_many_arguments)]
-    pub fn execute_connection(
+    pub fn new_conn(
         stream: TcpStream,
         addr: IpAddr,
         sender: Sender<PlayerMessage>,
@@ -73,6 +74,9 @@ impl ConnectionData {
             connected_server: server,
             associated_data: PlayerData::default(),
             mojauth: None,
+            components: DataComponentMap::new()
+                .with(PlayerComponents::GAMEMODE, Gamemode::Survival),
+            last_saved_components: DataComponentMap::new(),
         };
 
         conn.event_loop();
