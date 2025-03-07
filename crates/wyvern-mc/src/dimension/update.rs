@@ -69,25 +69,32 @@ impl DimensionData {
             };
             Runtime::spawn_task(move || {
                 if let Ok(true) = entity.get(EntityComponents::PHYSICS_ENABLED) {
-                    if let Ok(velocity) = entity.get(EntityComponents::VELOCITY) {
-                        let pos = entity.get(EntityComponents::POSITION)?;
-                        let new_pos = pos
-                            .with_x(pos.x() + velocity.x())
-                            .with_y(pos.y() + velocity.y())
-                            .with_z(pos.z() + velocity.z());
-                        if dimension
-                            .get_block(Vec3::new(
-                                new_pos.x().floor() as i32,
-                                new_pos.y().floor() as i32,
-                                new_pos.z().floor() as i32,
-                            ))?
-                            .name()
-                            == &Blocks::AIR
-                        {
-                            entity.set(EntityComponents::POSITION, new_pos)?;
-                        } else {
-                            entity.set(EntityComponents::VELOCITY, Vec3::new(0.0, 0.0, 0.0))?;
+                    if let Ok(mut velocity) = entity.get(EntityComponents::VELOCITY) {
+                        let mut pos = entity.get(EntityComponents::POSITION)?;
+                        for _ in 1..10 {
+                            let new_pos = pos
+                                .with_x(pos.x() + velocity.x())
+                                .with_y(pos.y() + velocity.y())
+                                .with_z(pos.z() + velocity.z());
+
+                            if dimension
+                                .get_block(Vec3::new(
+                                    new_pos.x().floor() as i32,
+                                    new_pos.y().floor() as i32,
+                                    new_pos.z().floor() as i32,
+                                ))?
+                                .name()
+                                == &Blocks::AIR
+                            {
+                                pos = new_pos;
+                                break;
+                            } else {
+                                velocity = velocity.map(|x| x / 2.0);
+                            }
                         }
+                        velocity = velocity.map(|x| x * 0.9);
+                        entity.set(EntityComponents::POSITION, pos)?;
+                        entity.set(EntityComponents::VELOCITY, velocity)?;
                     }
 
                     if let Ok(true) = entity.get(EntityComponents::GRAVITY_ENABLED) {
