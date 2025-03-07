@@ -33,7 +33,7 @@ use wyvern_macros::{actor, message};
 use crate::{
     actors::{ActorError, ActorResult},
     dimension::Dimension,
-    entities::EntityComponents,
+    entities::{AttributeContainer, EntityComponents},
     inventory::{DataInventory, Inventory},
     item::ItemStack,
     runtime::Runtime,
@@ -72,6 +72,14 @@ pub(crate) struct MojauthData {
 
 #[message(Player, PlayerMessage)]
 impl ConnectionData {
+    #[SetAttributes]
+    pub fn set_attributes(&mut self, container: AttributeContainer) -> ActorResult<()> {
+        self.associated_data.attributes = container;
+        let id = self.associated_data.entity_id;
+        self.write_packet(self.associated_data.attributes.clone().into_packet(id));
+        Ok(())
+    }
+
     #[Disconnect]
     pub(crate) fn disconnect_internal(&mut self, message: TextKinds) -> ActorResult<()> {
         let stage = *self.stage.lock().unwrap();

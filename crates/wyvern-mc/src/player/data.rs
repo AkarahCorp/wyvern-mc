@@ -2,6 +2,7 @@ use std::time::Instant;
 
 use crate::{
     dimension::Dimension,
+    entities::AttributeContainer,
     inventory::DataInventory,
     item::ItemStack,
     values::{Vec2, Vec3},
@@ -40,6 +41,7 @@ pub struct PlayerData {
 
     pub(crate) cursor_item: ItemStack,
     pub(crate) gamemode: Gamemode,
+    pub(crate) attributes: AttributeContainer,
 }
 
 impl Default for PlayerData {
@@ -76,6 +78,7 @@ impl Default for PlayerData {
             cursor_item: ItemStack::air(),
             window_id: 0,
             gamemode: Gamemode::Survival,
+            attributes: AttributeContainer::new(),
         }
     }
 }

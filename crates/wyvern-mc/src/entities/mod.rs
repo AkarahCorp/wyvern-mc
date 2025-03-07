@@ -12,6 +12,8 @@ use crate::{
 
 mod components;
 pub use components::*;
+mod attributes;
+pub use attributes::*;
 
 #[derive(Clone, Debug)]
 pub struct Entity {
