@@ -7,9 +7,17 @@ use voxidian_protocol::{
     value::VarInt,
 };
 
-use crate::{actors::ActorResult, components::DataComponentPatch, values::Vec3};
+use crate::{
+    actors::ActorResult,
+    components::{DataComponentHolder, DataComponentPatch},
+    entities::EntityComponents,
+    id,
+    item::ItemStack,
+    runtime::Runtime,
+    values::Vec3,
+};
 
-use super::{Player, PlayerComponents};
+use super::{ConnectionData, Player, PlayerComponents};
 
 impl Player {
     pub(crate) fn update_components(&mut self) -> ActorResult<()> {
@@ -78,6 +86,29 @@ impl Player {
         }
 
         self.set_saved_components(current_components.clone())?;
+
+        Ok(())
+    }
+}
+
+impl ConnectionData {
+    pub fn update_self_entity(&mut self) -> ActorResult<()> {
+        let dim = self.associated_data.dimension.clone().unwrap();
+        let pos = self.get(PlayerComponents::POSITION)?;
+        let dir = self.get(PlayerComponents::DIRECTION)?;
+        let uuid = self.get(PlayerComponents::UUID)?;
+
+        let main_hand_item = self
+            .get_inv_slot(self.associated_data.held_slot as usize)
+            .unwrap_or_else(|_| ItemStack::new(id![minecraft:air]));
+
+        Runtime::spawn_task(move || {
+            dim.get_entity(uuid).set(EntityComponents::POSITION, pos)?;
+            dim.get_entity(uuid).set(EntityComponents::DIRECTION, dir)?;
+            dim.get_entity(uuid)
+                .set(EntityComponents::MAINHAND_ITEM, main_hand_item)?;
+            Ok(())
+        });
 
         Ok(())
     }

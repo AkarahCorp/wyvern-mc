@@ -13,7 +13,7 @@ use crate::{
 
 pub struct ItemType;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct ItemStack {
     pub(crate) id: Id,
     pub(crate) map: DataComponentMap,
@@ -32,15 +32,19 @@ impl DataComponentHolder for ItemStack {
 impl ItemStack {
     pub fn new(id: Id) -> ItemStack {
         ItemStack {
-            id,
-            map: DataComponentMap::new().with(ItemComponents::ITEM_COUNT, 1),
+            id: id.clone(),
+            map: DataComponentMap::new()
+                .with(ItemComponents::ITEM_COUNT, 1)
+                .with(ItemComponents::ITEM_MODEL, id),
         }
     }
 
     pub fn air() -> ItemStack {
         ItemStack {
             id: Id::constant("minecraft", "air"),
-            map: DataComponentMap::new().with(ItemComponents::ITEM_COUNT, 1),
+            map: DataComponentMap::new()
+                .with(ItemComponents::ITEM_COUNT, 1)
+                .with(ItemComponents::ITEM_MODEL, Id::constant("minecraft", "air")),
         }
     }
 

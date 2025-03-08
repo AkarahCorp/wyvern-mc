@@ -1,4 +1,6 @@
-use voxidian_protocol::packet::s2c::play::EntityPositionSyncS2CPlayPacket;
+use voxidian_protocol::packet::s2c::play::{
+    EntityEquipmentPart, EntityPositionSyncS2CPlayPacket, EquipmentSlot, SetEquipmentS2CPlayPacket,
+};
 
 use crate::{
     actors::ActorResult,
@@ -103,6 +105,44 @@ impl DimensionData {
                         .unwrap_or(Vec3::new(0.0, 0.0, 0.0));
                     entity.set(EntityComponents::VELOCITY, vel.with_y(vel.y() - 0.08))?;
                 }
+                let mut parts = Vec::new();
+                macro_rules! add_parts {
+                    (
+                        $($ty:ident -> $ev:ident),*
+                    ) => {
+                        $(if let Ok(item) = entity.get(EntityComponents::$ty) {
+                            parts.push(EntityEquipmentPart {
+                                slot: EquipmentSlot::$ev,
+                                item: item.into(),
+                            });
+                        };)*
+                    };
+                }
+                add_parts!(
+                    MAINHAND_ITEM -> Mainhand,
+                    OFFHAND_ITEM -> Offhand,
+                    BODY_ITEM -> Body,
+
+                    HELMET_ITEM -> Helmet,
+                    CHESTPLATE_ITEM -> Chestplate,
+                    LEGGINGS_ITEM -> Leggings,
+                    BOOTS_ITEM -> Boots
+                );
+
+                let eid = entity.get(EntityComponents::ENTITY_ID).unwrap_or(-1);
+
+                if !parts.is_empty() {
+                    for player in entity.dimension().players()? {
+                        let player = Server::get()?.player(player)?;
+                        if player.entity_id()? != eid {
+                            player.write_packet(SetEquipmentS2CPlayPacket {
+                                entity_id: eid.into(),
+                                parts: parts.clone(),
+                            })?;
+                        }
+                    }
+                }
+
                 Ok(())
             });
         }

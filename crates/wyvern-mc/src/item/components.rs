@@ -1,3 +1,5 @@
+use voxidian_protocol::packet::s2c::play::EquipmentSlot as PtcEquipmentSlot;
+
 use crate::{
     components::DataComponentType,
     id,
@@ -18,4 +20,40 @@ impl ItemComponents {
     pub const ITEM_NAME: DataComponentType<TextKinds> =
         DataComponentType::new(id![minecraft:item_name]);
     pub const LORE: DataComponentType<Vec<TextKinds>> = DataComponentType::new(id![minecraft:lore]);
+    pub const EQUIPPABLE: DataComponentType<EquippableComponent> =
+        DataComponentType::new(id![minecraft:equippable]);
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum EquipmentSlot {
+    Mainhand,
+    Offhand,
+
+    Helmet,
+    Chestplate,
+    Leggings,
+    Boots,
+
+    Body,
+}
+
+impl From<PtcEquipmentSlot> for EquipmentSlot {
+    fn from(value: PtcEquipmentSlot) -> Self {
+        match value {
+            PtcEquipmentSlot::Mainhand => EquipmentSlot::Mainhand,
+            PtcEquipmentSlot::Offhand => EquipmentSlot::Offhand,
+            PtcEquipmentSlot::Boots => EquipmentSlot::Boots,
+            PtcEquipmentSlot::Leggings => EquipmentSlot::Leggings,
+            PtcEquipmentSlot::Chestplate => EquipmentSlot::Chestplate,
+            PtcEquipmentSlot::Helmet => EquipmentSlot::Helmet,
+            PtcEquipmentSlot::Body => EquipmentSlot::Body,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct EquippableComponent {
+    pub slot: EquipmentSlot,
+    pub equip_sound: Id,
+    pub model: Id,
 }

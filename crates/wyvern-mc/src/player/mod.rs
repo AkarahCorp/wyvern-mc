@@ -37,7 +37,6 @@ use crate::{
     entities::EntityComponents,
     inventory::{DataInventory, Inventory},
     item::ItemStack,
-    runtime::Runtime,
     server::Server,
     values::{Id, Sound, Text, TextKinds, Vec2, Vec3},
 };
@@ -353,6 +352,7 @@ impl ConnectionData {
             slot_data: item.into(),
         };
         self.write_packet(packet);
+
         Ok(())
     }
 
@@ -495,20 +495,6 @@ impl ConnectionData {
         new_buf.write_u8s(buf.as_slice());
 
         let _ = self.send_packet_buf(buf);
-    }
-
-    pub fn update_self_entity(&mut self) -> ActorResult<()> {
-        let dim = self.associated_data.dimension.clone().unwrap();
-        let pos = self.get(PlayerComponents::POSITION)?;
-        let dir = self.get(PlayerComponents::DIRECTION)?;
-        let uuid = self.get(PlayerComponents::UUID)?;
-
-        Runtime::spawn_task(move || {
-            dim.get_entity(uuid).set(EntityComponents::POSITION, pos)?;
-            dim.get_entity(uuid).set(EntityComponents::DIRECTION, dir)
-        });
-
-        Ok(())
     }
 }
 

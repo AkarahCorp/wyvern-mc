@@ -1,14 +1,15 @@
 use voxidian_protocol::value::{
-    CustomData, Damage, DataComponentTypes, DataComponents, ItemModel, ItemName, LengthPrefixVec,
-    Lore, MaxDamage, Nbt as PtcNbt, NbtElement, SlotData, Text, VarInt,
+    CustomData, Damage, DataComponentTypes, DataComponents, Equippable, EquippableSlot, Identifier,
+    ItemModel, ItemName, LengthPrefixVec, Lore, MaxDamage, Nbt as PtcNbt, NbtElement, RegOr,
+    SlotData, SoundEvent, Text, VarInt,
 };
 
 use crate::{
     components::{DataComponentHolder, DataComponentMap},
-    values::nbt::Nbt,
+    values::{Id, nbt::Nbt},
 };
 
-use super::{ITEM_REGISTRY, ItemComponents, ItemStack};
+use super::{EquipmentSlot, EquippableComponent, ITEM_REGISTRY, ItemComponents, ItemStack};
 
 impl From<ItemStack> for SlotData {
     fn from(value: ItemStack) -> Self {
@@ -64,6 +65,30 @@ impl From<ItemStack> for SlotData {
 
             filtered_components.push(DataComponentTypes::Lore);
         }
+        if let Ok(component) = value.get(ItemComponents::EQUIPPABLE) {
+            components.push(DataComponents::Equippable(Equippable {
+                slot: match component.slot {
+                    EquipmentSlot::Mainhand => EquippableSlot::MainHand,
+                    EquipmentSlot::Offhand => EquippableSlot::Offhand,
+                    EquipmentSlot::Helmet => EquippableSlot::Head,
+                    EquipmentSlot::Chestplate => EquippableSlot::Chest,
+                    EquipmentSlot::Leggings => EquippableSlot::Legs,
+                    EquipmentSlot::Boots => EquippableSlot::Feet,
+                    EquipmentSlot::Body => EquippableSlot::Body,
+                },
+                equip_sound: RegOr::Or(SoundEvent {
+                    name: component.equip_sound.into(),
+                    fixed_range: None,
+                }),
+                model: Some(component.model.into()),
+                camera_overlay: None,
+                allowed_entities: None,
+                dispensable: false,
+                swappable: true,
+                damage_on_hurt: false,
+            }));
+            filtered_components.push(DataComponentTypes::Equippable);
+        }
 
         let count = value
             .get(ItemComponents::ITEM_COUNT)
@@ -113,6 +138,24 @@ impl From<SlotData> for ItemStack {
                 }
                 DataComponents::ItemModel(id) => {
                     map.set(ItemComponents::ITEM_MODEL, id.asset.into());
+                }
+                DataComponents::Equippable(component) => {
+                    map.set(ItemComponents::EQUIPPABLE, EquippableComponent {
+                        slot: match component.slot {
+                            EquippableSlot::MainHand => EquipmentSlot::Mainhand,
+                            EquippableSlot::Feet => EquipmentSlot::Boots,
+                            EquippableSlot::Legs => EquipmentSlot::Leggings,
+                            EquippableSlot::Chest => EquipmentSlot::Chestplate,
+                            EquippableSlot::Head => EquipmentSlot::Helmet,
+                            EquippableSlot::Offhand => EquipmentSlot::Offhand,
+                            EquippableSlot::Body => EquipmentSlot::Body,
+                        },
+                        equip_sound: match component.equip_sound {
+                            RegOr::Id(_) => Id::empty(),
+                            RegOr::Or(event) => event.name.into(),
+                        },
+                        model: component.model.unwrap_or(Identifier::new("", "")).into(),
+                    });
                 }
                 _ => {}
             }

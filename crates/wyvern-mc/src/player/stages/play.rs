@@ -2,9 +2,9 @@ use voxidian_protocol::{
     packet::{
         c2s::play::{BlockFace, C2SPlayPackets, InteractAction, PlayerStatus},
         s2c::play::{
-            AddEntityS2CPlayPacket, ContainerSlotGroup, DisconnectS2CPlayPacket, GameEvent,
-            GameEventS2CPlayPacket, Gamemode, Hand, PlayerActionEntry,
-            PlayerInfoUpdateS2CPlayPacket, PongResponseS2CPlayPacket,
+            AddEntityS2CPlayPacket, AnimateS2CPlayPacket, ContainerSlotGroup,
+            DisconnectS2CPlayPacket, EntityAnimation, GameEvent, GameEventS2CPlayPacket, Gamemode,
+            Hand, PlayerActionEntry, PlayerInfoUpdateS2CPlayPacket, PongResponseS2CPlayPacket,
         },
     },
     value::{Angle, ProfileProperty, Text, TextComponent, VarInt},
@@ -388,6 +388,45 @@ impl ConnectionData {
                                     }
                                 }
                                 InteractAction::InteractAt(_, _, _, _hand) => {}
+                            }
+                            Ok(())
+                        });
+                    }
+                    C2SPlayPackets::Swing(packet) => {
+                        let Some(sender) = this.sender.upgrade() else {
+                            return Ok(());
+                        };
+                        let player = Player { sender };
+                        let eid = this.associated_data.entity_id;
+                        let uuid = this.get(PlayerComponents::UUID)?;
+                        Runtime::spawn_task(move || {
+                            let players = player.dimension()?.players()?;
+
+                            match packet.hand {
+                                Hand::Mainhand => {
+                                    for player in players {
+                                        if player == uuid {
+                                            continue;
+                                        }
+                                        let player = Server::get()?.player(player)?;
+                                        player.write_packet(AnimateS2CPlayPacket {
+                                            id: eid.into(),
+                                            anim: EntityAnimation::SwingMainHand,
+                                        })?;
+                                    }
+                                }
+                                Hand::Offhand => {
+                                    for player in players {
+                                        if player == uuid {
+                                            continue;
+                                        }
+                                        let player = Server::get()?.player(player)?;
+                                        player.write_packet(AnimateS2CPlayPacket {
+                                            id: eid.into(),
+                                            anim: EntityAnimation::SwingOffHand,
+                                        })?;
+                                    }
+                                }
                             }
                             Ok(())
                         });

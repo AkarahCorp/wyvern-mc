@@ -3,6 +3,7 @@ use voxidian_protocol::value::Uuid;
 use crate::{
     components::{DataComponentHolder, DataComponentType},
     id,
+    item::ItemStack,
     values::{Id, Vec2, Vec3},
 };
 
@@ -27,6 +28,21 @@ impl EntityComponents {
     pub const GRAVITY_ENABLED: DataComponentType<bool> =
         DataComponentType::new(id![minecraft:gravity]);
     pub const DRAG_ENABLED: DataComponentType<bool> = DataComponentType::new(id![minecraft:drag]);
+
+    pub const MAINHAND_ITEM: DataComponentType<ItemStack> =
+        DataComponentType::new(id![minecraft:equipment/mainhand]);
+    pub const OFFHAND_ITEM: DataComponentType<ItemStack> =
+        DataComponentType::new(id![minecraft:equipment/offhand]);
+    pub const BODY_ITEM: DataComponentType<ItemStack> =
+        DataComponentType::new(id![minecraft:equipment/body]);
+    pub const HELMET_ITEM: DataComponentType<ItemStack> =
+        DataComponentType::new(id![minecraft:equipment/helmet]);
+    pub const CHESTPLATE_ITEM: DataComponentType<ItemStack> =
+        DataComponentType::new(id![minecraft:equipment/chestplate]);
+    pub const LEGGINGS_ITEM: DataComponentType<ItemStack> =
+        DataComponentType::new(id![minecraft:equipment/leggings]);
+    pub const BOOTS_ITEM: DataComponentType<ItemStack> =
+        DataComponentType::new(id![minecraft:equipment/boots]);
 }
 
 impl DataComponentHolder for EntityData {
