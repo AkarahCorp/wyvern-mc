@@ -3,6 +3,7 @@ use crate::{
     id,
     values::nbt::Nbt,
 };
+use std::collections::BTreeMap;
 
 use super::{Axis, BlockDirection};
 
@@ -21,7 +22,7 @@ macro_rules! generate_block_components {
         }
 
         #[allow(unused)]
-        pub fn components_to_array(components: &DataComponentMap) -> Vec<(String, String)> {
+        pub fn components_to_array(components: &DataComponentMap) -> BTreeMap<String, String> {
             let mut arr = Vec::new();
             $(
                 if let Ok(value) = components.get(BlockComponents::$name) {
@@ -33,7 +34,7 @@ macro_rules! generate_block_components {
         }
 
         #[allow(unused)]
-        pub fn array_to_components(array: &[(String, String)]) -> DataComponentMap {
+        pub fn array_to_components(array: &BTreeMap<String, String>) -> DataComponentMap {
             let mut map = DataComponentMap::new();
             for element in array {
                 match element.0.as_str() {
