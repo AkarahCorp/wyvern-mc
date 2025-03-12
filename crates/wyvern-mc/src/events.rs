@@ -126,6 +126,7 @@ pub struct StopBreakBlockEvent {
 pub struct BreakBlockEvent {
     pub player: Player,
     pub position: Vec3<i32>,
+    pub old_block: BlockState,
 }
 
 #[derive(Debug, Clone)]

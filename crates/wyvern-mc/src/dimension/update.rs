@@ -12,7 +12,6 @@ use crate::{
     components::DataComponentPatch,
     dimension::{Dimension, DimensionData},
     entities::Entity,
-    player::PlayerComponents,
     runtime::Runtime,
     server::Server,
     values::Vec3,
@@ -41,7 +40,6 @@ impl DimensionData {
                     let player = *player;
                     Runtime::spawn_task(move || {
                         let player = Server::get()?.player(player)?;
-                        log::error!("{:?}: {:?}", player.get(PlayerComponents::USERNAME), dir);
                         player.write_packet(EntityPositionSyncS2CPlayPacket {
                             entity_id: id.into(),
                             x: pos.x(),

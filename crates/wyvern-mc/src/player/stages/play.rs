@@ -59,6 +59,12 @@ impl ConnectionData {
                                     })?;
                                 }
                                 if this.get(PlayerComponents::GAMEMODE) == Ok(Gamemode::Creative) {
+                                    let old_block = this
+                                        .associated_data
+                                        .dimension
+                                        .as_ref()
+                                        .unwrap()
+                                        .get_block(block)?;
                                     this.associated_data.dimension.as_ref().unwrap().set_block(
                                         block,
                                         BlockState::new(Id::constant("minecraft", "air")),
@@ -67,6 +73,7 @@ impl ConnectionData {
                                         this.connected_server.spawn_event(BreakBlockEvent {
                                             player: Player { sender },
                                             position: block,
+                                            old_block,
                                         })?;
                                     }
                                 }
@@ -74,6 +81,12 @@ impl ConnectionData {
                             PlayerStatus::CancelledDigging => {}
                             PlayerStatus::FinishedDigging => {
                                 if this.get(PlayerComponents::GAMEMODE) != Ok(Gamemode::Creative) {
+                                    let old_block = this
+                                        .associated_data
+                                        .dimension
+                                        .as_ref()
+                                        .unwrap()
+                                        .get_block(block)?;
                                     this.associated_data.dimension.as_ref().unwrap().set_block(
                                         block,
                                         BlockState::new(Id::constant("minecraft", "air")),
@@ -82,6 +95,7 @@ impl ConnectionData {
                                         this.connected_server.spawn_event(BreakBlockEvent {
                                             player: Player { sender },
                                             position: block,
+                                            old_block,
                                         })?;
                                     }
                                 }
