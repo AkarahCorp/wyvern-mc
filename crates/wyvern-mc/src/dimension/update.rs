@@ -1,5 +1,9 @@
-use voxidian_protocol::packet::s2c::play::{
-    EntityEquipmentPart, EntityPositionSyncS2CPlayPacket, EquipmentSlot, SetEquipmentS2CPlayPacket,
+use voxidian_protocol::{
+    packet::s2c::play::{
+        EntityEquipmentPart, EntityPositionSyncS2CPlayPacket, EquipmentSlot,
+        RotateHeadS2CPlayPacket, SetEquipmentS2CPlayPacket,
+    },
+    value::Angle,
 };
 
 use crate::{
@@ -8,6 +12,7 @@ use crate::{
     components::DataComponentPatch,
     dimension::{Dimension, DimensionData},
     entities::Entity,
+    player::PlayerComponents,
     runtime::Runtime,
     server::Server,
     values::Vec3,
@@ -36,6 +41,7 @@ impl DimensionData {
                     let player = *player;
                     Runtime::spawn_task(move || {
                         let player = Server::get()?.player(player)?;
+                        log::error!("{:?}: {:?}", player.get(PlayerComponents::USERNAME), dir);
                         player.write_packet(EntityPositionSyncS2CPlayPacket {
                             entity_id: id.into(),
                             x: pos.x(),
@@ -47,6 +53,10 @@ impl DimensionData {
                             yaw: dir.x(),
                             pitch: dir.y(),
                             on_ground: true,
+                        })?;
+                        player.write_packet(RotateHeadS2CPlayPacket {
+                            entity: id.into(),
+                            yaw: Angle::of_deg(dir.x().rem_euclid(360.0)),
                         })?;
                         Ok(())
                     });
