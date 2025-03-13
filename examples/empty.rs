@@ -6,10 +6,12 @@ use wyvern_mc::{
     blocks::{BlockComponents, BlockState},
     components::DataComponentHolder,
     entities::{AttributeContainer, Attributes},
-    events::{BreakBlockEvent, DimensionCreateEvent, PlayerJoinEvent, ServerStartEvent},
+    events::{
+        BreakBlockEvent, DimensionCreateEvent, PlaceBlockEvent, PlayerJoinEvent, ServerStartEvent,
+    },
     id,
     inventory::Inventory,
-    item::ItemStack,
+    item::{ItemComponents, ItemStack},
     player::PlayerComponents,
     runtime::Runtime,
     server::Server,
@@ -24,6 +26,7 @@ fn main() {
         .event(on_dim_init)
         .event(on_join)
         .event(on_break)
+        .event(on_place)
         .registries(|registries| {
             registries.add_defaults();
         })
@@ -61,6 +64,11 @@ fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
         .inventory()?
         .set_slot(37, ItemStack::new(id![minecraft:diamond_shovel]))?;
 
+    event.player.inventory()?.set_slot(
+        38,
+        ItemStack::new(id![minecraft:cobblestone]).with(ItemComponents::ITEM_COUNT, 64),
+    )?;
+
     Runtime::spawn_task(move || {
         std::thread::sleep(Duration::from_millis(10000));
         event.player.set(
@@ -75,11 +83,13 @@ fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
 }
 
 fn on_break(event: Arc<BreakBlockEvent>) -> ActorResult<()> {
-    Runtime::spawn_task(move || {
-        let dim = event.player.dimension()?;
-        dim.set_block(event.position, event.old_block.clone())?;
-        Ok(())
-    });
+    let dim = event.player.dimension()?;
+    dim.set_block(event.position, event.old_block.clone())?;
+    Ok(())
+}
 
+fn on_place(event: Arc<PlaceBlockEvent>) -> ActorResult<()> {
+    let dim = event.player.dimension()?;
+    dim.set_block(event.position, BlockState::new(id![minecraft:air]))?;
     Ok(())
 }

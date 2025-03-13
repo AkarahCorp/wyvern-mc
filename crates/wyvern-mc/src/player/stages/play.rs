@@ -2,9 +2,10 @@ use voxidian_protocol::{
     packet::{
         c2s::play::{BlockFace, C2SPlayPackets, InteractAction, PlayerStatus},
         s2c::play::{
-            AddEntityS2CPlayPacket, AnimateS2CPlayPacket, ContainerSlotGroup,
-            DisconnectS2CPlayPacket, EntityAnimation, GameEvent, GameEventS2CPlayPacket, Gamemode,
-            Hand, PlayerActionEntry, PlayerInfoUpdateS2CPlayPacket, PongResponseS2CPlayPacket,
+            AddEntityS2CPlayPacket, AnimateS2CPlayPacket, BlockChangedAckS2CPlayPacket,
+            ContainerSlotGroup, DisconnectS2CPlayPacket, EntityAnimation, GameEvent,
+            GameEventS2CPlayPacket, Gamemode, Hand, PlayerActionEntry,
+            PlayerInfoUpdateS2CPlayPacket, PongResponseS2CPlayPacket,
         },
     },
     value::{Angle, ProfileProperty, Text, TextComponent, VarInt},
@@ -50,6 +51,8 @@ impl ConnectionData {
                     C2SPlayPackets::PlayerAction(packet) => {
                         let block =
                             Vec3::new(packet.location.x, packet.location.y, packet.location.z);
+
+                        this.write_packet(BlockChangedAckS2CPlayPacket(packet.sequence));
                         match packet.status {
                             PlayerStatus::StartedDigging => {
                                 if let Some(sender) = this.sender.upgrade() {
@@ -65,6 +68,7 @@ impl ConnectionData {
                                         .as_ref()
                                         .unwrap()
                                         .get_block(block)?;
+
                                     this.associated_data.dimension.as_ref().unwrap().set_block(
                                         block,
                                         BlockState::new(Id::constant("minecraft", "air")),
@@ -87,6 +91,7 @@ impl ConnectionData {
                                         .as_ref()
                                         .unwrap()
                                         .get_block(block)?;
+
                                     this.associated_data.dimension.as_ref().unwrap().set_block(
                                         block,
                                         BlockState::new(Id::constant("minecraft", "air")),
@@ -295,6 +300,8 @@ impl ConnectionData {
                             .as_ref()
                             .ok_or(ActorError::ActorIsNotLoaded)?
                             .clone();
+
+                        this.write_packet(BlockChangedAckS2CPlayPacket(packet.sequence));
                         Runtime::spawn_task(move || {
                             let _ = dim.set_block(final_pos, state_clone);
 
