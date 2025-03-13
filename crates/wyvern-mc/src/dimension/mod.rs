@@ -183,9 +183,7 @@ impl DimensionData {
         Ok(self
             .entities
             .values()
-            .filter(|x| {
-                x.get(EntityComponents::ENTITY_TYPE).unwrap() != Id::constant("minecraft", "player")
-            })
+            .filter(|x| !x.get(EntityComponents::PLAYER_CONTROLLED).unwrap())
             .map(|x| Entity {
                 dimension: Dimension {
                     sender: self.sender.clone(),
@@ -226,6 +224,7 @@ impl DimensionData {
         components.set(EntityComponents::POSITION, Vec3::new(0.0, 0.0, 0.0));
         components.set(EntityComponents::DIRECTION, Vec2::new(0.0, 0.0));
         components.set(EntityComponents::VELOCITY, Vec3::new(0.0, 0.0, 0.0));
+        components.set(EntityComponents::PLAYER_CONTROLLED, false);
 
         self.entities.insert(uuid, EntityData {
             last_components: DataComponentMap::new(),
@@ -281,7 +280,7 @@ impl DimensionData {
         components.set(EntityComponents::POSITION, Vec3::new(0.0, 0.0, 0.0));
         components.set(EntityComponents::DIRECTION, Vec2::new(0.0, 0.0));
         components.set(EntityComponents::VELOCITY, Vec3::new(0.0, 0.0, 0.0));
-
+        components.set(EntityComponents::PLAYER_CONTROLLED, true);
         self.entities.insert(uuid, EntityData {
             last_components: DataComponentMap::new(),
             components,
@@ -383,8 +382,7 @@ impl DimensionData {
     pub fn players(&mut self) -> ActorResult<Vec<Uuid>> {
         let mut vec = Vec::new();
         for entity in &mut self.entities {
-            let etype = entity.1.get(EntityComponents::ENTITY_TYPE).unwrap();
-            if etype == Id::constant("minecraft", "player") {
+            if entity.1.get(EntityComponents::PLAYER_CONTROLLED)? {
                 let uuid = entity.1.get(EntityComponents::UUID).unwrap();
                 vec.push(uuid);
             }

@@ -20,6 +20,8 @@ impl EntityComponents {
         DataComponentType::new(id![minecraft:direction]);
     pub const UUID: DataComponentType<Uuid> = DataComponentType::new(id![minecraft:uuid]);
     pub const ENTITY_ID: DataComponentType<i32> = DataComponentType::new(id![minecraft:entity_id]);
+    pub const PLAYER_CONTROLLED: DataComponentType<bool> =
+        DataComponentType::new(id![minecraft:player_controlled]);
 
     pub const VELOCITY: DataComponentType<Vec3<f64>> =
         DataComponentType::new(id![minecraft:velocity]);
