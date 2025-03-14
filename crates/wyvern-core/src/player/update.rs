@@ -2,7 +2,7 @@ use core::f64;
 
 use voxidian_protocol::{
     packet::s2c::play::{
-        GameEvent, GameEventS2CPlayPacket, Gamemode, PlayerPositionS2CPlayPacket, TeleportFlags,
+        GameEvent, GameEventS2CPlayPacket, PlayerPositionS2CPlayPacket, TeleportFlags,
     },
     value::VarInt,
 };
@@ -13,7 +13,7 @@ use crate::{
     entities::EntityComponents,
     item::ItemStack,
     runtime::Runtime,
-    values::{Vec3, id},
+    values::{Gamemode, Vec3, id},
 };
 
 use super::{ConnectionData, Player, PlayerComponents};
@@ -32,7 +32,6 @@ impl Player {
             self.write_packet(GameEventS2CPlayPacket {
                 event: GameEvent::ChangeGameMode,
                 value: match mode {
-                    Gamemode::None => 0.0,
                     Gamemode::Survival => 0.0,
                     Gamemode::Creative => 1.0,
                     Gamemode::Adventure => 2.0,

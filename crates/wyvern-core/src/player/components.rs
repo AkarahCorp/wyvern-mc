@@ -1,16 +1,13 @@
 use std::sync::Arc;
 
 use dyn_clone::clone_box;
-use voxidian_protocol::{
-    packet::{c2s::play::InputFlags, s2c::play::Gamemode},
-    value::Uuid,
-};
+use voxidian_protocol::{packet::c2s::play::InputFlags, value::Uuid};
 
 use crate::{
     actors::{ActorError, ActorResult},
     components::{ComponentElement, DataComponentType},
     entities::AttributeContainer,
-    values::{Vec2, Vec3, id},
+    values::{Gamemode, Vec2, Vec3, id},
 };
 
 use super::Player;

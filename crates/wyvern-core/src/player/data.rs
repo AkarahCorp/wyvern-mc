@@ -1,7 +1,7 @@
 use std::time::Instant;
 
 use crate::{dimension::Dimension, inventory::DataInventory, item::ItemStack, values::Vec2};
-use voxidian_protocol::packet::s2c::play::ScreenWindowKind;
+use wyvern_values::InventoryKind;
 
 #[derive(Debug, Clone)]
 pub struct PlayerData {
@@ -17,7 +17,7 @@ pub struct PlayerData {
     pub(crate) last_sent_keep_alive: Instant,
 
     pub(crate) inventory: DataInventory,
-    pub(crate) screen: Option<(ScreenWindowKind, DataInventory)>,
+    pub(crate) screen: Option<(InventoryKind, DataInventory)>,
     pub(crate) window_id: i8,
     pub(crate) held_slot: i16,
 

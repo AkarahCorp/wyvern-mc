@@ -1,6 +1,5 @@
 use std::{sync::Arc, time::Duration};
 
-use voxidian_protocol::packet::s2c::play::Gamemode;
 use wyvern_mc::{
     actors::ActorResult,
     blocks::{BlockComponents, BlockState},
@@ -14,7 +13,7 @@ use wyvern_mc::{
     player::PlayerComponents,
     runtime::Runtime,
     server::Server,
-    values::{Vec3, id},
+    values::{Gamemode, Vec3, id},
 };
 
 fn main() {

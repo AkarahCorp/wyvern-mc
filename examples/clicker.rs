@@ -3,7 +3,6 @@ use std::{
     sync::{Arc, LazyLock, Mutex},
 };
 
-use voxidian_protocol::packet::s2c::play::ScreenWindowKind;
 use wyvern_mc::{
     actors::ActorResult,
     blocks::BlockState,
@@ -17,7 +16,9 @@ use wyvern_mc::{
     item::{ItemComponents, ItemStack},
     player::PlayerComponents,
     server::Server,
-    values::{Id, SoundCategory, Sounds, Texts, Uuid, Vec2, Vec3, id, nbt::NbtCompound},
+    values::{
+        Id, InventoryKind, SoundCategory, Sounds, Texts, Uuid, Vec2, Vec3, id, nbt::NbtCompound,
+    },
 };
 
 static COUNTER: LazyLock<Mutex<HashMap<Uuid, i32>>> = LazyLock::new(|| Mutex::new(HashMap::new()));
@@ -142,6 +143,6 @@ fn on_right_click(event: Arc<RightClickEvent>) -> ActorResult<()> {
 }
 
 fn on_swap_hands(event: Arc<SwapHandsEvent>) -> ActorResult<()> {
-    event.player.open_screen(ScreenWindowKind::Generic9x1)?;
+    event.player.open_screen(InventoryKind::Chest1Row)?;
     Ok(())
 }

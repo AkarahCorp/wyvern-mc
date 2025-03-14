@@ -4,8 +4,8 @@ use voxidian_protocol::{
         s2c::play::{
             AddEntityS2CPlayPacket, AnimateS2CPlayPacket, BlockChangedAckS2CPlayPacket,
             ContainerSlotGroup, DisconnectS2CPlayPacket, EntityAnimation, GameEvent,
-            GameEventS2CPlayPacket, Gamemode, Hand, PlayerActionEntry,
-            PlayerInfoUpdateS2CPlayPacket, PongResponseS2CPlayPacket,
+            GameEventS2CPlayPacket, Hand, PlayerActionEntry, PlayerInfoUpdateS2CPlayPacket,
+            PongResponseS2CPlayPacket, ScreenWindowKind,
         },
     },
     value::{Angle, ProfileProperty, Text, TextComponent, VarInt},
@@ -26,7 +26,7 @@ use crate::{
     player::{ConnectionData, Player, PlayerComponents},
     runtime::Runtime,
     server::Server,
-    values::{Id, Texts, Vec2, Vec3, cell::Token},
+    values::{Gamemode, Id, Texts, Vec2, Vec3, cell::Token},
 };
 
 impl ConnectionData {
@@ -352,7 +352,10 @@ impl ConnectionData {
 
                         if let Some((screen, open_inventory)) = &mut this.associated_data.screen {
                             for slot in packet.changed_slots.iter() {
-                                match screen.get_slot_index_group(slot.slot as usize).unwrap() {
+                                match ScreenWindowKind::from(*screen)
+                                    .get_slot_index_group(slot.slot as usize)
+                                    .unwrap()
+                                {
                                     ContainerSlotGroup::PlayerHotbar(hotbar) => {
                                         this.associated_data
                                             .inventory

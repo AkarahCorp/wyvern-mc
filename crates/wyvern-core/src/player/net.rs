@@ -16,15 +16,13 @@ use crate::{
 use flume::{Receiver, Sender};
 use voxidian_protocol::{
     packet::{
-        DecodeError, PrefixedPacketDecode, Stage,
-        c2s::handshake::C2SHandshakePackets,
-        processing::PacketProcessing,
-        s2c::play::{Gamemode, KeepAliveS2CPlayPacket},
+        DecodeError, PrefixedPacketDecode, Stage, c2s::handshake::C2SHandshakePackets,
+        processing::PacketProcessing, s2c::play::KeepAliveS2CPlayPacket,
     },
     value::Uuid,
 };
 
-use crate::{player::PlayerMessage, server::Server};
+use crate::{player::PlayerMessage, server::Server, values::Gamemode};
 
 use super::{ConnectionData, ConnectionWithSignal, Player, PlayerComponents, data::PlayerData};
 

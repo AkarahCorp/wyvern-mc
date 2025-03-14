@@ -13,5 +13,9 @@ mod sound;
 pub use sound::*;
 mod text;
 pub use text::*;
+mod gamemode;
+pub use gamemode::*;
+mod window;
+pub use window::*;
 
 pub use voxidian_protocol::value::Uuid;

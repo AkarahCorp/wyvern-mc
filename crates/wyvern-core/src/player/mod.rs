@@ -18,10 +18,11 @@ use voxidian_protocol::{
             login::LoginDisconnectS2CLoginPacket,
             play::{
                 AddEntityS2CPlayPacket, ContainerSetSlotS2CPlayPacket, DisconnectS2CPlayPacket,
-                ForgetLevelChunkS2CPlayPacket, GameEvent, GameEventS2CPlayPacket, Gamemode,
-                OpenScreenS2CPlayPacket, PlayerPositionS2CPlayPacket, PlayerRotationS2CPlayPacket,
-                RespawnDataKept, RespawnS2CPlayPacket, ScreenWindowKind, SoundCategory,
-                SoundEntityS2CPlayPacket, SystemChatS2CPlayPacket, TeleportFlags,
+                ForgetLevelChunkS2CPlayPacket, GameEvent, GameEventS2CPlayPacket,
+                Gamemode as PtcGamemode, OpenScreenS2CPlayPacket, PlayerPositionS2CPlayPacket,
+                PlayerRotationS2CPlayPacket, RespawnDataKept, RespawnS2CPlayPacket,
+                ScreenWindowKind, SoundCategory, SoundEntityS2CPlayPacket, SystemChatS2CPlayPacket,
+                TeleportFlags,
             },
         },
     },
@@ -29,6 +30,7 @@ use voxidian_protocol::{
     value::{Angle, ProfileProperty, Text as PtcText, TextComponent, VarInt},
 };
 use wyvern_macros::{actor, message};
+use wyvern_values::InventoryKind;
 
 use crate::{
     actors::{ActorError, ActorResult},
@@ -38,7 +40,7 @@ use crate::{
     inventory::{DataInventory, Inventory},
     item::ItemStack,
     server::Server,
-    values::{Id, Sound, Text, TextKinds, Vec2, Vec3},
+    values::{Gamemode, Id, Sound, Text, TextKinds, Vec2, Vec3},
 };
 
 mod components;
@@ -237,8 +239,8 @@ impl ConnectionData {
             },
             dim_name: dimension.name()?.into(),
             seed: 0,
-            gamemode: Gamemode::Survival,
-            prev_gamemode: Gamemode::None,
+            gamemode: PtcGamemode::Survival,
+            prev_gamemode: PtcGamemode::None,
             is_debug: false,
             is_flat: false,
             death_loc: None,
@@ -323,7 +325,7 @@ impl ConnectionData {
             .associated_data
             .screen
             .as_ref()
-            .map(|(x, _)| x.container_slot_count())
+            .map(|(x, _)| ScreenWindowKind::from(*x).container_slot_count())
             .unwrap_or(0)
             + slot;
         self.associated_data.inventory.set_slot(slot, copy)?;
@@ -375,7 +377,7 @@ impl ConnectionData {
     }
 
     #[OpenScreen]
-    pub fn open_screen(&mut self, kind: ScreenWindowKind) -> ActorResult<()> {
+    pub fn open_screen(&mut self, kind: InventoryKind) -> ActorResult<()> {
         let id = if self.associated_data.window_id > 100 {
             self.associated_data.window_id = 1;
             1
@@ -386,11 +388,14 @@ impl ConnectionData {
         self.write_packet(OpenScreenS2CPlayPacket {
             window: VarInt::new(id as i32),
             title: PtcText::new().to_nbt(),
-            kind,
+            kind: kind.into(),
         });
         self.associated_data.screen = Some((
             kind,
-            DataInventory::new_filled(kind.container_slot_count(), ItemStack::air),
+            DataInventory::new_filled(
+                ScreenWindowKind::from(kind).container_slot_count(),
+                ItemStack::air,
+            ),
         ));
         Ok(())
     }
