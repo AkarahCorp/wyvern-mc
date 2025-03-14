@@ -13,12 +13,11 @@ use wyvern_mc::{
         DimensionCreateEvent, PlayerJoinEvent, RightClickEvent, ServerStartEvent, ServerTickEvent,
         SwapHandsEvent,
     },
-    id,
     inventory::Inventory,
     item::{ItemComponents, ItemStack},
     player::PlayerComponents,
     server::Server,
-    values::{Id, SoundCategory, Sounds, Texts, Uuid, Vec2, Vec3, nbt::NbtCompound},
+    values::{Id, SoundCategory, Sounds, Texts, Uuid, Vec2, Vec3, id, nbt::NbtCompound},
 };
 
 static COUNTER: LazyLock<Mutex<HashMap<Uuid, i32>>> = LazyLock::new(|| Mutex::new(HashMap::new()));

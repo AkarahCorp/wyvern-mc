@@ -241,11 +241,11 @@ macro_rules! compound {
     (
         $($key:ident: $value:expr),*
     ) => {{
-        let mut compound = $crate::values::nbt::NbtCompound::new();
+        let mut compound = $crate::nbt::NbtCompound::new();
 
         $(
             {
-                compound.set(stringify!($key), $crate::values::nbt::Nbt::new($value));
+                compound.set(stringify!($key), $crate::nbt::Nbt::new($value));
             }
         )*
         compound
@@ -257,10 +257,10 @@ macro_rules! list {
     (
         $($value:expr),*
     ) => {{
-        let mut value = $crate::values::nbt::NbtArray::new();
+        let mut value = $crate::nbt::NbtArray::new();
         $(
             {
-                let _ = value.push($crate::values::nbt::Nbt::new($value));
+                let _ = value.push($crate::nbt::Nbt::new($value));
             }
         )*
         value

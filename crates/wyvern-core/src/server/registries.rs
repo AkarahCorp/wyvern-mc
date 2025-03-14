@@ -3,12 +3,9 @@ use voxidian_protocol::value::{
     WolfVariant as PtcWolfVariant,
 };
 
-use crate::{
-    id,
-    values::{
-        Id, Registry,
-        regval::{DimensionType, PaintingVariant, WolfVariant},
-    },
+use crate::values::{
+    Id, Registry, id,
+    regval::{DimensionType, PaintingVariant, WolfVariant},
 };
 
 #[allow(dead_code)]
@@ -52,23 +49,17 @@ impl From<RegistryContainerBuilder> for RegistryContainer {
 impl RegistryContainerBuilder {
     pub fn add_defaults(&mut self) {
         self.dimension_type(id![minecraft:overworld], DimensionType::default());
-        self.wolf_variant(
-            Id::empty(),
-            WolfVariant {
-                angry_texture: Id::empty(),
-                wild_texture: Id::empty(),
-                tame_texture: Id::empty(),
-                biomes: Vec::new(),
-            },
-        );
-        self.painting_variant(
-            Id::empty(),
-            PaintingVariant {
-                asset: Id::empty(),
-                width: 1,
-                height: 1,
-            },
-        );
+        self.wolf_variant(Id::empty(), WolfVariant {
+            angry_texture: Id::empty(),
+            wild_texture: Id::empty(),
+            tame_texture: Id::empty(),
+            biomes: Vec::new(),
+        });
+        self.painting_variant(Id::empty(), PaintingVariant {
+            asset: Id::empty(),
+            width: 1,
+            height: 1,
+        });
     }
 
     pub fn wolf_variant(&mut self, key: Id, value: WolfVariant) {

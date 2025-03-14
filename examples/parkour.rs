@@ -7,10 +7,9 @@ use wyvern_mc::{
         DimensionCreateEvent, PlayerCommandEvent, PlayerJoinEvent, ServerStartEvent,
         ServerTickEvent,
     },
-    id,
     player::PlayerComponents,
     server::Server,
-    values::{Vec3, regval::DimensionType},
+    values::{Vec3, id, regval::DimensionType},
 };
 
 fn main() {

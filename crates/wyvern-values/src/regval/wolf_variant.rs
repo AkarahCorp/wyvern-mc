@@ -1,4 +1,4 @@
-use crate::values::Id;
+use crate::Id;
 use datafix::serialization::{CodecAdapters, CodecOps, DefaultCodec, MapCodecBuilder};
 use voxidian_protocol::value::{Identifier, WolfVariant as PtcWolfVariant};
 

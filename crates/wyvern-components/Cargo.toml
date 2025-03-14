@@ -1,0 +1,10 @@
+[package]
+name = "wyvern-components"
+version = "0.0.0"
+edition = "2024"
+
+[dependencies]
+dyn-clone = { workspace = true }
+wyvern-actors = { workspace = true }
+wyvern-values = { workspace = true }
+rustc-hash = { workspace = true }

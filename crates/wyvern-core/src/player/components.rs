@@ -10,8 +10,7 @@ use crate::{
     actors::{ActorError, ActorResult},
     components::{ComponentElement, DataComponentType},
     entities::AttributeContainer,
-    id,
-    values::{Vec2, Vec3},
+    values::{Vec2, Vec3, id},
 };
 
 use super::Player;

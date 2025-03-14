@@ -9,13 +9,12 @@ use wyvern_mc::{
         DimensionCreateEvent, PlayerAttackEntityEvent, PlayerAttackPlayerEvent, PlayerJoinEvent,
         ServerStartEvent,
     },
-    id,
     inventory::Inventory,
     item::{EquipmentSlot, EquippableComponent, ItemComponents, ItemStack},
     player::PlayerComponents,
     runtime::Runtime,
     server::Server,
-    values::{Id, Sounds, Texts, Vec3},
+    values::{Id, Sounds, Texts, Vec3, id},
 };
 
 fn main() {

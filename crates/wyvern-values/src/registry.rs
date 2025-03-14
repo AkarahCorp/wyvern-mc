@@ -42,8 +42,16 @@ impl<T> Registry<T> {
         self.inner.clear();
     }
 
-    pub(crate) fn get_entry(&self, key: Id) -> Option<RegEntry<T>> {
+    pub fn get_entry(&self, key: Id) -> Option<RegEntry<T>> {
         self.inner.get_entry(&key.into())
+    }
+
+    pub fn inner(&self) -> &PtcRegistry<T> {
+        &self.inner
+    }
+
+    pub fn inner_mut(&mut self) -> &mut PtcRegistry<T> {
+        &mut self.inner
     }
 }
 

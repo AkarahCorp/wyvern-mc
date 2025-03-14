@@ -84,21 +84,21 @@ impl ConnectionData {
                             this.connected_server
                                 .registries()?
                                 .biomes
-                                .inner
+                                .inner()
                                 .to_registry_data_packet(),
                         );
                         this.write_packet(
                             this.connected_server
                                 .registries()?
                                 .damage_types
-                                .inner
+                                .inner()
                                 .to_registry_data_packet(),
                         );
                         this.write_packet(
                             this.connected_server
                                 .registries()?
                                 .wolf_variants
-                                .inner
+                                .inner()
                                 .to_registry_data_packet(),
                         );
 
@@ -106,7 +106,7 @@ impl ConnectionData {
                             this.connected_server
                                 .registries()?
                                 .painting_variants
-                                .inner
+                                .inner()
                                 .to_registry_data_packet(),
                         );
 
@@ -114,7 +114,7 @@ impl ConnectionData {
                             this.connected_server
                                 .registries()?
                                 .dimension_types
-                                .inner
+                                .inner()
                                 .to_registry_data_packet(),
                         );
 

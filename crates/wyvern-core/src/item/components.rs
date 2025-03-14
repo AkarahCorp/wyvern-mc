@@ -2,8 +2,7 @@ use voxidian_protocol::packet::s2c::play::EquipmentSlot as PtcEquipmentSlot;
 
 use crate::{
     components::DataComponentType,
-    id,
-    values::{Id, TextKinds, nbt::NbtCompound},
+    values::{Id, TextKinds, id, nbt::NbtCompound},
 };
 
 pub struct ItemComponents;

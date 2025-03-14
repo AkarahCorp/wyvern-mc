@@ -1,4 +1,4 @@
-use crate::values::Id;
+use crate::Id;
 use voxidian_protocol::value::{PaintingVariant as PtcPaintingVariant, TextComponent};
 
 pub struct PaintingVariant {

@@ -2,9 +2,8 @@ use voxidian_protocol::value::Uuid;
 
 use crate::{
     components::{DataComponentHolder, DataComponentType},
-    id,
     item::ItemStack,
-    values::{Id, Vec2, Vec3},
+    values::{Id, Vec2, Vec3, id},
 };
 
 use super::EntityData;

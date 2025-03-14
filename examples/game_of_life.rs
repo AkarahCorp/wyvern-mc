@@ -13,9 +13,8 @@ use wyvern_mc::{
         DimensionCreateEvent, PlayerJoinEvent, ServerStartEvent, StartBreakBlockEvent,
         SwapHandsEvent,
     },
-    id,
     server::Server,
-    values::{Id, Vec3, regval::DimensionType},
+    values::{Id, Vec3, id, regval::DimensionType},
 };
 
 const MAX_X: usize = 50;

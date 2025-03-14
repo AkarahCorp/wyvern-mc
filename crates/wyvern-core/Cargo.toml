@@ -6,9 +6,11 @@ edition = "2024"
 [dependencies]
 voxidian-protocol = { workspace = true }
 wyvern-macros = { workspace = true }
+wyvern-values = { workspace = true }
 datafix = { workspace = true }
 log = { workspace = true }
 flume = { workspace = true }
 rand = { workspace = true }
 dyn-clone = { workspace = true }
 rustc-hash = { workspace = true }
+wyvern-actors = { workspace = true }

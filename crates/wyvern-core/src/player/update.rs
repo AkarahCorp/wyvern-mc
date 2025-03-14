@@ -11,10 +11,9 @@ use crate::{
     actors::ActorResult,
     components::{DataComponentHolder, DataComponentPatch},
     entities::EntityComponents,
-    id,
     item::ItemStack,
     runtime::Runtime,
-    values::Vec3,
+    values::{Vec3, id},
 };
 
 use super::{ConnectionData, Player, PlayerComponents};

@@ -426,8 +426,8 @@ impl ConnectionData {
             sound: sound.clone().into(),
             category: SoundCategory::Master,
             entity: self.associated_data.entity_id.into(),
-            volume: sound.volume,
-            pitch: sound.pitch,
+            volume: sound.get_volume(),
+            pitch: sound.get_pitch(),
             seed: 0,
         });
         Ok(())

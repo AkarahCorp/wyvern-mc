@@ -1,7 +1,9 @@
 #![feature(try_blocks)]
 #![allow(clippy::type_complexity)]
 
-pub mod actors;
+pub mod actors {
+    pub use wyvern_actors::*;
+}
 pub mod blocks;
 pub mod components;
 pub mod dimension;
@@ -12,6 +14,8 @@ pub mod item;
 pub mod player;
 pub mod runtime;
 pub mod server;
-pub mod values;
+pub mod values {
+    pub use wyvern_values::*;
+}
 
-pub use wyvern_macros::*;
+pub(crate) use wyvern_macros::*;

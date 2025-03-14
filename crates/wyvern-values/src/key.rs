@@ -91,7 +91,7 @@ impl Clone for Id {
 #[macro_export]
 macro_rules! id {
     ($namespace:ident:$path:ident$(/$subpath:ident)*) => {
-        $crate::values::Id::constant(
+        $crate::Id::constant(
             stringify!($namespace),
             concat!(
                 stringify!($path),

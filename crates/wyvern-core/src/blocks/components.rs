@@ -1,6 +1,7 @@
+use wyvern_values::id;
+
 use crate::{
     components::{DataComponentMap, DataComponentType},
-    id,
     values::nbt::Nbt,
 };
 use std::collections::BTreeMap;

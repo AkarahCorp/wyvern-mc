@@ -1,0 +1,10 @@
+[package]
+name = "wyvern-values"
+version = "0.0.0"
+edition = "2024"
+
+[dependencies]
+voxidian-protocol = { workspace = true }
+wyvern-macros = { workspace = true }
+datafix = { workspace = true }
+uuid = { workspace = true }

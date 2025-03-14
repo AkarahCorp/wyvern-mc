@@ -41,6 +41,14 @@ impl Sound {
         self
     }
 
+    pub fn get_pitch(&self) -> f32 {
+        self.pitch
+    }
+
+    pub fn get_volume(&self) -> f32 {
+        self.volume
+    }
+
     pub fn category(mut self, category: SoundCategory) -> Self {
         self.category = category;
         self
