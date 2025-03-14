@@ -40,7 +40,7 @@ impl AttributeContainer {
     pub fn into_packet(&self, entity_id: i32) -> UpdateAttributesS2CPlayPacket {
         let mut properties = LengthPrefixVec::new();
 
-        for attr in &self.attributes.inner {
+        for attr in self.attributes.inner() {
             let float = (*attr.1.as_any()).downcast_ref::<f64>().unwrap_or(&0.0);
             if let Some(entry) = ATTRIBUTES.get_entry(attr.0.clone()) {
                 properties.push(Attribute {

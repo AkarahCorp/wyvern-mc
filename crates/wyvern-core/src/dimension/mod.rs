@@ -359,7 +359,7 @@ impl DimensionData {
         value: Arc<dyn ComponentElement>,
     ) -> ActorResult<()> {
         if let Some(entity) = self.entities.get_mut(&uuid) {
-            entity.components.inner.insert(id, value);
+            entity.components.inner_mut().insert(id, value);
         }
         Ok(())
     }
@@ -372,7 +372,7 @@ impl DimensionData {
     ) -> ActorResult<Arc<dyn ComponentElement>> {
         self.entities
             .get_mut(&uuid)
-            .and_then(|entity| entity.components.inner.get(&id))
+            .and_then(|entity| entity.components.inner().get(&id))
             .ok_or(ActorError::ComponentNotFound)
             .cloned()
     }

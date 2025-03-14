@@ -68,6 +68,14 @@ impl DataComponentMap {
     pub fn keys(&self) -> Vec<&Id> {
         self.inner.keys().collect()
     }
+
+    pub fn inner(&self) -> &FxHashMap<Id, Arc<dyn ComponentElement>> {
+        &self.inner
+    }
+
+    pub fn inner_mut(&mut self) -> &mut FxHashMap<Id, Arc<dyn ComponentElement>> {
+        &mut self.inner
+    }
 }
 
 impl Default for DataComponentMap {

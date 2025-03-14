@@ -5,7 +5,9 @@ pub mod actors {
     pub use wyvern_actors::*;
 }
 pub mod blocks;
-pub mod components;
+pub mod components {
+    pub use wyvern_components::*;
+}
 pub mod dimension;
 pub mod entities;
 pub mod events;

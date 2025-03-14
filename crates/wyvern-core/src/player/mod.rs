@@ -110,7 +110,7 @@ impl ConnectionData {
         id: Id,
         value: Arc<dyn ComponentElement>,
     ) -> ActorResult<()> {
-        self.components.inner.insert(id, value);
+        self.components.inner_mut().insert(id, value);
         Ok(())
     }
 
@@ -120,7 +120,7 @@ impl ConnectionData {
         id: Id,
     ) -> ActorResult<Arc<dyn ComponentElement>> {
         self.components
-            .inner
+            .inner()
             .get(&id)
             .ok_or(ActorError::ComponentNotFound)
             .cloned()
