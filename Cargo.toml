@@ -7,6 +7,7 @@ voxidian-protocol = { git = "https://github.com/LighthouseMC/VoxidianProtocol.gi
 # voxidian-protocol = { path = "../voxidian-protocol/" }
 datafix = { git = "https://github.com/akarahdev/datafix.git" }
 wyvern-macros = { path = "./crates/wyvern-macros" }
+wyvern-core = { path = "./crates/wyvern-core" }
 proc-macro2 = { version = "*" }
 syn = { version = "*", features = ["full"] }
 quote = { version = "*" }
@@ -17,6 +18,5 @@ flume = { version = "*" }
 rand = { version = "*" }
 dyn-clone = "1.0.18"
 rustc-hash = { version = "*" }
-
 [profile.release]
 debug = true
