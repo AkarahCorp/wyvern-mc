@@ -490,8 +490,6 @@ impl ConnectionData {
                 Vec::new()
             };
 
-            println!("{:#?}", props);
-
             Runtime::spawn_task(move || {
                 let _ = player.write_packet(PlayerInfoUpdateS2CPlayPacket {
                     actions: vec![(uuid, vec![

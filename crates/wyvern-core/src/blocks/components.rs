@@ -6,7 +6,7 @@ use crate::{
 };
 use std::collections::BTreeMap;
 
-use super::{Axis, BlockDirection};
+use super::{Axis, BlockDirection, ChestType, Half, StairShape};
 
 macro_rules! generate_block_components {
     (
@@ -24,14 +24,14 @@ macro_rules! generate_block_components {
 
         #[allow(unused)]
         pub fn components_to_array(components: &DataComponentMap) -> BTreeMap<String, String> {
-            let mut arr = Vec::new();
+            let mut map = BTreeMap::new();
             $(
                 if let Ok(value) = components.get(BlockComponents::$name) {
-                    arr.push(($string, value.to_string()));
+                    map.insert($string.into(), value.to_string());
                 }
             )*
 
-            arr.into_iter().map(|x| (x.0.to_string(), x.1)).collect()
+            map
         }
 
         #[allow(unused)]
@@ -54,13 +54,28 @@ macro_rules! generate_block_components {
     };
 }
 
-// The block components *must* be in alphabetical order of the string key. Failure to do so will result in panics.
 generate_block_components! {
-    pub const AGE: i32 = id![minecraft:age], "age";
-    pub const FACING: BlockDirection = id![minecraft:facing], "facing";
-    pub const BANNER_ROTATION: i32 = id![minecraft:banner_rotation], "rotation";
+    pub const WATERLOGGED: bool = id![minecraft:waterlogged], "waterlogged";
+    pub const POWERED: bool = id![minecraft:powered], "powered";
+    pub const OPEN: bool = id![minecraft:open], "open";
+
     pub const AXIS: Axis = id![minecraft:axis], "axis";
+    pub const FACING: BlockDirection = id![minecraft:facing], "facing";
+    pub const HALF: Half = id![minecraft:half], "half";
+    pub const STAIR_SHAPE: StairShape = id![minecraft:stair/shape], "shape";
+
+    pub const AGE: i32 = id![minecraft:age], "age";
     pub const SNOWY: bool = id![minecraft:snowy], "snowy";
+
+    pub const BANNER_ROTATION: i32 = id![minecraft:banner/rotation], "rotation";
+    pub const TNT_UNSTABLE: bool = id![minecraft:tnt/unstable], "unstable";
+    pub const CHEST_TYPE: ChestType = id![minecraft:chest/type], "type";
+    pub const WATER_LEVEL: i32 = id![minecraft:water/level], "level";
+
+    pub const FACING_NORTH: bool = id![minecraft:north], "north";
+    pub const FACING_SOUTH: bool = id![minecraft:south], "south";
+    pub const FACING_EAST: bool = id![minecraft:east], "east";
+    pub const FACING_WEST: bool = id![minecraft:west], "west";
 }
 
 impl BlockComponents {

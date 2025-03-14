@@ -309,7 +309,7 @@ macro_rules! list {
 mod tests {
     #[test]
     fn compound_creation() {
-        let nbt = compound! {
+        let _ = compound! {
             x: 10,
             y: 20,
             z: list![
@@ -324,7 +324,5 @@ mod tests {
                 }
             ]
         };
-
-        eprintln!("{:?}", nbt);
     }
 }

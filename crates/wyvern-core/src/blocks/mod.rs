@@ -78,11 +78,10 @@ impl BlockState {
     }
 
     pub fn from_protocol_id(id: i32) -> Self {
-        Self::from(
-            ID_TO_BLOCK_STATE
-                .get(&id)
-                .unwrap_or(ID_TO_BLOCK_STATE.get(&0).unwrap()),
-        )
+        Self::from(ID_TO_BLOCK_STATE.get(&id).unwrap_or({
+            eprintln!("id: {:#?}", id);
+            ID_TO_BLOCK_STATE.get(&0).unwrap()
+        }))
     }
 
     pub fn id_is_valid(&self) -> bool {

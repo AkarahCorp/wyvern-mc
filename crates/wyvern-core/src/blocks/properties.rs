@@ -56,3 +56,24 @@ make_enum! {
         Head as "head",
         Foot as "foot",
 }
+
+make_enum! {
+    Half =>
+        Top as "top",
+        Bottom as "bottom",
+}
+
+make_enum! {
+    StairShape =>
+        Straight as "straight",
+        InnerLeft as "inner_left",
+        InnerRight as "inner_right",
+        OuterLeft as "outer_left",
+        OuterRight as "outer_right",
+}
+
+make_enum! {
+    ChestType =>
+        Single as "single",
+        Double as "double",
+}
