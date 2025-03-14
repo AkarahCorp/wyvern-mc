@@ -9,6 +9,7 @@ noise = "0.9.0"
 rand = { workspace = true }
 log = { workspace = true }
 env_logger = { workspace = true }
+datafix = { workspace = true }
 
 [[example]]
 name = "clicker"
@@ -29,6 +30,10 @@ path = "./parkour.rs"
 [[example]]
 name = "empty"
 path = "./empty.rs"
+
+[[example]]
+name = "structures"
+path = "./structures.rs"
 
 [[example]]
 name = "combat"

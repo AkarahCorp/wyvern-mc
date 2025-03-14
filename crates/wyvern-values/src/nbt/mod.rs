@@ -1,8 +1,10 @@
 mod ops;
 pub use ops::*;
+use voxidian_protocol::packet::PacketBuf;
 
 use std::collections::HashMap;
 
+use voxidian_protocol::value::Nbt as PtcNbt;
 use voxidian_protocol::value::NbtCompound as PtcNbtCompound;
 use voxidian_protocol::value::NbtElement as PtcNbtElement;
 
@@ -151,8 +153,20 @@ impl From<PtcNbtElement> for Nbt {
             PtcNbtElement::Double(v) => Nbt::Double(v),
             PtcNbtElement::BArray(_items) => todo!(),
             PtcNbtElement::String(v) => Nbt::String(v),
-            PtcNbtElement::List(_nbt_elements) => todo!(),
-            PtcNbtElement::Compound(_nbt_compound) => todo!(),
+            PtcNbtElement::List(nbt_elements) => {
+                let mut array = NbtArray::new();
+                for element in nbt_elements {
+                    array.push(element).unwrap();
+                }
+                Nbt::Array(array)
+            }
+            PtcNbtElement::Compound(nbt_compound) => {
+                let mut compound = NbtCompound::new();
+                for entry in nbt_compound.entries() {
+                    compound.set(entry.0, Nbt::from(entry.1.clone()));
+                }
+                Nbt::Compound(compound)
+            }
             PtcNbtElement::IArray(_items) => todo!(),
             PtcNbtElement::LArray(_items) => todo!(),
         }
@@ -228,11 +242,35 @@ impl NbtCompound {
     pub fn set(&mut self, key: impl Into<String>, value: Nbt) {
         self.inner.insert(key.into(), value);
     }
+
+    pub fn keys(&self) -> Vec<String> {
+        self.inner.keys().cloned().collect()
+    }
 }
 
 impl Default for NbtCompound {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum NbtDecodeError {
+    BadNbt,
+    NotGzipped,
+}
+
+impl TryFrom<Vec<u8>> for NbtCompound {
+    type Error = NbtDecodeError;
+
+    fn try_from(value: Vec<u8>) -> Result<Self, NbtDecodeError> {
+        let mut buf = PacketBuf::from(value)
+            .inflate_gzip()
+            .map_err(|_| NbtDecodeError::NotGzipped)?;
+        let nbt = PtcNbt::read_named(&mut buf)
+            .map_err(|_| NbtDecodeError::BadNbt)?
+            .root;
+        Ok(nbt.into())
     }
 }
 

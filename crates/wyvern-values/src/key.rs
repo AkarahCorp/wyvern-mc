@@ -46,6 +46,15 @@ impl Id {
     }
 }
 
+impl std::fmt::Display for Id {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.namespace)?;
+        f.write_str(":")?;
+        f.write_str(&self.path)?;
+        Ok(())
+    }
+}
+
 impl From<Identifier> for Id {
     fn from(value: Identifier) -> Self {
         Id::new(&value.namespace, &value.path)

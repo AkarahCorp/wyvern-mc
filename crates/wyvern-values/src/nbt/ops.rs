@@ -139,12 +139,8 @@ impl CodecOps<Nbt> for NbtOps {
         }
     }
 
-    fn get_unit(&self, value: &Nbt) -> datafix::result::DataResult<()> {
-        if let Nbt::Compound(_) = value {
-            Ok(())
-        } else {
-            Err(DataError::unexpected_type("unit"))
-        }
+    fn get_unit(&self, _value: &Nbt) -> datafix::result::DataResult<()> {
+        Ok(())
     }
 
     fn get_list_mut(&self, value: &mut Nbt) -> DataResult<impl ListViewMut<Nbt>> {
@@ -177,7 +173,10 @@ impl MapView<Nbt> for NbtCompoundView<'_> {
     }
 
     fn keys(&self) -> Vec<String> {
-        todo!()
+        let Nbt::Compound(compound) = self.value else {
+            return Vec::new();
+        };
+        compound.keys()
     }
 }
 
