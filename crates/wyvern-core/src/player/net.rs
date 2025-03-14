@@ -21,6 +21,7 @@ use voxidian_protocol::{
     },
     value::Uuid,
 };
+use wyvern_actors::ActorError;
 
 use crate::{player::PlayerMessage, server::Server, values::Gamemode};
 
@@ -223,15 +224,11 @@ impl ConnectionData {
                         );
                         Ok(())
                     }
-                    Err(e) => {
-                        panic!("{:?}", e);
-                    }
+                    Err(_e) => Err(ActorError::BadRequest),
                 }
             }
             Err(DecodeError::EndOfBuffer) => Ok(()),
-            Err(e) => {
-                panic!("err: {:?}", e);
-            }
+            Err(_e) => Err(ActorError::BadRequest),
         }
     }
 }

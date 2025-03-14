@@ -204,9 +204,9 @@ impl ServerData {
                     server: server.clone(),
                 });
 
-                for player in self.connections.iter() {
-                    let mut player = player.lower();
-                    if player.stage().unwrap_or(Stage::Handshake) == Stage::Play {
+                for c in self.connections.iter() {
+                    let mut player = c.lower();
+                    if c.stage.lock().map(|x| *x).unwrap_or(Stage::Handshake) == Stage::Play {
                         Runtime::spawn_task(move || player.update_components());
                     }
                 }

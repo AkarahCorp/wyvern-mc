@@ -3,6 +3,7 @@
 use std::{
     pin::Pin,
     sync::{LazyLock, OnceLock},
+    thread::Builder,
 };
 
 use flume::{Receiver, Sender};
@@ -36,11 +37,13 @@ impl Runtime {
                 .into()
             {
                 let recv: Receiver<Box<dyn FnOnce() -> ActorResult<()> + Send>> = chan.1.clone();
-                std::thread::spawn(move || {
-                    while let Ok(task) = recv.recv() {
-                        task();
-                    }
-                });
+                Builder::new()
+                    .name("TaskThread".to_string())
+                    .spawn(move || {
+                        while let Ok(task) = recv.recv() {
+                            task();
+                        }
+                    });
             }
             chan.0
         });
