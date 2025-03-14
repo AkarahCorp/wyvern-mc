@@ -23,7 +23,7 @@ use crate::{
     },
     inventory::Inventory,
     item::{ITEM_REGISTRY, ItemComponents, ItemStack},
-    player::{ConnectionData, Player, PlayerComponents},
+    player::{ConnectionData, PlayerComponents},
     runtime::Runtime,
     server::Server,
     values::{Gamemode, Id, Texts, Vec2, Vec3, cell::Token},
@@ -41,12 +41,10 @@ impl ConnectionData {
 
                 match packet {
                     C2SPlayPackets::ChatCommand(packet) => {
-                        if let Some(sender) = this.sender.upgrade() {
-                            this.connected_server.spawn_event(PlayerCommandEvent {
-                                player: Player { sender },
-                                command: packet.command,
-                            })?;
-                        }
+                        this.connected_server.spawn_event(PlayerCommandEvent {
+                            player: this.as_actor(),
+                            command: packet.command,
+                        })?;
                     }
                     C2SPlayPackets::PlayerAction(packet) => {
                         let block =
@@ -55,12 +53,10 @@ impl ConnectionData {
                         this.write_packet(BlockChangedAckS2CPlayPacket(packet.sequence));
                         match packet.status {
                             PlayerStatus::StartedDigging => {
-                                if let Some(sender) = this.sender.upgrade() {
-                                    this.connected_server.spawn_event(StartBreakBlockEvent {
-                                        player: Player { sender },
-                                        position: block,
-                                    })?;
-                                }
+                                this.connected_server.spawn_event(StartBreakBlockEvent {
+                                    player: this.as_actor(),
+                                    position: block,
+                                })?;
                                 if this.get(PlayerComponents::GAMEMODE) == Ok(Gamemode::Creative) {
                                     let old_block = this
                                         .associated_data
@@ -73,13 +69,11 @@ impl ConnectionData {
                                         block,
                                         BlockState::new(Id::constant("minecraft", "air")),
                                     )?;
-                                    if let Some(sender) = this.sender.upgrade() {
-                                        this.connected_server.spawn_event(BreakBlockEvent {
-                                            player: Player { sender },
-                                            position: block,
-                                            old_block,
-                                        })?;
-                                    }
+                                    this.connected_server.spawn_event(BreakBlockEvent {
+                                        player: this.as_actor(),
+                                        position: block,
+                                        old_block,
+                                    })?;
                                 }
                             }
                             PlayerStatus::CancelledDigging => {}
@@ -96,13 +90,11 @@ impl ConnectionData {
                                         block,
                                         BlockState::new(Id::constant("minecraft", "air")),
                                     )?;
-                                    if let Some(sender) = this.sender.upgrade() {
-                                        this.connected_server.spawn_event(BreakBlockEvent {
-                                            player: Player { sender },
-                                            position: block,
-                                            old_block,
-                                        })?;
-                                    }
+                                    this.connected_server.spawn_event(BreakBlockEvent {
+                                        player: this.as_actor(),
+                                        position: block,
+                                        old_block,
+                                    })?;
                                 }
                             }
                             PlayerStatus::DropItemStack => {
@@ -112,12 +104,10 @@ impl ConnectionData {
                                     this.associated_data.held_slot as usize,
                                     ItemStack::air(),
                                 )?;
-                                if let Some(sender) = this.sender.upgrade() {
-                                    this.connected_server.spawn_event(DropItemEvent {
-                                        player: Player { sender },
-                                        item,
-                                    })?;
-                                }
+                                this.connected_server.spawn_event(DropItemEvent {
+                                    player: this.as_actor(),
+                                    item,
+                                })?;
                             }
                             PlayerStatus::DropItem => {
                                 let item =
@@ -126,20 +116,16 @@ impl ConnectionData {
                                     this.associated_data.held_slot as usize,
                                     ItemStack::air(),
                                 )?;
-                                if let Some(sender) = this.sender.upgrade() {
-                                    this.connected_server.spawn_event(DropItemEvent {
-                                        player: Player { sender },
-                                        item,
-                                    })?;
-                                }
+                                this.connected_server.spawn_event(DropItemEvent {
+                                    player: this.as_actor(),
+                                    item,
+                                })?;
                             }
                             PlayerStatus::FinishUsingItem => {}
                             PlayerStatus::SwapItems => {
-                                if let Some(sender) = this.sender.upgrade() {
-                                    this.connected_server.spawn_event(SwapHandsEvent {
-                                        player: Player { sender },
-                                    })?;
-                                }
+                                this.connected_server.spawn_event(SwapHandsEvent {
+                                    player: this.as_actor(),
+                                })?;
                             }
                         }
                     }
@@ -170,13 +156,11 @@ impl ConnectionData {
 
                         this.send_chunks()?;
 
-                        if let Some(sender) = this.sender.upgrade() {
-                            this.connected_server.spawn_event(PlayerMoveEvent {
-                                player: Player { sender },
-                                new_position: this.get(PlayerComponents::POSITION)?,
-                                new_direction: this.get(PlayerComponents::DIRECTION)?,
-                            })?;
-                        }
+                        this.connected_server.spawn_event(PlayerMoveEvent {
+                            player: this.as_actor(),
+                            new_position: this.get(PlayerComponents::POSITION)?,
+                            new_direction: this.get(PlayerComponents::DIRECTION)?,
+                        })?;
 
                         this.update_self_entity()?;
                     }
@@ -197,13 +181,11 @@ impl ConnectionData {
                             Vec2::new(packet.pitch, packet.yaw),
                         );
 
-                        if let Some(sender) = this.sender.upgrade() {
-                            this.connected_server.spawn_event(PlayerMoveEvent {
-                                player: Player { sender },
-                                new_position: this.get(PlayerComponents::POSITION)?,
-                                new_direction: this.get(PlayerComponents::DIRECTION)?,
-                            })?;
-                        }
+                        this.connected_server.spawn_event(PlayerMoveEvent {
+                            player: this.as_actor(),
+                            new_position: this.get(PlayerComponents::POSITION)?,
+                            new_direction: this.get(PlayerComponents::DIRECTION)?,
+                        })?;
 
                         this.update_self_entity()?;
                         this.send_chunks()?;
@@ -221,13 +203,11 @@ impl ConnectionData {
                             Vec2::new(packet.pitch, packet.yaw),
                         );
 
-                        if let Some(sender) = this.sender.upgrade() {
-                            this.connected_server.spawn_event(PlayerMoveEvent {
-                                player: Player { sender },
-                                new_position: this.get(PlayerComponents::POSITION)?,
-                                new_direction: this.get(PlayerComponents::DIRECTION)?,
-                            })?;
-                        }
+                        this.connected_server.spawn_event(PlayerMoveEvent {
+                            player: this.as_actor(),
+                            new_position: this.get(PlayerComponents::POSITION)?,
+                            new_direction: this.get(PlayerComponents::DIRECTION)?,
+                        })?;
 
                         this.update_self_entity()?;
                     }
@@ -256,20 +236,16 @@ impl ConnectionData {
                     C2SPlayPackets::SetCarriedItem(packet) => {
                         this.associated_data.held_slot = packet.slot + 36;
 
-                        if let Some(sender) = this.sender.upgrade() {
-                            this.connected_server.spawn_event(ChangeHeldSlotEvent {
-                                player: Player { sender },
-                                slot: packet.slot + 36,
-                            })?;
-                        }
+                        this.connected_server.spawn_event(ChangeHeldSlotEvent {
+                            player: this.as_actor(),
+                            slot: packet.slot + 36,
+                        })?;
                     }
                     C2SPlayPackets::UseItem(packet) => {
                         if packet.hand == Hand::Mainhand {
-                            if let Some(sender) = this.sender.upgrade() {
-                                this.connected_server.spawn_event(RightClickEvent {
-                                    player: Player { sender },
-                                })?;
-                            }
+                            this.connected_server.spawn_event(RightClickEvent {
+                                player: this.as_actor(),
+                            })?;
                         }
                     }
                     C2SPlayPackets::UseItemOn(packet) => {
@@ -325,27 +301,23 @@ impl ConnectionData {
                             }
                         }
 
-                        if let Some(sender) = this.sender.upgrade() {
-                            if state.id_is_valid() {
-                                this.connected_server.spawn_event(PlaceBlockEvent {
-                                    player: Player { sender },
-                                    position: final_pos,
-                                    block: state,
-                                })?;
-                            } else {
-                                this.connected_server.spawn_event(RightClickEvent {
-                                    player: Player { sender },
-                                })?;
-                            }
+                        if state.id_is_valid() {
+                            this.connected_server.spawn_event(PlaceBlockEvent {
+                                player: this.as_actor(),
+                                position: final_pos,
+                                block: state,
+                            })?;
+                        } else {
+                            this.connected_server.spawn_event(RightClickEvent {
+                                player: this.as_actor(),
+                            })?;
                         }
                     }
                     C2SPlayPackets::Chat(packet) => {
-                        if let Some(sender) = this.sender.upgrade() {
-                            this.connected_server.spawn_event(ChatMessageEvent {
-                                player: Player { sender },
-                                message: packet.message,
-                            })?;
-                        }
+                        this.connected_server.spawn_event(ChatMessageEvent {
+                            player: this.as_actor(),
+                            message: packet.message,
+                        })?;
                     }
                     C2SPlayPackets::ContainerClick(packet) => {
                         this.associated_data.cursor_item = packet.cursor_item.into();
@@ -386,12 +358,7 @@ impl ConnectionData {
                         this.associated_data.screen = None;
                     }
                     C2SPlayPackets::Interact(packet) => {
-                        let Some(sender) = this.sender.upgrade() else {
-                            return Ok(());
-                        };
-                        let player = Player {
-                            sender: sender.clone(),
-                        };
+                        let player = this.as_actor();
                         Runtime::spawn_task(move || {
                             match packet.action {
                                 InteractAction::Interact(_hand) => {}
@@ -401,12 +368,12 @@ impl ConnectionData {
                                         .get_entity_by_id(packet.entity_id.into())?;
                                     if let Ok(victim) = Server::get()?.player(*victim.uuid()) {
                                         Server::get()?.spawn_event(PlayerAttackPlayerEvent {
-                                            attacker: Player { sender },
+                                            attacker: player,
                                             victim,
                                         })?;
                                     } else {
                                         Server::get()?.spawn_event(PlayerAttackEntityEvent {
-                                            attacker: Player { sender },
+                                            attacker: player,
                                             victim,
                                         })?;
                                     }
@@ -417,10 +384,7 @@ impl ConnectionData {
                         });
                     }
                     C2SPlayPackets::Swing(packet) => {
-                        let Some(sender) = this.sender.upgrade() else {
-                            return Ok(());
-                        };
-                        let player = Player { sender };
+                        let player = this.as_actor();
                         let eid = this.associated_data.entity_id;
                         let uuid = this.get(PlayerComponents::UUID)?;
                         Runtime::spawn_task(move || {
@@ -474,12 +438,10 @@ impl ConnectionData {
         let key = Id::constant("null", "null");
         let token = Token::new(Id::constant("null", "null"));
         let token_copy = token.clone();
-        if let Some(sender) = self.sender.upgrade() {
-            self.connected_server.spawn_event(PlayerJoinEvent {
-                player: Player { sender },
-                new_dimension: token_copy,
-            })?;
-        }
+        self.connected_server.spawn_event(PlayerJoinEvent {
+            player: self.as_actor(),
+            new_dimension: token_copy,
+        })?;
 
         loop {
             std::thread::yield_now();
@@ -550,11 +512,7 @@ impl ConnectionData {
         let uuid = self.get(PlayerComponents::UUID)?;
         let username = self.get(PlayerComponents::USERNAME)?;
         for player in self.connected_server.connections()? {
-            let Some(sender) = self.sender.upgrade() else {
-                continue;
-            };
-
-            if player.sender.same_channel(&sender) {
+            if player.sender.upgrade().unwrap().same_channel(&self.sender) {
                 let props = if let Some(mojauth) = self.mojauth.as_ref() {
                     mojauth
                         .props

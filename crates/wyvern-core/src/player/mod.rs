@@ -5,7 +5,7 @@ use std::{
 };
 
 use data::PlayerData;
-use flume::{Receiver, Sender, WeakSender};
+use flume::{Receiver, Sender};
 use inventory::PlayerInventory;
 use net::ConnectionStoppedSignal;
 use voxidian_protocol::{
@@ -65,7 +65,7 @@ pub(crate) struct ConnectionData {
     pub(crate) connected_server: Server,
     pub(crate) stage: Arc<Mutex<Stage>>,
     pub(crate) associated_data: PlayerData,
-    pub(crate) sender: WeakSender<PlayerMessage>,
+    pub(crate) sender: Sender<PlayerMessage>,
     pub(crate) mojauth: Option<MojauthData>,
     pub(crate) last_saved_components: DataComponentMap,
     pub(crate) components: DataComponentMap,

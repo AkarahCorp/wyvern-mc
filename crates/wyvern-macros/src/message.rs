@@ -81,7 +81,6 @@ pub fn message(attr: TokenStream, item: TokenStream) -> TokenStream {
 
     let assoc_fns = message_variants.iter().map(|v| &v.base_function);
     let mapped_fns = message_variants.iter().map(create_fn_from_variant);
-    let weak_mapped_fns = message_variants.iter().map(create_weak_fn_from_variant);
     let enum_types = message_variants
         .iter()
         .flat_map(create_enum_types_from_variant)
@@ -94,11 +93,6 @@ pub fn message(attr: TokenStream, item: TokenStream) -> TokenStream {
 
     let attr_actor_type = attr.actor_type;
     let attr_message_type = attr.message_type;
-
-    let weak_type = proc_macro2::Ident::new(
-        &format!("Weak{}", attr_actor_type.to_token_stream()),
-        proc_macro2::Span::call_site(),
-    );
 
     let o = quote! {
         pub(crate) enum #attr_message_type {
@@ -121,24 +115,15 @@ pub fn message(attr: TokenStream, item: TokenStream) -> TokenStream {
             }
         }
 
-        impl #weak_type {
-            pub fn upgrade(&self) -> ActorResult<#attr_actor_type> {
-                self.sender.upgrade().ok_or(ActorError::ActorDoesNotExist)
-                    .map(|sender| #attr_actor_type { sender })
-            }
-
-            #(#weak_mapped_fns)*
-        }
-
         impl #target_type {
             #(#assoc_fns)*
+
+            fn as_actor(&self) -> #attr_actor_type {
+                #attr_actor_type { sender: self.sender.downgrade() }
+            }
         }
 
         impl #attr_actor_type {
-            pub fn make_weak(&self) -> #weak_type {
-                #weak_type { sender: self.sender.downgrade() }
-            }
-
             #(#mapped_fns)*
         }
     };
@@ -227,81 +212,18 @@ fn create_fn_from_variant(variant: &MessageVariant) -> TokenStream {
     let r = quote! {
         #(#doc_attr)*
         #fn_vis fn #name(&self, #(#param_names: #param_types),*) -> #rt {
+            let Some(sender) = self.sender.upgrade() else {
+                return Err(ActorError::ActorHasBeenDropped);
+            };
             let (tx, mut rx) = flume::bounded(1);
-            match self.sender.send(#enum_type::#enum_variant(#(#param_names,)* tx)) {
+            match sender.send(#enum_type::#enum_variant(#(#param_names,)* tx)) {
                 Ok(v) => {},
-                Err(e) => return Err(ActorError::ActorDoesNotExist)
+                Err(e) => return Err(ActorError::ActorHasBeenDropped)
             }
             loop {
                 match rx.try_recv() {
                     Ok(v) => return v,
                     Err(e) => std::thread::yield_now()
-                };
-            };
-        }
-    };
-    r
-}
-
-fn create_weak_fn_from_variant(variant: &MessageVariant) -> TokenStream {
-    let name = &variant.base_function.sig.ident;
-    let rt = match &variant.returns {
-        ReturnType::Default => quote! { () },
-        ReturnType::Type(_rarrow, ty) => ty.to_token_stream(),
-    };
-
-    let param_types: Vec<Type> = variant
-        .parameters
-        .iter()
-        .filter_map(|x| match x {
-            FnArg::Receiver(_receiver) => None,
-            FnArg::Typed(pat_type) => Some(pat_type),
-        })
-        .map(|x| *x.ty.clone())
-        .collect::<Vec<_>>();
-
-    let param_types = param_types.iter();
-
-    let param_names: Vec<Ident> = variant
-        .parameters
-        .iter()
-        .filter_map(|x| match x {
-            FnArg::Receiver(_receiver) => None,
-            FnArg::Typed(pat_type) => Some(pat_type),
-        })
-        .map(|x| *x.pat.clone())
-        .map(|x| match x {
-            syn::Pat::Ident(pat_ident) => pat_ident,
-            _ => panic!("all patterns must be identifiers"),
-        })
-        .map(|x| x.ident)
-        .collect::<Vec<_>>();
-
-    let doc_attr_opt = variant.base_function.attrs.get(1);
-    let doc_attr = doc_attr_opt.iter();
-
-    let fn_vis = &variant.base_function.vis;
-
-    let enum_type = variant.enum_name.clone();
-    let enum_variant = variant.name.clone();
-
-    assert!(rt.to_token_stream().to_string().contains("ActorResult"));
-
-    let r = quote! {
-        #(#doc_attr)*
-        #fn_vis fn #name(&self, #(#param_names: #param_types),*) -> #rt {
-            let sender = self.sender.upgrade().ok_or(crate::actors::ActorError::ActorDoesNotExist)?;
-            let (tx, mut rx) = flume::bounded(1);
-            match sender.send(#enum_type::#enum_variant(#(#param_names,)* tx)) {
-                Ok(v) => {},
-                Err(_) => return Err(ActorError::ActorDoesNotExist)
-            }
-            loop {
-                match rx.try_recv() {
-                    Ok(v) => return v,
-                    Err(e) => {
-                        std::thread::yield_now();
-                    }
                 };
             };
         }

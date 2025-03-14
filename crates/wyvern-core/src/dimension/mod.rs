@@ -80,9 +80,7 @@ impl DimensionData {
             .iter()
             .find(|x| x.1.get(EntityComponents::ENTITY_ID) == Ok(id))
             .map(|x| Entity {
-                dimension: Dimension {
-                    sender: self.sender.clone(),
-                },
+                dimension: self.as_actor(),
                 uuid: *x.0,
             })
             .ok_or(ActorError::IndexOutOfBounds)
@@ -189,9 +187,7 @@ impl DimensionData {
             .values()
             .filter(|x| !x.get(EntityComponents::PLAYER_CONTROLLED).unwrap())
             .map(|x| Entity {
-                dimension: Dimension {
-                    sender: self.sender.clone(),
-                },
+                dimension: self.as_actor(),
                 uuid: x.get(EntityComponents::UUID).unwrap(),
             })
             .collect())
@@ -204,9 +200,7 @@ impl DimensionData {
             .entities
             .values()
             .map(|x| Entity {
-                dimension: Dimension {
-                    sender: self.sender.clone(),
-                },
+                dimension: self.as_actor(),
                 uuid: x.components.get(EntityComponents::UUID).unwrap(),
             })
             .collect())
@@ -235,9 +229,7 @@ impl DimensionData {
             components,
         });
 
-        let dim = Dimension {
-            sender: self.sender.clone(),
-        };
+        let dim = self.as_actor();
 
         Runtime::spawn_task(move || {
             for conn in dim.players().unwrap_or_else(|_| Vec::new()) {
@@ -265,9 +257,7 @@ impl DimensionData {
         });
 
         Ok(Entity {
-            dimension: Dimension {
-                sender: self.sender.clone(),
-            },
+            dimension: self.as_actor(),
             uuid,
         })
     }
@@ -296,9 +286,7 @@ impl DimensionData {
             components,
         });
 
-        let dim = Dimension {
-            sender: self.sender.clone(),
-        };
+        let dim = self.as_actor();
 
         Runtime::spawn_task(move || {
             for conn in dim.players().unwrap_or_else(|_| Vec::new()) {
@@ -338,9 +326,7 @@ impl DimensionData {
         });
 
         Ok(Entity {
-            dimension: Dimension {
-                sender: self.sender.clone(),
-            },
+            dimension: self.as_actor(),
             uuid,
         })
     }
@@ -363,9 +349,7 @@ impl DimensionData {
             components,
         });
 
-        let dim = Dimension {
-            sender: self.sender.clone(),
-        };
+        let dim = self.as_actor();
 
         Runtime::spawn_task(move || {
             for conn in dim.players().unwrap_or_else(|_| Vec::new()) {
@@ -394,9 +378,7 @@ impl DimensionData {
         });
 
         Ok(Entity {
-            dimension: Dimension {
-                sender: self.sender.clone(),
-            },
+            dimension: self.as_actor(),
             uuid,
         })
     }
@@ -521,9 +503,8 @@ impl DimensionData {
             (self.chunk_generator)(&mut chunk, pos.x(), pos.y());
             self.chunks.insert(*pos, chunk);
 
-            let sender = self.sender.clone();
             server.spawn_event(ChunkLoadEvent {
-                dimension: Dimension { sender },
+                dimension: self.as_actor(),
                 pos: *pos,
             })?;
         }

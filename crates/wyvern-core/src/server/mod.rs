@@ -110,14 +110,12 @@ impl ServerData {
         log::debug!("Creating new dimension: {:?}", name);
         let root_dim = DimensionData::new(
             name.clone(),
-            Server {
-                sender: self.sender.clone(),
-            },
+            self.as_actor(),
             Id::new("minecraft", "overworld"),
         );
 
         let dim = Dimension {
-            sender: root_dim.sender.clone(),
+            sender: root_dim.sender.downgrade(),
         };
         self.dimensions.insert(name, dim.clone());
         Runtime::spawn_actor(move || {
@@ -125,9 +123,7 @@ impl ServerData {
         });
 
         let dim_clone = dim.clone();
-        let server_clone = Server {
-            sender: self.sender.clone(),
-        };
+        let server_clone = self.as_actor();
         let _ = server_clone.spawn_event(DimensionCreateEvent {
             dimension: dim_clone,
             server: server_clone.clone(),
@@ -171,9 +167,7 @@ impl ServerData {
 impl ServerData {
     pub fn start(self) {
         log::info!("A server is starting!");
-        let snd = Server {
-            sender: self.sender.clone(),
-        };
+        let snd = self.as_actor();
 
         SERVER_INSTANCE.set(snd.clone()).unwrap_or_else(|_| {
             log::error!("WyvernMC does not support running two servers at once. Bugs may occur.");

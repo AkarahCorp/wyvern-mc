@@ -13,7 +13,7 @@ use crate::{
     values::{Vec2, Vec3},
 };
 
-use super::{ConnectionData, Player, PlayerComponents};
+use super::{ConnectionData, PlayerComponents};
 
 impl ConnectionData {
     pub fn send_chunks(&mut self) -> ActorResult<()> {
@@ -62,9 +62,7 @@ impl ConnectionData {
             lhs_dist.cmp(&rhs_dist)
         });
 
-        let player = Player {
-            sender: self.sender.upgrade().unwrap(),
-        };
+        let player = self.as_actor();
         let server = self.connected_server.clone();
 
         if let Some(pos) = chunks.first() {

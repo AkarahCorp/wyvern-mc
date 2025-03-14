@@ -7,14 +7,8 @@ use voxidian_protocol::{
 };
 
 use crate::{
-    actors::ActorResult,
-    blocks::Blocks,
-    components::DataComponentPatch,
-    dimension::{Dimension, DimensionData},
-    entities::Entity,
-    runtime::Runtime,
-    server::Server,
-    values::Vec3,
+    actors::ActorResult, blocks::Blocks, components::DataComponentPatch, dimension::DimensionData,
+    entities::Entity, runtime::Runtime, server::Server, values::Vec3,
 };
 
 use super::EntityComponents;
@@ -69,14 +63,10 @@ impl DimensionData {
     pub fn auto_apply_entity_properties(&mut self) -> ActorResult<()> {
         for entity in &self.entities {
             let entity = Entity {
-                dimension: Dimension {
-                    sender: self.sender.clone(),
-                },
+                dimension: self.as_actor(),
                 uuid: *entity.0,
             };
-            let dimension = Dimension {
-                sender: self.sender.clone(),
-            };
+            let dimension = self.as_actor();
             Runtime::spawn_task(move || {
                 if let Ok(true) = entity.get(EntityComponents::PHYSICS_ENABLED) {
                     if let Ok(mut velocity) = entity.get(EntityComponents::VELOCITY) {

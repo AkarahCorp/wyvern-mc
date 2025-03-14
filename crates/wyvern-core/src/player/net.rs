@@ -46,7 +46,9 @@ impl ConnectionData {
         });
 
         ConnectionWithSignal {
-            player: Player { sender: data_tx },
+            player: Player {
+                sender: data_tx.downgrade(),
+            },
             _signal: signal_rx,
             stage,
         }
@@ -70,7 +72,7 @@ impl ConnectionData {
             bytes_to_send: Vec::new(),
             packet_processing: PacketProcessing::NONE,
             receiver,
-            sender: sender.downgrade(),
+            sender,
             signal,
             stage,
             connected_server: server,
