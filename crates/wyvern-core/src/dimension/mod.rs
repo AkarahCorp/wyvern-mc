@@ -8,17 +8,21 @@ use crate::{
     actors::Actor,
     blocks::BlockState,
     components::{ComponentElement, DataComponentHolder, DataComponentMap},
-    entities::{Entity, EntityComponents, EntityData},
+    entities::{Entity, EntityComponents, EntityData, PlayerSkinData},
 };
 use chunk::{Chunk, ChunkSection};
 use flume::Sender;
 use voxidian_protocol::{
     packet::s2c::play::{
-        AddEntityS2CPlayPacket, BlockUpdateS2CPlayPacket, RemoveEntitiesS2CPlayPacket,
+        AddEntityS2CPlayPacket, BlockUpdateS2CPlayPacket, PlayerActionEntry,
+        PlayerInfoUpdateS2CPlayPacket, RemoveEntitiesS2CPlayPacket,
     },
     registry::RegEntry,
-    value::{Angle, BlockPos, EntityType as PtcEntityType, Identifier, Uuid, VarInt},
+    value::{
+        Angle, BlockPos, EntityType as PtcEntityType, Identifier, ProfileProperty, Uuid, VarInt,
+    },
 };
+use wyvern_values::id;
 
 use crate::{
     actors::{ActorError, ActorResult},
@@ -243,6 +247,79 @@ impl DimensionData {
                     uuid,
                     kind: PtcEntityType::vanilla_registry()
                         .get_entry(&entity_type.clone().into())
+                        .unwrap(),
+                    x: 0.0,
+                    y: 0.0,
+                    z: 0.0,
+                    pitch: Angle::of_deg(0.0),
+                    yaw: Angle::of_deg(0.0),
+                    head_yaw: Angle::of_deg(0.0),
+                    data: VarInt::from(0),
+                    vel_x: 0,
+                    vel_y: 0,
+                    vel_z: 0,
+                });
+            }
+
+            Ok(())
+        });
+
+        Ok(Entity {
+            dimension: Dimension {
+                sender: self.sender.clone(),
+            },
+            uuid,
+        })
+    }
+
+    #[SpawnHumanEntity]
+    #[doc = "Spawns a new entity in the dimension with the given type, returning a handle to the entity."]
+    pub fn spawn_human_entity(&mut self, skin: PlayerSkinData) -> ActorResult<Entity> {
+        let mut uuid = Uuid::new_v4();
+        while self.entities.contains_key(&uuid) {
+            uuid = Uuid::new_v4();
+        }
+
+        let mut components = DataComponentMap::new();
+        let id = self.server.clone().unwrap().new_entity_id()?;
+        components.set(EntityComponents::ENTITY_ID, id);
+        components.set(EntityComponents::UUID, uuid);
+        components.set(EntityComponents::ENTITY_TYPE, id![minecraft:player]);
+        components.set(EntityComponents::POSITION, Vec3::new(0.0, 0.0, 0.0));
+        components.set(EntityComponents::DIRECTION, Vec2::new(0.0, 0.0));
+        components.set(EntityComponents::VELOCITY, Vec3::new(0.0, 0.0, 0.0));
+        components.set(EntityComponents::PLAYER_CONTROLLED, false);
+        components.set(EntityComponents::PLAYER_SKIN, skin.clone());
+
+        self.entities.insert(uuid, EntityData {
+            last_components: DataComponentMap::new(),
+            components,
+        });
+
+        let dim = Dimension {
+            sender: self.sender.clone(),
+        };
+
+        Runtime::spawn_task(move || {
+            for conn in dim.players().unwrap_or_else(|_| Vec::new()) {
+                let conn = dim.server().unwrap().player(conn).unwrap();
+                let name = format!("NPC_{:?}", id);
+                let props = vec![ProfileProperty {
+                    name: "textures".to_string(),
+                    value: skin.texture.clone(),
+                    sig: Some(skin.signature.clone()),
+                }];
+                let _ = conn.write_packet(PlayerInfoUpdateS2CPlayPacket {
+                    actions: vec![(uuid, vec![PlayerActionEntry::AddPlayer {
+                        name,
+                        props: props.into(),
+                    }])],
+                });
+                let _ = conn.write_packet(AddEntityS2CPlayPacket {
+                    id: id.into(),
+                    uuid,
+                    kind: PtcEntityType::vanilla_registry()
+                        .get_entry(&Identifier::new_const("minecraft", "player"))
                         .unwrap(),
                     x: 0.0,
                     y: 0.0,

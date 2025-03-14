@@ -4,7 +4,7 @@ use wyvern_mc::{
     actors::ActorResult,
     blocks::{BlockComponents, BlockState},
     components::DataComponentHolder,
-    entities::{AttributeContainer, Attributes, EntityComponents},
+    entities::{AttributeContainer, Attributes, EntityComponents, PlayerSkinData},
     events::{
         DimensionCreateEvent, PlayerAttackEntityEvent, PlayerAttackPlayerEvent, PlayerJoinEvent,
         ServerStartEvent,
@@ -17,6 +17,8 @@ use wyvern_mc::{
     values::{Id, Sounds, Texts, Vec3, id},
 };
 
+const TEXTURE: &str = include_str!("./texture.txt");
+const SIGNATURE: &str = include_str!("./signature.txt");
 fn main() {
     env_logger::init();
 
@@ -80,7 +82,10 @@ fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
         let entity = event
             .player
             .dimension()?
-            .spawn_entity(id![minecraft:zombie])?;
+            .spawn_human_entity(PlayerSkinData {
+                texture: TEXTURE.into(),
+                signature: SIGNATURE.into(),
+            })?;
         entity.set(EntityComponents::POSITION, Vec3::new(3.0, 10.0, 3.0))?;
         entity.set(EntityComponents::PHYSICS_ENABLED, true)?;
         entity.set(EntityComponents::GRAVITY_ENABLED, true)?;

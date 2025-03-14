@@ -528,6 +528,8 @@ impl ConnectionData {
                 Vec::new()
             };
 
+            println!("{:#?}", props);
+
             Runtime::spawn_task(move || {
                 let _ = player.write_packet(PlayerInfoUpdateS2CPlayPacket {
                     actions: vec![(uuid, vec![
@@ -601,6 +603,21 @@ impl ConnectionData {
                 .unwrap_or(Vec2::new(0.0, 0.0));
             let id = entity.get(EntityComponents::ENTITY_ID)?;
             let ty = entity.get(EntityComponents::ENTITY_TYPE)?;
+
+            if let Ok(skin) = entity.get(EntityComponents::PLAYER_SKIN) {
+                let name = format!("NPC_{:?}", entity.get(EntityComponents::ENTITY_ID)?);
+                let props = vec![ProfileProperty {
+                    name: "textures".to_string(),
+                    value: skin.texture,
+                    sig: Some(skin.signature),
+                }];
+                self.write_packet(PlayerInfoUpdateS2CPlayPacket {
+                    actions: vec![(*entity.uuid(), vec![PlayerActionEntry::AddPlayer {
+                        name,
+                        props: props.into(),
+                    }])],
+                });
+            }
             self.write_packet(AddEntityS2CPlayPacket {
                 id: id.into(),
                 uuid: *entity.uuid(),
