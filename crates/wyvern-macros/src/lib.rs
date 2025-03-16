@@ -1,6 +1,7 @@
 mod actor;
 mod message;
 mod registries;
+mod server;
 
 use proc_macro::TokenStream;
 
@@ -32,4 +33,9 @@ pub fn generate_sounds_types(input: TokenStream) -> TokenStream {
 #[proc_macro]
 pub fn generate_attrs_types(input: TokenStream) -> TokenStream {
     registries::attrs(input.into()).into()
+}
+
+#[proc_macro_attribute]
+pub fn server(attr: TokenStream, item: TokenStream) -> TokenStream {
+    server::server(attr.into(), item.into()).into()
 }

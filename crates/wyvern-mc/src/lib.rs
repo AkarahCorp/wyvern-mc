@@ -11,3 +11,6 @@ pub mod datatypes {
 pub mod actors {
     pub use wyvern_actors::*;
 }
+pub mod macros {
+    pub use wyvern_macros::server;
+}

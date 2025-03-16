@@ -11,6 +11,7 @@ pub mod events;
 pub mod inventory;
 pub mod item;
 pub mod player;
+pub mod plugin;
 pub mod runtime;
 pub mod server;
 

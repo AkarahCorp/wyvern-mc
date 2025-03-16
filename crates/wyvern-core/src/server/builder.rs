@@ -12,6 +12,7 @@ use crate::{
     actors::ActorResult,
     blocks::BLOCK_STATE_KEYS,
     events::{Event, EventBus},
+    plugin::Plugin,
 };
 
 use super::{ServerData, dimensions::DimensionContainer, registries::RegistryContainerBuilder};
@@ -30,7 +31,7 @@ impl Default for ServerBuilder {
 }
 
 impl ServerBuilder {
-    pub(crate) fn new() -> ServerBuilder {
+    pub fn new() -> ServerBuilder {
         ServerBuilder {
             events: EventBus::default(),
             registries: RegistryContainerBuilder {
@@ -53,6 +54,10 @@ impl ServerBuilder {
         E::add_handler(&mut self.events, handler);
 
         self
+    }
+
+    pub fn plugin<P: Plugin + 'static>(self, plugin: P) -> Self {
+        plugin.build(self)
     }
 
     pub fn mojauth_enabled(mut self, status: bool) -> Self {

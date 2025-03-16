@@ -11,15 +11,15 @@ use wyvern_mc::{
     },
     inventory::Inventory,
     item::{ItemComponents, ItemStack},
+    macros::server,
     player::PlayerComponents,
     runtime::Runtime,
-    server::Server,
+    server::{Server, ServerBuilder},
     values::{Vec3, id},
 };
 
-fn main() {
-    env_logger::init();
-
+#[server]
+fn server() -> ServerBuilder {
     Server::builder()
         .event(on_server_start)
         .event(on_dim_init)
@@ -29,7 +29,6 @@ fn main() {
         .registries(|registries| {
             registries.add_defaults();
         })
-        .run();
 }
 
 fn on_server_start(event: Arc<ServerStartEvent>) -> ActorResult<()> {
