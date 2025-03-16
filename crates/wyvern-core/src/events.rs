@@ -1,15 +1,11 @@
 use std::{fmt::Debug, pin::Pin, sync::Arc};
 
 use crate::{
-    actors::ActorResult,
-    blocks::BlockState,
-    dimension::Dimension,
-    entities::Entity,
-    item::ItemStack,
-    player::Player,
-    server::Server,
-    values::{Id, Vec2, Vec3, cell::Token},
+    actors::ActorResult, blocks::BlockState, dimension::Dimension, entities::Entity,
+    item::ItemStack, player::Player, server::Server,
 };
+
+use wyvern_values::{Id, Vec2, Vec3, cell::Token};
 
 macro_rules! event_bus {
     ($($name:ident : $t:ty)*) => {

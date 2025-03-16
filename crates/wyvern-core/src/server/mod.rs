@@ -20,8 +20,8 @@ use crate::{
     dimension::{Dimension, DimensionData},
     events::{DimensionCreateEvent, Event, EventBus, ServerStartEvent, ServerTickEvent},
     player::{ConnectionData, ConnectionWithSignal, Player},
-    values::Id,
 };
+use wyvern_values::Id;
 
 mod builder;
 pub use builder::*;

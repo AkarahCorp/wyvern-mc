@@ -8,12 +8,9 @@ use voxidian_protocol::{
     },
 };
 
-use crate::{
-    blocks::BlockComponents,
-    components::DataComponentHolder,
-    server::Server,
-    values::{Id, Vec3, nbt::Nbt},
-};
+use crate::{blocks::BlockComponents, components::DataComponentHolder, server::Server};
+
+use wyvern_values::{Id, Vec3, nbt::Nbt};
 
 use crate::blocks::BlockState;
 

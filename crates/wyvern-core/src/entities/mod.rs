@@ -7,8 +7,8 @@ use crate::{
     actors::{ActorError, ActorResult},
     components::{ComponentElement, DataComponentMap, DataComponentType},
     dimension::Dimension,
-    values::Id,
 };
+use wyvern_values::Id;
 
 mod components;
 pub use components::*;

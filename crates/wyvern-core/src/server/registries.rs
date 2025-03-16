@@ -3,7 +3,7 @@ use voxidian_protocol::value::{
     WolfVariant as PtcWolfVariant,
 };
 
-use crate::values::{
+use wyvern_values::{
     Id, Registry, id,
     regval::{DimensionType, PaintingVariant, WolfVariant},
 };

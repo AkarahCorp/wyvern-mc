@@ -40,8 +40,9 @@ use crate::{
     inventory::{DataInventory, Inventory},
     item::ItemStack,
     server::Server,
-    values::{Gamemode, Id, Sound, Text, TextKinds, Vec2, Vec3},
 };
+
+use wyvern_values::{Gamemode, Id, Sound, Text, TextKinds, Vec2, Vec3};
 
 mod components;
 pub use components::*;

@@ -4,10 +4,8 @@ use voxidian_protocol::value::{
     SlotData, SoundEvent, Text, VarInt,
 };
 
-use crate::{
-    components::{DataComponentHolder, DataComponentMap},
-    values::{Id, nbt::Nbt},
-};
+use crate::components::{DataComponentHolder, DataComponentMap};
+use wyvern_values::{Id, nbt::Nbt};
 
 use super::{EquipmentSlot, EquippableComponent, ITEM_REGISTRY, ItemComponents, ItemStack};
 

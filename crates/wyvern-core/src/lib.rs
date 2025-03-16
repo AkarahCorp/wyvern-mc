@@ -16,8 +16,5 @@ pub mod item;
 pub mod player;
 pub mod runtime;
 pub mod server;
-pub mod values {
-    pub use wyvern_values::*;
-}
 
 pub(crate) use wyvern_macros::*;

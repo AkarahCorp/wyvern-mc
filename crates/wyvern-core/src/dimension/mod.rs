@@ -29,8 +29,9 @@ use crate::{
     events::ChunkLoadEvent,
     runtime::Runtime,
     server::Server,
-    values::{Id, Vec2, Vec3},
 };
+
+use wyvern_values::{Id, Vec2, Vec3};
 
 pub mod chunk;
 mod update;

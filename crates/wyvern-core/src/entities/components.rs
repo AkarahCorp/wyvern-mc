@@ -3,8 +3,9 @@ use voxidian_protocol::value::Uuid;
 use crate::{
     components::{DataComponentHolder, DataComponentType},
     item::ItemStack,
-    values::{Id, Vec2, Vec3, id},
 };
+
+use wyvern_values::{Id, Vec2, Vec3, id};
 
 use super::EntityData;
 

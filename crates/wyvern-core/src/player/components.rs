@@ -7,8 +7,9 @@ use crate::{
     actors::{ActorError, ActorResult},
     components::{ComponentElement, DataComponentType},
     entities::AttributeContainer,
-    values::{Gamemode, Vec2, Vec3, id},
 };
+
+use wyvern_values::{Gamemode, Vec2, Vec3, id};
 
 use super::Player;
 

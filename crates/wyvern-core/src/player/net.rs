@@ -23,7 +23,8 @@ use voxidian_protocol::{
 };
 use wyvern_actors::ActorError;
 
-use crate::{player::PlayerMessage, server::Server, values::Gamemode};
+use crate::{player::PlayerMessage, server::Server};
+use wyvern_values::Gamemode;
 
 use super::{ConnectionData, ConnectionWithSignal, Player, PlayerComponents, data::PlayerData};
 

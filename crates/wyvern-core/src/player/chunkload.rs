@@ -6,12 +6,8 @@ use voxidian_protocol::{
     value::{ChunkSectionData, Nbt, NbtCompound, VarInt},
 };
 
-use crate::{
-    actors::ActorResult,
-    components::DataComponentHolder,
-    runtime::Runtime,
-    values::{Vec2, Vec3},
-};
+use crate::{actors::ActorResult, components::DataComponentHolder, runtime::Runtime};
+use wyvern_values::{Vec2, Vec3};
 
 use super::{ConnectionData, PlayerComponents};
 

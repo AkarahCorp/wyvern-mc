@@ -8,8 +8,9 @@ use voxidian_protocol::{
 
 use crate::{
     actors::ActorResult, blocks::Blocks, components::DataComponentPatch, dimension::DimensionData,
-    entities::Entity, runtime::Runtime, server::Server, values::Vec3,
+    entities::Entity, runtime::Runtime, server::Server,
 };
+use wyvern_values::Vec3;
 
 use super::EntityComponents;
 

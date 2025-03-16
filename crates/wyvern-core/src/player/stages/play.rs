@@ -26,8 +26,9 @@ use crate::{
     player::{ConnectionData, PlayerComponents},
     runtime::Runtime,
     server::Server,
-    values::{Gamemode, Id, Texts, Vec2, Vec3, cell::Token},
 };
+
+use wyvern_values::{Gamemode, Id, Texts, Vec2, Vec3, cell::Token};
 
 impl ConnectionData {
     pub fn play_phase(&mut self) -> ActorResult<()> {

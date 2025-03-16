@@ -6,10 +6,8 @@ use std::sync::LazyLock;
 
 use voxidian_protocol::{registry::Registry, value::Item};
 
-use crate::{
-    components::{DataComponentHolder, DataComponentMap},
-    values::Id,
-};
+use crate::components::{DataComponentHolder, DataComponentMap};
+use wyvern_values::Id;
 
 pub struct ItemType;
 

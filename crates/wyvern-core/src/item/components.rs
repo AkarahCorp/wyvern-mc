@@ -1,9 +1,7 @@
 use voxidian_protocol::packet::s2c::play::EquipmentSlot as PtcEquipmentSlot;
 
-use crate::{
-    components::DataComponentType,
-    values::{Id, TextKinds, id, nbt::NbtCompound},
-};
+use crate::components::DataComponentType;
+use wyvern_values::{Id, TextKinds, id, nbt::NbtCompound};
 
 pub struct ItemComponents;
 

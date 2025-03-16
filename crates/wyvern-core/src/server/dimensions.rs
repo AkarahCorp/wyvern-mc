@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
-use crate::{dimension::Dimension, values::Id};
+use crate::dimension::Dimension;
+use wyvern_values::Id;
 
 pub(crate) struct DimensionContainer {
     pub(crate) dimensions: HashMap<Id, Dimension>,

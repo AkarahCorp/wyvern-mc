@@ -13,8 +13,8 @@ use crate::{
     entities::EntityComponents,
     item::ItemStack,
     runtime::Runtime,
-    values::{Gamemode, Vec3, id},
 };
+use wyvern_values::{Gamemode, Vec3, id};
 
 use super::{ConnectionData, Player, PlayerComponents};
 
