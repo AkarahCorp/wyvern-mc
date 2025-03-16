@@ -41,6 +41,7 @@ impl Runtime {
                     .name("TaskThread".to_string())
                     .spawn(move || {
                         while let Ok(task) = recv.recv() {
+                            println!("{:#?}", recv.len());
                             task();
                         }
                     });

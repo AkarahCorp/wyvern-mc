@@ -21,6 +21,8 @@ impl PlayerComponents {
     pub const UUID: DataComponentType<Uuid> = DataComponentType::new(id![minecraft:uuid]);
     pub const TELEPORT_POSITION: DataComponentType<Vec3<f64>> =
         DataComponentType::new(id![minecraft:tp_position]);
+    pub const TELEPORT_VELOCITY: DataComponentType<Vec3<f64>> =
+        DataComponentType::new(id![minecraft:tp_velocity]);
     pub const POSITION: DataComponentType<Vec3<f64>> =
         DataComponentType::new(id![minecraft:position]);
     pub const DIRECTION: DataComponentType<Vec2<f32>> =

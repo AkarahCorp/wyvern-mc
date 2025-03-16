@@ -54,6 +54,7 @@ impl Player {
                     PlayerComponents::TELEPORT_POSITION,
                     Vec3::new(f64::MIN, f64::MIN, f64::MIN),
                 )?;
+                self.set(PlayerComponents::POSITION, location)?;
                 self.write_packet(PlayerPositionS2CPlayPacket {
                     teleport_id: VarInt::from(self.get(PlayerComponents::TELEPORT_SYNC_SENT)?),
                     x: location.x(),
@@ -68,6 +69,41 @@ impl Player {
                         relative_x: false,
                         relative_y: false,
                         relative_z: false,
+                        relative_pitch: true,
+                        relative_yaw: true,
+                        relative_vx: true,
+                        relative_vy: true,
+                        relative_vz: true,
+                        rotate_velocity: false,
+                    },
+                })?;
+            }
+        }
+
+        if let Ok(velocity) = self.get(PlayerComponents::TELEPORT_VELOCITY) {
+            if velocity != Vec3::new(f64::MIN, f64::MIN, f64::MIN) {
+                self.set(
+                    PlayerComponents::TELEPORT_SYNC_SENT,
+                    self.get(PlayerComponents::TELEPORT_SYNC_SENT).unwrap_or(10) + 1,
+                )?;
+                self.set(
+                    PlayerComponents::TELEPORT_VELOCITY,
+                    Vec3::new(f64::MIN, f64::MIN, f64::MIN),
+                )?;
+                self.write_packet(PlayerPositionS2CPlayPacket {
+                    teleport_id: VarInt::from(self.get(PlayerComponents::TELEPORT_SYNC_SENT)?),
+                    x: 0.0,
+                    y: 0.0,
+                    z: 0.0,
+                    vx: velocity.x(),
+                    vy: velocity.y(),
+                    vz: velocity.z(),
+                    adyaw_deg: 0.0,
+                    adpitch_deg: 0.0,
+                    flags: TeleportFlags {
+                        relative_x: true,
+                        relative_y: true,
+                        relative_z: true,
                         relative_pitch: true,
                         relative_yaw: true,
                         relative_vx: true,

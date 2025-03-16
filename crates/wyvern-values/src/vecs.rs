@@ -1,3 +1,5 @@
+use std::f64::consts::PI;
+
 use datafix::serialization::{CodecAdapters, CodecOps, DefaultCodec};
 
 #[derive(PartialEq, Eq, Hash, Copy, Clone, Debug)]
@@ -38,7 +40,7 @@ impl<T: Copy> Vec2<T> {
 
 impl Vec2<f32> {
     pub fn to_3d_direction(&self) -> Vec3<f64> {
-        let yaw = (self.inner[0].to_radians() as f64) + 90.0;
+        let yaw = (self.inner[0].to_radians() as f64) + (PI / 2.0);
         let pitch = self.inner[1].to_radians() as f64;
 
         let cos_pitch = pitch.cos();
@@ -46,7 +48,7 @@ impl Vec2<f32> {
         let cos_yaw = yaw.cos();
         let sin_yaw = yaw.sin();
 
-        Vec3::new(cos_pitch * cos_yaw, sin_pitch, cos_pitch * sin_yaw)
+        Vec3::new(cos_pitch * cos_yaw, -sin_pitch, cos_pitch * sin_yaw)
     }
 }
 
@@ -123,6 +125,14 @@ impl Vec3<f64> {
 
     pub fn magnitude(&self) -> f64 {
         f64::sqrt(self.x().powi(2) + self.y().powi(2) + self.z().powi(2))
+    }
+
+    pub fn distance(&self, other: Vec3<f64>) -> f64 {
+        f64::sqrt(
+            (other.x() - self.x()).powi(2)
+                + (other.y() - self.y()).powi(2)
+                + (other.z() - self.z()).powi(2),
+        )
     }
 }
 

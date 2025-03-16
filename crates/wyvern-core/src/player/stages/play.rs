@@ -251,68 +251,71 @@ impl ConnectionData {
                         }
                     }
                     C2SPlayPackets::UseItemOn(packet) => {
-                        let face = match packet.face {
-                            BlockFace::Down => Vec3::new(0, -1, 0),
-                            BlockFace::Up => Vec3::new(0, 1, 0),
-                            BlockFace::North => Vec3::new(0, 0, -1),
-                            BlockFace::South => Vec3::new(0, 0, 1),
-                            BlockFace::West => Vec3::new(-1, 0, 0),
-                            BlockFace::East => Vec3::new(1, 0, 0),
-                        };
-                        let target = Vec3::new(packet.target.x, packet.target.y, packet.target.z);
-                        let final_pos = Vec3::new(
-                            target.x() + face.x(),
-                            target.y() + face.y(),
-                            target.z() + face.z(),
-                        );
-                        let held = this
-                            .associated_data
-                            .inventory
-                            .get_slot(this.associated_data.held_slot as usize)?;
+                        if packet.hand == Hand::Mainhand {
+                            let face = match packet.face {
+                                BlockFace::Down => Vec3::new(0, -1, 0),
+                                BlockFace::Up => Vec3::new(0, 1, 0),
+                                BlockFace::North => Vec3::new(0, 0, -1),
+                                BlockFace::South => Vec3::new(0, 0, 1),
+                                BlockFace::West => Vec3::new(-1, 0, 0),
+                                BlockFace::East => Vec3::new(1, 0, 0),
+                            };
+                            let target =
+                                Vec3::new(packet.target.x, packet.target.y, packet.target.z);
+                            let final_pos = Vec3::new(
+                                target.x() + face.x(),
+                                target.y() + face.y(),
+                                target.z() + face.z(),
+                            );
+                            let held = this
+                                .associated_data
+                                .inventory
+                                .get_slot(this.associated_data.held_slot as usize)?;
 
-                        let state = BlockState::new(held.kind());
-                        let state_clone = state.clone();
-                        let dim = this
-                            .associated_data
-                            .dimension
-                            .as_ref()
-                            .ok_or(ActorError::ActorIsNotLoaded)?
-                            .clone();
+                            let state = BlockState::new(held.kind());
+                            let state_clone = state.clone();
+                            let dim = this
+                                .associated_data
+                                .dimension
+                                .as_ref()
+                                .ok_or(ActorError::ActorIsNotLoaded)?
+                                .clone();
 
-                        this.write_packet(BlockChangedAckS2CPlayPacket(packet.sequence));
-                        Runtime::spawn_task(move || {
-                            let _ = dim.set_block(final_pos, state_clone);
+                            this.write_packet(BlockChangedAckS2CPlayPacket(packet.sequence));
+                            Runtime::spawn_task(move || {
+                                let _ = dim.set_block(final_pos, state_clone);
 
-                            Ok(())
-                        });
+                                Ok(())
+                            });
 
-                        // TODO: make placement only occur if the item is placable
-                        if state.id_is_valid() {
-                            if let Ok(item_count) = held.get(ItemComponents::ITEM_COUNT) {
-                                if item_count <= 1 {
-                                    this.associated_data.inventory.set_slot(
-                                        this.associated_data.held_slot as usize,
-                                        ItemStack::air(),
-                                    )?;
-                                } else {
-                                    this.associated_data.inventory.set_slot(
-                                        this.associated_data.held_slot as usize,
-                                        held.with(ItemComponents::ITEM_COUNT, item_count - 1),
-                                    )?;
+                            // TODO: make placement only occur if the item is placable
+                            if state.id_is_valid() {
+                                if let Ok(item_count) = held.get(ItemComponents::ITEM_COUNT) {
+                                    if item_count <= 1 {
+                                        this.associated_data.inventory.set_slot(
+                                            this.associated_data.held_slot as usize,
+                                            ItemStack::air(),
+                                        )?;
+                                    } else {
+                                        this.associated_data.inventory.set_slot(
+                                            this.associated_data.held_slot as usize,
+                                            held.with(ItemComponents::ITEM_COUNT, item_count - 1),
+                                        )?;
+                                    }
                                 }
                             }
-                        }
 
-                        if state.id_is_valid() {
-                            this.connected_server.spawn_event(PlaceBlockEvent {
-                                player: this.as_actor(),
-                                position: final_pos,
-                                block: state,
-                            })?;
-                        } else {
-                            this.connected_server.spawn_event(RightClickEvent {
-                                player: this.as_actor(),
-                            })?;
+                            if state.id_is_valid() {
+                                this.connected_server.spawn_event(PlaceBlockEvent {
+                                    player: this.as_actor(),
+                                    position: final_pos,
+                                    block: state,
+                                })?;
+                            } else {
+                                this.connected_server.spawn_event(RightClickEvent {
+                                    player: this.as_actor(),
+                                })?;
+                            }
                         }
                     }
                     C2SPlayPackets::Chat(packet) => {
@@ -528,19 +531,25 @@ impl ConnectionData {
                 };
 
                 self.write_packet(PlayerInfoUpdateS2CPlayPacket {
-                    actions: vec![(uuid, vec![PlayerActionEntry::AddPlayer {
-                        name: username.clone(),
-                        props: props.into(),
-                    }])],
+                    actions: vec![(uuid, vec![
+                        PlayerActionEntry::AddPlayer {
+                            name: username.clone(),
+                            props: props.into(),
+                        },
+                        PlayerActionEntry::Listed(true),
+                    ])],
                 });
             } else {
                 let uuid = player.get(PlayerComponents::UUID)?;
                 let username = player.get(PlayerComponents::USERNAME)?;
                 self.write_packet(PlayerInfoUpdateS2CPlayPacket {
-                    actions: vec![(uuid, vec![PlayerActionEntry::AddPlayer {
-                        name: username.clone(),
-                        props: player.auth_props().unwrap_or(Vec::new()).into(),
-                    }])],
+                    actions: vec![(uuid, vec![
+                        PlayerActionEntry::AddPlayer {
+                            name: username.clone(),
+                            props: player.auth_props().unwrap_or(Vec::new()).into(),
+                        },
+                        PlayerActionEntry::Listed(true),
+                    ])],
                 });
             }
         }
