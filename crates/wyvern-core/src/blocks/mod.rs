@@ -28,7 +28,7 @@ pub static BLOCK_STATE_KEYS: LazyLock<HashSet<Id>> = LazyLock::new(|| {
 
 pub struct Block {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BlockState {
     pub(crate) block: Id,
     pub(crate) components: DataComponentMap,
@@ -78,10 +78,11 @@ impl BlockState {
     }
 
     pub fn from_protocol_id(id: i32) -> Self {
-        Self::from(ID_TO_BLOCK_STATE.get(&id).unwrap_or({
-            eprintln!("id: {:#?}", id);
-            ID_TO_BLOCK_STATE.get(&0).unwrap()
-        }))
+        Self::from(
+            ID_TO_BLOCK_STATE
+                .get(&id)
+                .unwrap_or(ID_TO_BLOCK_STATE.get(&0).unwrap()),
+        )
     }
 
     pub fn id_is_valid(&self) -> bool {

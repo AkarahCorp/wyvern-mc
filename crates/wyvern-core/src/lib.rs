@@ -8,6 +8,7 @@ pub mod blocks;
 pub mod components {
     pub use wyvern_components::*;
 }
+pub mod datatypes;
 pub mod dimension;
 pub mod entities;
 pub mod events;

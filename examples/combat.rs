@@ -4,6 +4,7 @@ use wyvern_mc::{
     actors::ActorResult,
     blocks::{BlockComponents, BlockState},
     components::DataComponentHolder,
+    datatypes::Particle,
     entities::{AttributeContainer, Attributes, EntityComponents, PlayerSkinData},
     events::{
         DimensionCreateEvent, PlayerAttackEntityEvent, PlayerAttackPlayerEvent, PlayerJoinEvent,
@@ -159,6 +160,11 @@ fn on_attack(event: Arc<PlayerAttackEntityEvent>) -> ActorResult<()> {
     event
         .attacker
         .play_sound(Sounds::ENTITY_PLAYER_ATTACK_CRIT)?;
+
+    event.attacker.play_particle(
+        event.victim.get(EntityComponents::POSITION)?,
+        Particle::new(id![minecraft:crit]),
+    )?;
 
     Ok(())
 }

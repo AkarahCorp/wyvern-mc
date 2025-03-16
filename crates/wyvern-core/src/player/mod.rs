@@ -19,10 +19,10 @@ use voxidian_protocol::{
             play::{
                 AddEntityS2CPlayPacket, ContainerSetSlotS2CPlayPacket, DisconnectS2CPlayPacket,
                 ForgetLevelChunkS2CPlayPacket, GameEvent, GameEventS2CPlayPacket,
-                Gamemode as PtcGamemode, OpenScreenS2CPlayPacket, PlayerPositionS2CPlayPacket,
-                PlayerRotationS2CPlayPacket, RespawnDataKept, RespawnS2CPlayPacket,
-                ScreenWindowKind, SoundCategory, SoundEntityS2CPlayPacket, SystemChatS2CPlayPacket,
-                TeleportFlags,
+                Gamemode as PtcGamemode, LevelParticlesS2CPlayPacket, OpenScreenS2CPlayPacket,
+                PlayerPositionS2CPlayPacket, PlayerRotationS2CPlayPacket, RespawnDataKept,
+                RespawnS2CPlayPacket, ScreenWindowKind, SoundCategory, SoundEntityS2CPlayPacket,
+                SystemChatS2CPlayPacket, TeleportFlags,
             },
         },
     },
@@ -35,6 +35,7 @@ use wyvern_values::InventoryKind;
 use crate::{
     actors::{ActorError, ActorResult},
     components::{ComponentElement, DataComponentHolder, DataComponentMap},
+    datatypes::Particle,
     dimension::Dimension,
     entities::EntityComponents,
     inventory::{DataInventory, Inventory},
@@ -442,6 +443,24 @@ impl ConnectionData {
     #[EntityId]
     pub(crate) fn entity_id(&self) -> ActorResult<i32> {
         Ok(self.associated_data.entity_id)
+    }
+
+    #[PlayParticle]
+    pub fn play_particle(&mut self, pos: Vec3<f64>, particle: Particle) -> ActorResult<()> {
+        self.write_packet(LevelParticlesS2CPlayPacket {
+            long_distance: true,
+            always_visible: true,
+            x: pos.x(),
+            y: pos.y(),
+            z: pos.z(),
+            spread_x: 0.0,
+            spread_y: 0.0,
+            spread_z: 0.0,
+            max_speed: 0.0,
+            count: 1,
+            particle: particle.into(),
+        });
+        Ok(())
     }
 }
 
