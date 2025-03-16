@@ -4,7 +4,7 @@ use wyvern_mc::{
     actors::ActorResult,
     blocks::{BlockComponents, BlockState},
     components::DataComponentHolder,
-    datatypes::Particle,
+    datatypes::{particle::Particle, sound::Sounds, text::Texts},
     entities::{AttributeContainer, Attributes, EntityComponents, PlayerSkinData},
     events::{
         DimensionCreateEvent, PlayerAttackEntityEvent, PlayerAttackPlayerEvent, PlayerJoinEvent,
@@ -15,7 +15,7 @@ use wyvern_mc::{
     player::PlayerComponents,
     runtime::Runtime,
     server::Server,
-    values::{Id, Sounds, Texts, Vec3, id},
+    values::{Id, Vec3, id},
 };
 
 const TEXTURE: &str = include_str!("./texture.txt");

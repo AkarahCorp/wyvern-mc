@@ -5,6 +5,10 @@ use wyvern_mc::{
     actors::ActorResult,
     blocks::{BlockState, Structure},
     components::DataComponentHolder,
+    datatypes::{
+        gamemode::Gamemode,
+        nbt::{Nbt, NbtCompound, NbtOps},
+    },
     entities::{AttributeContainer, Attributes},
     events::{
         BreakBlockEvent, DimensionCreateEvent, PlaceBlockEvent, PlayerJoinEvent, ServerStartEvent,
@@ -12,10 +16,7 @@ use wyvern_mc::{
     player::PlayerComponents,
     runtime::Runtime,
     server::Server,
-    values::{
-        Gamemode, Vec3, id,
-        nbt::{Nbt, NbtCompound, NbtOps},
-    },
+    values::{Vec3, id},
 };
 
 fn main() {

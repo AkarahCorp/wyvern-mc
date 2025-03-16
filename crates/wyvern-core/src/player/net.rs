@@ -10,7 +10,6 @@ use std::{
 
 use crate::{
     actors::{Actor, ActorResult},
-    components::{DataComponentHolder, DataComponentMap},
     runtime::Runtime,
 };
 use flume::{Receiver, Sender};
@@ -22,9 +21,10 @@ use voxidian_protocol::{
     value::Uuid,
 };
 use wyvern_actors::ActorError;
+use wyvern_components::{DataComponentHolder, DataComponentMap};
+use wyvern_datatypes::gamemode::Gamemode;
 
 use crate::{player::PlayerMessage, server::Server};
-use wyvern_values::Gamemode;
 
 use super::{ConnectionData, ConnectionWithSignal, Player, PlayerComponents, data::PlayerData};
 

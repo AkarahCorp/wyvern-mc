@@ -2,10 +2,10 @@ use std::sync::Arc;
 
 use dyn_clone::clone_box;
 use voxidian_protocol::value::Uuid;
+use wyvern_components::{ComponentElement, DataComponentMap, DataComponentType};
 
 use crate::{
     actors::{ActorError, ActorResult},
-    components::{ComponentElement, DataComponentMap, DataComponentType},
     dimension::Dimension,
 };
 use wyvern_values::Id;

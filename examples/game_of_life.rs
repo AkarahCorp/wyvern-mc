@@ -9,12 +9,13 @@ use std::{
 use wyvern_mc::{
     actors::ActorResult,
     blocks::{BlockState, Blocks},
+    datatypes::regval::DimensionType,
     events::{
         DimensionCreateEvent, PlayerJoinEvent, ServerStartEvent, StartBreakBlockEvent,
         SwapHandsEvent,
     },
     server::Server,
-    values::{Id, Vec3, id, regval::DimensionType},
+    values::{Id, Vec3, id},
 };
 
 const MAX_X: usize = 50;

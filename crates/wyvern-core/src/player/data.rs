@@ -1,7 +1,8 @@
 use std::time::Instant;
 
 use crate::{dimension::Dimension, inventory::DataInventory, item::ItemStack};
-use wyvern_values::{InventoryKind, Vec2};
+use wyvern_datatypes::window::InventoryKind;
+use wyvern_values::Vec2;
 
 #[derive(Debug, Clone)]
 pub struct PlayerData {

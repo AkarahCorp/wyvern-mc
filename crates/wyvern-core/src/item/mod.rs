@@ -1,12 +1,12 @@
 mod components;
 pub use components::*;
+use wyvern_components::{DataComponentHolder, DataComponentMap};
 mod conversion;
 
 use std::sync::LazyLock;
 
 use voxidian_protocol::{registry::Registry, value::Item};
 
-use crate::components::{DataComponentHolder, DataComponentMap};
 use wyvern_values::Id;
 
 pub struct ItemType;
@@ -18,11 +18,11 @@ pub struct ItemStack {
 }
 
 impl DataComponentHolder for ItemStack {
-    fn component_map(&self) -> &crate::components::DataComponentMap {
+    fn component_map(&self) -> &DataComponentMap {
         &self.map
     }
 
-    fn component_map_mut(&mut self) -> &mut crate::components::DataComponentMap {
+    fn component_map_mut(&mut self) -> &mut DataComponentMap {
         &mut self.map
     }
 }

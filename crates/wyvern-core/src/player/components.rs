@@ -2,14 +2,15 @@ use std::sync::Arc;
 
 use dyn_clone::clone_box;
 use voxidian_protocol::{packet::c2s::play::InputFlags, value::Uuid};
+use wyvern_components::{ComponentElement, DataComponentType};
+use wyvern_datatypes::gamemode::Gamemode;
 
 use crate::{
     actors::{ActorError, ActorResult},
-    components::{ComponentElement, DataComponentType},
     entities::AttributeContainer,
 };
 
-use wyvern_values::{Gamemode, Vec2, Vec3, id};
+use wyvern_values::{Vec2, Vec3, id};
 
 use super::Player;
 

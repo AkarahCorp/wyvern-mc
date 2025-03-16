@@ -3,10 +3,8 @@ use voxidian_protocol::value::{
     WolfVariant as PtcWolfVariant,
 };
 
-use wyvern_values::{
-    Id, Registry, id,
-    regval::{DimensionType, PaintingVariant, WolfVariant},
-};
+use wyvern_datatypes::regval::{DimensionType, PaintingVariant, WolfVariant};
+use wyvern_values::{Id, Registry, id};
 
 #[allow(dead_code)]
 pub struct RegistryContainer {

@@ -1,12 +1,12 @@
 use std::sync::LazyLock;
 
-use super::Id;
 use voxidian_protocol::{
     packet::s2c::play::SoundCategory as PtcSoundCategory,
     registry::Registry,
     value::{Sound as PtcSound, SoundEvent},
 };
 use wyvern_macros::generate_sounds_types;
+use wyvern_values::Id;
 
 static SOUND_REGISTRY: LazyLock<Registry<SoundEvent>> = LazyLock::new(SoundEvent::vanilla_registry);
 #[derive(Debug, Clone)]

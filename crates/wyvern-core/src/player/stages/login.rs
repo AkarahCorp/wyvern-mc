@@ -13,10 +13,10 @@ use voxidian_protocol::{
     },
     value::{LengthPrefixHashMap, VarInt},
 };
+use wyvern_components::DataComponentHolder;
 
 use crate::{
     actors::{ActorError, ActorResult},
-    components::DataComponentHolder,
     player::{ConnectionData, MojauthData, PlayerComponents},
     server::Server,
 };

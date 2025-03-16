@@ -7,3 +7,6 @@ edition = "2024"
 [dependencies]
 wyvern-core = { workspace = true }
 wyvern-values = { workspace = true }
+wyvern-actors = { workspace = true }
+wyvern-components = { workspace = true }
+wyvern-datatypes = { workspace = true }

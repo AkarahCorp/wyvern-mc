@@ -1,14 +1,10 @@
 #![feature(try_blocks)]
 #![allow(clippy::type_complexity)]
 
-pub mod actors {
+pub(crate) mod actors {
     pub use wyvern_actors::*;
 }
 pub mod blocks;
-pub mod components {
-    pub use wyvern_components::*;
-}
-pub mod datatypes;
 pub mod dimension;
 pub mod entities;
 pub mod events;

@@ -5,9 +5,7 @@ use std::{
 };
 
 use crate::{
-    actors::Actor,
     blocks::BlockState,
-    components::{ComponentElement, DataComponentHolder, DataComponentMap},
     entities::{Entity, EntityComponents, EntityData, PlayerSkinData},
 };
 use chunk::{Chunk, ChunkSection};
@@ -22,15 +20,13 @@ use voxidian_protocol::{
         Angle, BlockPos, EntityType as PtcEntityType, Identifier, ProfileProperty, Uuid, VarInt,
     },
 };
+use wyvern_actors::Actor;
+use wyvern_components::{ComponentElement, DataComponentHolder, DataComponentMap};
 use wyvern_values::id;
 
-use crate::{
-    actors::{ActorError, ActorResult},
-    events::ChunkLoadEvent,
-    runtime::Runtime,
-    server::Server,
-};
+use crate::{events::ChunkLoadEvent, runtime::Runtime, server::Server};
 
+use crate::actors::{ActorError, ActorResult};
 use wyvern_values::{Id, Vec2, Vec3};
 
 pub mod chunk;

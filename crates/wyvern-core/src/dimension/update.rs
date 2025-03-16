@@ -5,10 +5,11 @@ use voxidian_protocol::{
     },
     value::Angle,
 };
+use wyvern_components::DataComponentPatch;
 
 use crate::{
-    actors::ActorResult, blocks::Blocks, components::DataComponentPatch, dimension::DimensionData,
-    entities::Entity, runtime::Runtime, server::Server,
+    actors::ActorResult, blocks::Blocks, dimension::DimensionData, entities::Entity,
+    runtime::Runtime, server::Server,
 };
 use wyvern_values::Vec3;
 

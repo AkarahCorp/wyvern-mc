@@ -6,15 +6,11 @@ use voxidian_protocol::{
     },
     value::VarInt,
 };
+use wyvern_components::{DataComponentHolder, DataComponentPatch};
+use wyvern_datatypes::gamemode::Gamemode;
 
-use crate::{
-    actors::ActorResult,
-    components::{DataComponentHolder, DataComponentPatch},
-    entities::EntityComponents,
-    item::ItemStack,
-    runtime::Runtime,
-};
-use wyvern_values::{Gamemode, Vec3, id};
+use crate::{actors::ActorResult, entities::EntityComponents, item::ItemStack, runtime::Runtime};
+use wyvern_values::{Vec3, id};
 
 use super::{ConnectionData, Player, PlayerComponents};
 

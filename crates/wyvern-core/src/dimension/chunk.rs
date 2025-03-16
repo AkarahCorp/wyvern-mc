@@ -7,10 +7,12 @@ use voxidian_protocol::{
         PalettedContainer,
     },
 };
+use wyvern_components::DataComponentHolder;
+use wyvern_datatypes::nbt::Nbt;
 
-use crate::{blocks::BlockComponents, components::DataComponentHolder, server::Server};
+use crate::{blocks::BlockComponents, server::Server};
 
-use wyvern_values::{Id, Vec3, nbt::Nbt};
+use wyvern_values::{Id, Vec3};
 
 use crate::blocks::BlockState;
 

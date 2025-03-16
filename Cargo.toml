@@ -11,6 +11,7 @@ wyvern-components = { path = "./crates/wyvern-components" }
 wyvern-actors = { path = "./crates/wyvern-actors" }
 wyvern-core = { path = "./crates/wyvern-core" }
 wyvern-values = { path = "./crates/wyvern-values" }
+wyvern-datatypes = { path = "./crates/wyvern-datatypes" }
 proc-macro2 = { version = "*" }
 syn = { version = "*", features = ["full"] }
 quote = { version = "*" }

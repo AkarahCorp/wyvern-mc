@@ -1,8 +1,7 @@
-use wyvern_values::id;
-
-use crate::components::{DataComponentMap, DataComponentType};
 use std::collections::BTreeMap;
-use wyvern_values::nbt::Nbt;
+use wyvern_components::{DataComponentMap, DataComponentType};
+use wyvern_datatypes::nbt::Nbt;
+use wyvern_values::id;
 
 use super::{Axis, BlockDirection, ChestType, Half, StairShape};
 

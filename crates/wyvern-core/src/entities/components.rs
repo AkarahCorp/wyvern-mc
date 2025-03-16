@@ -1,9 +1,7 @@
 use voxidian_protocol::value::Uuid;
+use wyvern_components::{DataComponentHolder, DataComponentMap, DataComponentType};
 
-use crate::{
-    components::{DataComponentHolder, DataComponentType},
-    item::ItemStack,
-};
+use crate::item::ItemStack;
 
 use wyvern_values::{Id, Vec2, Vec3, id};
 
@@ -51,11 +49,11 @@ impl EntityComponents {
 }
 
 impl DataComponentHolder for EntityData {
-    fn component_map(&self) -> &crate::components::DataComponentMap {
+    fn component_map(&self) -> &DataComponentMap {
         &self.components
     }
 
-    fn component_map_mut(&mut self) -> &mut crate::components::DataComponentMap {
+    fn component_map_mut(&mut self) -> &mut DataComponentMap {
         &mut self.components
     }
 }

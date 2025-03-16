@@ -1,5 +1,5 @@
-use crate::Id;
 use voxidian_protocol::value::{PaintingVariant as PtcPaintingVariant, TextComponent};
+use wyvern_values::Id;
 
 pub struct PaintingVariant {
     pub asset: Id,

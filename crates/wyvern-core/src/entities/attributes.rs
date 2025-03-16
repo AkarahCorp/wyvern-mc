@@ -5,8 +5,7 @@ use voxidian_protocol::{
     value::{AttributeType, LengthPrefixVec, VarInt},
 };
 
-use crate::components::{DataComponentHolder, DataComponentMap, DataComponentType};
-
+use wyvern_components::{DataComponentHolder, DataComponentMap, DataComponentType};
 use wyvern_values::{Id, Registry};
 
 pub static ATTRIBUTES: LazyLock<Registry<AttributeType>> =

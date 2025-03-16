@@ -3,13 +3,14 @@ use std::sync::Arc;
 use wyvern_mc::{
     actors::ActorResult,
     blocks::{BlockState, Blocks},
+    datatypes::regval::DimensionType,
     events::{
         DimensionCreateEvent, PlayerCommandEvent, PlayerJoinEvent, ServerStartEvent,
         ServerTickEvent,
     },
     player::PlayerComponents,
     server::Server,
-    values::{Vec3, id, regval::DimensionType},
+    values::{Vec3, id},
 };
 
 fn main() {

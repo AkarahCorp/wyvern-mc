@@ -5,10 +5,11 @@ use wyvern_mc::{
     actors::ActorResult,
     blocks::{BlockComponents, BlockState, Blocks},
     components::DataComponentHolder,
+    datatypes::regval::DimensionType,
     dimension::chunk::Chunk,
     events::{DimensionCreateEvent, PlayerJoinEvent, ServerStartEvent},
     server::Server,
-    values::{Vec3, id, regval::DimensionType},
+    values::{Vec3, id},
 };
 
 fn main() {

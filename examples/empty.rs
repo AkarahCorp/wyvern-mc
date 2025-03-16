@@ -4,6 +4,7 @@ use wyvern_mc::{
     actors::ActorResult,
     blocks::{BlockComponents, BlockState},
     components::DataComponentHolder,
+    datatypes::gamemode::Gamemode,
     entities::{AttributeContainer, Attributes},
     events::{
         BreakBlockEvent, DimensionCreateEvent, PlaceBlockEvent, PlayerJoinEvent, ServerStartEvent,
@@ -13,7 +14,7 @@ use wyvern_mc::{
     player::PlayerComponents,
     runtime::Runtime,
     server::Server,
-    values::{Gamemode, Vec3, id},
+    values::{Vec3, id},
 };
 
 fn main() {

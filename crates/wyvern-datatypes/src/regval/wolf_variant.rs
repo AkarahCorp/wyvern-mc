@@ -1,6 +1,6 @@
-use crate::Id;
 use datafix::serialization::{CodecAdapters, CodecOps, DefaultCodec, MapCodecBuilder};
 use voxidian_protocol::value::{Identifier, WolfVariant as PtcWolfVariant};
+use wyvern_values::Id;
 
 pub struct WolfVariant {
     pub angry_texture: Id,

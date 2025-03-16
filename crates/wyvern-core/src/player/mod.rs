@@ -29,13 +29,18 @@ use voxidian_protocol::{
     registry::RegEntry,
     value::{Angle, ProfileProperty, Text as PtcText, TextComponent, VarInt},
 };
+use wyvern_components::{ComponentElement, DataComponentHolder, DataComponentMap};
+use wyvern_datatypes::{
+    gamemode::Gamemode,
+    particle::Particle,
+    sound::Sound,
+    text::{Text, TextKinds},
+    window::InventoryKind,
+};
 use wyvern_macros::{actor, message};
-use wyvern_values::InventoryKind;
 
 use crate::{
     actors::{ActorError, ActorResult},
-    components::{ComponentElement, DataComponentHolder, DataComponentMap},
-    datatypes::Particle,
     dimension::Dimension,
     entities::EntityComponents,
     inventory::{DataInventory, Inventory},
@@ -43,7 +48,7 @@ use crate::{
     server::Server,
 };
 
-use wyvern_values::{Gamemode, Id, Sound, Text, TextKinds, Vec2, Vec3};
+use wyvern_values::{Id, Vec2, Vec3};
 
 mod components;
 pub use components::*;

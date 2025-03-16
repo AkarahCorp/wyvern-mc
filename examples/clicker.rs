@@ -7,6 +7,12 @@ use wyvern_mc::{
     actors::ActorResult,
     blocks::BlockState,
     components::DataComponentHolder,
+    datatypes::{
+        nbt::NbtCompound,
+        sound::{SoundCategory, Sounds},
+        text::Texts,
+        window::InventoryKind,
+    },
     entities::{Entities, EntityComponents},
     events::{
         DimensionCreateEvent, PlayerJoinEvent, RightClickEvent, ServerStartEvent, ServerTickEvent,
@@ -16,9 +22,7 @@ use wyvern_mc::{
     item::{ItemComponents, ItemStack},
     player::PlayerComponents,
     server::Server,
-    values::{
-        Id, InventoryKind, SoundCategory, Sounds, Texts, Uuid, Vec2, Vec3, id, nbt::NbtCompound,
-    },
+    values::{Id, Uuid, Vec2, Vec3, id},
 };
 
 static COUNTER: LazyLock<Mutex<HashMap<Uuid, i32>>> = LazyLock::new(|| Mutex::new(HashMap::new()));

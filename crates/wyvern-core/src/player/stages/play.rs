@@ -10,11 +10,12 @@ use voxidian_protocol::{
     },
     value::{Angle, ProfileProperty, Text, TextComponent, VarInt},
 };
+use wyvern_components::DataComponentHolder;
+use wyvern_datatypes::{gamemode::Gamemode, text::Texts};
 
 use crate::{
     actors::{Actor, ActorError, ActorResult},
     blocks::BlockState,
-    components::DataComponentHolder,
     entities::EntityComponents,
     events::{
         BreakBlockEvent, ChangeHeldSlotEvent, ChatMessageEvent, DropItemEvent, PlaceBlockEvent,
@@ -28,7 +29,7 @@ use crate::{
     server::Server,
 };
 
-use wyvern_values::{Gamemode, Id, Texts, Vec2, Vec3, cell::Token};
+use wyvern_values::{Id, Vec2, Vec3, cell::Token};
 
 impl ConnectionData {
     pub fn play_phase(&mut self) -> ActorResult<()> {
