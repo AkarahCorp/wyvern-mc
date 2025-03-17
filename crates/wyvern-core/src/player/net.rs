@@ -1,4 +1,3 @@
-use core::panic;
 use std::{
     collections::VecDeque,
     fmt::Debug,
@@ -42,9 +41,12 @@ impl ConnectionData {
 
         let stage2 = stage.clone();
         let data_tx2 = data_tx.clone();
-        Runtime::spawn_actor(move || {
-            ConnectionData::new_conn(stream, addr, data_tx2, data_rx, signal_tx, server, stage2)
-        });
+        Runtime::spawn_actor(
+            move || {
+                ConnectionData::new_conn(stream, addr, data_tx2, data_rx, signal_tx, server, stage2)
+            },
+            "PlayerThread",
+        );
 
         ConnectionWithSignal {
             player: Player {
@@ -175,6 +177,7 @@ impl ConnectionData {
             match self.stream.write_all(&self.bytes_to_send) {
                 Ok(()) => {}
                 Err(e) if e.kind() == ErrorKind::WouldBlock => {}
+                Err(e) if e.kind() == ErrorKind::BrokenPipe => {}
                 Err(e) => panic!("{:?}", e),
             }
             self.bytes_to_send.clear();

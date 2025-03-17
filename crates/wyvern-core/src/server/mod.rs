@@ -118,9 +118,12 @@ impl ServerData {
             sender: root_dim.sender.downgrade(),
         };
         self.dimensions.insert(name, dim.clone());
-        Runtime::spawn_actor(move || {
-            root_dim.event_loop();
-        });
+        Runtime::spawn_actor(
+            move || {
+                root_dim.event_loop();
+            },
+            "DimensionThread",
+        );
 
         let dim_clone = dim.clone();
         let server_clone = self.as_actor();
@@ -154,10 +157,10 @@ impl ServerData {
     #[GetPlayerByUuid]
     pub fn player(&self, player: Uuid) -> ActorResult<Player> {
         for conn in &self.connections {
-            if conn.player.get(PlayerComponents::UUID) == Ok(player)
-                && conn.player.stage() == Ok(Stage::Play)
-            {
-                return Ok(conn.player.clone());
+            if conn.player.get(PlayerComponents::UUID) == Ok(player) {
+                if conn.player.stage() == Ok(Stage::Play) {
+                    return Ok(conn.player.clone());
+                }
             }
         }
         Err(ActorError::BadRequest)
@@ -180,7 +183,10 @@ impl ServerData {
             Ok(())
         });
         let snd_clone = snd.clone();
-        Runtime::spawn_actor(move || Self::networking_loop(snd_clone));
+        Runtime::spawn_actor(
+            move || Self::networking_loop(snd_clone),
+            "ServerNetworkingThread",
+        );
         self.handle_loops(snd);
     }
 

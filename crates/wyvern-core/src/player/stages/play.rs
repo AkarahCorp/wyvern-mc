@@ -252,7 +252,7 @@ impl ConnectionData {
                     }
                     C2SPlayPackets::UseItemOn(packet) => {
                         if packet.hand == Hand::Mainhand {
-                            let face = match packet.face {
+                            let face: Vec3<i32> = match packet.face {
                                 BlockFace::Down => Vec3::new(0, -1, 0),
                                 BlockFace::Up => Vec3::new(0, 1, 0),
                                 BlockFace::North => Vec3::new(0, 0, -1),

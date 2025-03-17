@@ -19,11 +19,11 @@ pub struct Runtime {
 }
 
 impl Runtime {
-    pub fn spawn_actor<F>(func: F)
+    pub fn spawn_actor<F>(func: F, name: impl Into<String>)
     where
         F: FnOnce() + Send + 'static,
     {
-        std::thread::spawn(func);
+        let builder = Builder::new().name(name.into()).spawn(func).unwrap();
     }
 
     pub fn spawn_task<F>(func: F)
@@ -32,9 +32,10 @@ impl Runtime {
     {
         let sender = GLOBAL_RUNTIME.tasks.get_or_init(|| {
             let chan = flume::unbounded();
-            for _ in 0..std::thread::available_parallelism()
+            for _ in 0..(std::thread::available_parallelism()
                 .expect("Multithreaded system is required")
-                .into()
+                .get()
+                / 2)
             {
                 let recv: Receiver<Box<dyn FnOnce() -> ActorResult<()> + Send>> = chan.1.clone();
                 Builder::new()
