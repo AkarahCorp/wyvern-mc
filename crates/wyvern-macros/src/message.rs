@@ -216,14 +216,24 @@ fn create_fn_from_variant(variant: &MessageVariant) -> TokenStream {
                 return Err(ActorError::ActorHasBeenDropped);
             };
             let (tx, mut rx) = flume::bounded(1);
-            match sender.send(#enum_type::#enum_variant(#(#param_names,)* tx)) {
+            match sender.try_send(#enum_type::#enum_variant(#(#param_names,)* tx)) {
                 Ok(v) => {},
-                Err(e) => return Err(ActorError::ActorHasBeenDropped)
+                Err(flume::TrySendError::Disconnected(v)) => {
+                    return Err(ActorError::ActorHasBeenDropped);
+                }
+                Err(e) => {
+                    std::thread::yield_now();
+                }
             }
             loop {
                 match rx.try_recv() {
                     Ok(v) => return v,
-                    Err(e) => std::thread::yield_now()
+                    Err(e) if e == flume::TryRecvError::Disconnected => {
+                        return Err(ActorError::ActorHasBeenDropped);
+                    }
+                    Err(e) => {
+                        std::thread::yield_now();
+                    }
                 };
             };
         }
@@ -255,7 +265,7 @@ fn create_match_arm_from_variant(variant: &MessageVariant) -> TokenStream {
     let r = quote! {
         #enum_type::#enum_variant(#(#param_names,)* tx) => {
             let r = self.#name(#(#param_names,)*);
-            let _ = tx.send(r);
+            let _ = tx.try_send(r);
         }
     };
     r
