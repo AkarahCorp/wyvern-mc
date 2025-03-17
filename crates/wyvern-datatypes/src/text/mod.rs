@@ -12,6 +12,24 @@ pub trait Text: Into<TextComponent> + Into<TextKinds> {
         self.text_meta().color = color;
         self
     }
+
+    fn bold(mut self, bold: bool) -> Self {
+        self.text_meta().style.bold = bold;
+        self
+    }
+
+    fn italic(mut self, italic: bool) -> Self {
+        self.text_meta().style.italic = italic;
+        self
+    }
+
+    fn and_then(self, other: impl Text) -> impl Text {
+        TextGroup {
+            left: self,
+            right: other,
+            meta: TextMeta::default(),
+        }
+    }
 }
 
 pub struct Texts;
@@ -20,18 +38,7 @@ impl Texts {
     pub fn literal(content: impl Into<String>) -> TextLiteral {
         TextLiteral {
             content: content.into(),
-            meta: TextMeta {
-                color: TextColor {
-                    r: 255,
-                    g: 255,
-                    b: 255,
-                },
-                style: TextStyle {
-                    bold: false,
-                    italic: false,
-                },
-                children: Vec::new(),
-            },
+            meta: TextMeta::default(),
         }
     }
 }

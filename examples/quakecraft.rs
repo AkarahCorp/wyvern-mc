@@ -8,7 +8,7 @@ use wyvern_mc::{
     datatypes::{
         nbt::{Nbt, NbtCompound, NbtOps},
         particle::Particle,
-        text::Texts,
+        text::{Text, TextColor, Texts},
     },
     entities::{AttributeContainer, Attributes},
     events::{
@@ -20,7 +20,7 @@ use wyvern_mc::{
     macros::server,
     player::{Player, PlayerComponents},
     server::{Server, ServerBuilder},
-    values::{Uuid, Vec3, id},
+    values::{Vec3, id},
 };
 
 #[server]
@@ -108,12 +108,21 @@ fn on_tick(_event: Arc<ServerTickEvent>) -> ActorResult<()> {
     for player in Server::get()?.players()? {
         player.set(
             PlayerComponents::SIDEBAR_NAME,
-            Texts::literal("QUAKECRAFT").into(),
+            Texts::literal("QUAKECRAFT")
+                .with_color(TextColor::new(255, 255, 0))
+                .bold(true)
+                .into(),
         )?;
         player.set(PlayerComponents::SIDEBAR_LINES, vec![
-            Texts::literal(format!("QUAKECRAFT1 {}", Uuid::new_v4())).into(),
-            Texts::literal("QUAKECRAFT22").into(),
-            Texts::literal("QUAKECRAFT333").into(),
+            Texts::literal("").into(),
+            Texts::literal("Kills: ")
+                .with_color(TextColor::new(133, 133, 133))
+                .and_then(Texts::literal("Untracked").with_color(TextColor::new(255, 133, 133)))
+                .into(),
+            Texts::literal("").into(),
+            Texts::literal("www.example.org")
+                .with_color(TextColor::new(255, 255, 0))
+                .into(),
         ])?;
         player.set(PlayerComponents::SIDEBAR_PRESENT, true)?;
     }

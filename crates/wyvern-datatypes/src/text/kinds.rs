@@ -16,11 +16,10 @@ impl From<TextKinds> for PtcText {
                 text.push(text_literal.into());
                 text
             }
-            TextKinds::Group(items) => {
+            TextKinds::Group(texts) => {
                 let mut text = PtcText::new();
-                for element in items {
-                    let text2: PtcText = element.into();
-                    for compound in text2.into_components() {
+                for part in texts {
+                    for compound in PtcText::from(part).into_components() {
                         text.push(compound);
                     }
                 }
@@ -55,6 +54,44 @@ impl From<TextLiteral> for TextKinds {
 }
 
 impl Text for TextLiteral {
+    fn text_meta(&mut self) -> &mut TextMeta {
+        &mut self.meta
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct TextGroup<L: Text, R: Text> {
+    pub(crate) left: L,
+    pub(crate) right: R,
+    pub(crate) meta: TextMeta,
+}
+
+impl<L: Text, R: Text> From<TextGroup<L, R>> for TextKinds {
+    fn from(value: TextGroup<L, R>) -> Self {
+        TextKinds::Group(vec![value.left.into(), value.right.into()])
+    }
+}
+
+impl<L: Text, R: Text> From<TextGroup<L, R>> for PtcText {
+    fn from(value: TextGroup<L, R>) -> Self {
+        let mut text = PtcText::new();
+        let vec: Vec<TextKinds> = vec![value.left.into(), value.right.into()];
+        for part in vec {
+            for compound in PtcText::from(part).into_components() {
+                text.push(compound);
+            }
+        }
+        text
+    }
+}
+
+impl<L: Text, R: Text> From<TextGroup<L, R>> for TextComponent {
+    fn from(_value: TextGroup<L, R>) -> Self {
+        unimplemented!()
+    }
+}
+
+impl<L: Text, R: Text> Text for TextGroup<L, R> {
     fn text_meta(&mut self) -> &mut TextMeta {
         &mut self.meta
     }

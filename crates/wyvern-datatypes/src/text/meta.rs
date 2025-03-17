@@ -1,4 +1,5 @@
 use super::TextKinds;
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct TextMeta {
     pub(crate) color: TextColor,
@@ -6,6 +7,24 @@ pub struct TextMeta {
     #[allow(unused)] // currently uneditable by vxptc :(
     pub(crate) children: Vec<TextKinds>,
 }
+
+impl Default for TextMeta {
+    fn default() -> Self {
+        TextMeta {
+            color: TextColor {
+                r: 255,
+                g: 255,
+                b: 255,
+            },
+            style: TextStyle {
+                bold: false,
+                italic: false,
+            },
+            children: Vec::new(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct TextColor {
     pub(crate) r: u8,
