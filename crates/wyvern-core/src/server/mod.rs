@@ -157,10 +157,10 @@ impl ServerData {
     #[GetPlayerByUuid]
     pub fn player(&self, player: Uuid) -> ActorResult<Player> {
         for conn in &self.connections {
-            if conn.player.get(PlayerComponents::UUID) == Ok(player) {
-                if conn.player.stage() == Ok(Stage::Play) {
-                    return Ok(conn.player.clone());
-                }
+            if conn.player.get(PlayerComponents::UUID) == Ok(player)
+                && conn.player.stage() == Ok(Stage::Play)
+            {
+                return Ok(conn.player.clone());
             }
         }
         Err(ActorError::BadRequest)
