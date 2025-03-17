@@ -19,7 +19,6 @@ use wyvern_mc::{
     item::{ItemComponents, ItemStack},
     macros::server,
     player::{Player, PlayerComponents},
-    runtime::Runtime,
     server::{Server, ServerBuilder},
     values::{Vec3, id},
 };
@@ -105,64 +104,57 @@ fn on_chat(event: Arc<ChatMessageEvent>) -> ActorResult<()> {
 }
 
 fn on_shoot(event: Arc<RightClickEvent>) -> ActorResult<()> {
-    for _ in 1..50 {
-        let event = event.clone();
-        Runtime::spawn_task(move || {
-            let position = event.player.get(PlayerComponents::POSITION)?;
-            let direction = event
-                .player
-                .get(PlayerComponents::DIRECTION)?
-                .to_3d_direction()
-                .map(|x| x / 2.0);
-            let mut step = position.with_y(position.y() + 1.8);
-            let players = event.player.dimension()?.players()?;
-            for _ in 1..120 {
-                step = step
-                    .with_x(step.x() + direction.x())
-                    .with_y(step.y() + direction.y())
-                    .with_z(step.z() + direction.z());
+    let position = event.player.get(PlayerComponents::POSITION)?;
+    let direction = event
+        .player
+        .get(PlayerComponents::DIRECTION)?
+        .to_3d_direction()
+        .map(|x| x / 2.0);
+    let mut step = position.with_y(position.y() + 1.8);
+    let players = event.player.dimension()?.players()?;
+    for _ in 1..120 {
+        step = step
+            .with_x(step.x() + direction.x())
+            .with_y(step.y() + direction.y())
+            .with_z(step.z() + direction.z());
+
+        for subplayer in &players {
+            let subplayer = Server::get()?.player(*subplayer)?;
+            subplayer.play_particle(step, Particle::new(id![minecraft:electric_spark]))?;
+        }
+
+        if *event.player.dimension()?.get_block(step.floor())?.name() != id![minecraft:air] {
+            break;
+        }
+
+        for player in &players {
+            let player = Server::get()?.player(*player)?;
+            let position = player.get(PlayerComponents::POSITION)?;
+            if player.get(PlayerComponents::USERNAME)
+                == event.player.get(PlayerComponents::USERNAME)
+            {
+                continue;
+            }
+
+            let dx = (step.x() - position.x()).abs();
+            let dy = (step.y() - (position.y() + 1.0)).abs();
+            let dz = (step.z() - position.z()).abs();
+
+            if dx <= 0.5 && dz <= 0.5 && dy <= 1.0 {
+                respawn_player(&player)?;
 
                 for subplayer in &players {
                     let subplayer = Server::get()?.player(*subplayer)?;
-                    subplayer.play_particle(step, Particle::new(id![minecraft:electric_spark]))?;
+                    subplayer.send_message(Texts::literal(format!(
+                        "{} pommed {}",
+                        event.player.get(PlayerComponents::USERNAME)?,
+                        player.get(PlayerComponents::USERNAME)?
+                    )))?;
                 }
 
-                if *event.player.dimension()?.get_block(step.floor())?.name() != id![minecraft:air]
-                {
-                    break;
-                }
-
-                for player in &players {
-                    let player = Server::get()?.player(*player)?;
-                    let position = player.get(PlayerComponents::POSITION)?;
-                    if player.get(PlayerComponents::USERNAME)
-                        == event.player.get(PlayerComponents::USERNAME)
-                    {
-                        continue;
-                    }
-
-                    let dx = (step.x() - position.x()).abs();
-                    let dy = (step.y() - (position.y() + 1.0)).abs();
-                    let dz = (step.z() - position.z()).abs();
-
-                    if dx <= 0.5 && dz <= 0.5 && dy <= 1.0 {
-                        respawn_player(&player)?;
-
-                        for subplayer in &players {
-                            let subplayer = Server::get()?.player(*subplayer)?;
-                            subplayer.send_message(Texts::literal(format!(
-                                "{} pommed {}",
-                                event.player.get(PlayerComponents::USERNAME)?,
-                                player.get(PlayerComponents::USERNAME)?
-                            )))?;
-                        }
-
-                        return Ok(());
-                    }
-                }
+                return Ok(());
             }
-            Ok(())
-        });
+        }
     }
     Ok(())
 }
