@@ -79,15 +79,7 @@ impl DimensionData {
                                 .with_y(pos.y() + velocity.y())
                                 .with_z(pos.z() + velocity.z());
 
-                            if dimension
-                                .get_block(Vec3::new(
-                                    new_pos.x().floor() as i32,
-                                    new_pos.y().floor() as i32,
-                                    new_pos.z().floor() as i32,
-                                ))?
-                                .name()
-                                == &Blocks::AIR
-                            {
+                            if dimension.get_block(new_pos.floor())?.name() == &Blocks::AIR {
                                 pos = new_pos;
                                 break;
                             } else {

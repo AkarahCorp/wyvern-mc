@@ -262,11 +262,7 @@ impl ConnectionData {
                             };
                             let target =
                                 Vec3::new(packet.target.x, packet.target.y, packet.target.z);
-                            let final_pos = Vec3::new(
-                                target.x() + face.x(),
-                                target.y() + face.y(),
-                                target.z() + face.z(),
-                            );
+                            let final_pos = target + face;
                             let held = this
                                 .associated_data
                                 .inventory

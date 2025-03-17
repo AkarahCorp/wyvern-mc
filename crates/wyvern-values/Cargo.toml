@@ -8,3 +8,4 @@ voxidian-protocol = { workspace = true }
 wyvern-macros = { workspace = true }
 datafix = { workspace = true }
 uuid = { workspace = true }
+num-traits = { workspace = true }

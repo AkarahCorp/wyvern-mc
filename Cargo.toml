@@ -23,6 +23,6 @@ rand = { version = "*" }
 dyn-clone = "1.0.18"
 rustc-hash = { version = "*" }
 uuid = { version = "*" }
-
+num-traits = { version = "*" }
 [profile.release]
 debug = true

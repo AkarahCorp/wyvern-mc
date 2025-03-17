@@ -1,6 +1,10 @@
-use std::f64::consts::PI;
+use std::{
+    f64::consts::PI,
+    ops::{Add, Div, Mul, Sub},
+};
 
 use datafix::serialization::{CodecAdapters, CodecOps, DefaultCodec};
+use num_traits::Float;
 
 pub type Vec2<T> = NVec<T, 2>;
 pub type Vec3<T> = NVec<T, 3>;
@@ -14,30 +18,33 @@ pub trait True {}
 #[doc(hidden)]
 impl True for Guard<true> {}
 
+pub trait Vc: Copy {}
+impl<T: Copy> Vc for T {}
+
 #[derive(PartialEq, Eq, Hash, Copy, Clone, Debug)]
-pub struct NVec<T: Copy, const N: usize> {
+pub struct NVec<T: Vc, const N: usize> {
     inner: [T; N],
 }
 
-impl<T: Copy> NVec<T, 1> {
+impl<T: Vc> NVec<T, 1> {
     pub fn new(x: T) -> NVec<T, 1> {
         NVec { inner: [x] }
     }
 }
 
-impl<T: Copy> NVec<T, 2> {
+impl<T: Vc> NVec<T, 2> {
     pub fn new(x: T, y: T) -> NVec<T, 2> {
         NVec { inner: [x, y] }
     }
 }
 
-impl<T: Copy> NVec<T, 3> {
+impl<T: Vc> NVec<T, 3> {
     pub fn new(x: T, y: T, z: T) -> NVec<T, 3> {
         NVec { inner: [x, y, z] }
     }
 }
 
-impl<T: Copy, const N: usize> NVec<T, N>
+impl<T: Vc, const N: usize> NVec<T, N>
 where
     Guard<{ N >= 1 }>: True,
 {
@@ -52,7 +59,7 @@ where
     }
 }
 
-impl<T: Copy, const N: usize> NVec<T, N>
+impl<T: Vc, const N: usize> NVec<T, N>
 where
     Guard<{ N >= 2 }>: True,
 {
@@ -67,7 +74,7 @@ where
     }
 }
 
-impl<T: Copy, const N: usize> NVec<T, N>
+impl<T: Vc, const N: usize> NVec<T, N>
 where
     Guard<{ N >= 3 }>: True,
 {
@@ -82,8 +89,31 @@ where
     }
 }
 
-impl<T: Copy, const N: usize> NVec<T, N> {
-    pub fn map<U: Copy + Default>(&self, f: impl Fn(T) -> U) -> NVec<U, N> {
+impl<T: Vc, const N: usize> NVec<T, N>
+where
+    Guard<{ N >= 4 }>: True,
+{
+    pub fn w(&self) -> T {
+        self.inner[3]
+    }
+
+    pub fn with_w(&self, w: T) -> Self {
+        let mut copy = *self;
+        copy.inner[3] = w;
+        copy
+    }
+}
+
+impl<T: Vc + Default, const N: usize> NVec<T, N> {
+    pub fn get(&self, idx: usize) -> Option<T> {
+        if idx >= N {
+            None
+        } else {
+            Some(self.inner[idx])
+        }
+    }
+
+    pub fn map<U: Vc + Default>(&self, f: impl Fn(T) -> U) -> NVec<U, N> {
         let mut copy = NVec {
             inner: std::array::from_fn(|_| U::default()),
         };
@@ -94,7 +124,63 @@ impl<T: Copy, const N: usize> NVec<T, N> {
     }
 }
 
-impl<T: Copy + DefaultCodec<OT, O>, const N: usize, OT: Clone, O: CodecOps<OT>> DefaultCodec<OT, O>
+impl<T: Vc + Default + Add<Output = T>, const N: usize> Add for NVec<T, N> {
+    type Output = NVec<T, N>;
+
+    fn add(self, other: Self) -> Self::Output {
+        let mut copy = NVec {
+            inner: std::array::from_fn(|_| T::default()),
+        };
+        for idx in 0..N {
+            copy.inner[idx] = self.inner[idx] + other.inner[idx];
+        }
+        copy
+    }
+}
+
+impl<T: Vc + Default + Sub<Output = T>, const N: usize> Sub for NVec<T, N> {
+    type Output = NVec<T, N>;
+
+    fn sub(self, other: Self) -> Self::Output {
+        let mut copy = NVec {
+            inner: std::array::from_fn(|_| T::default()),
+        };
+        for idx in 0..N {
+            copy.inner[idx] = self.inner[idx] - other.inner[idx];
+        }
+        copy
+    }
+}
+
+impl<T: Vc + Default + Mul<Output = T>, const N: usize> Mul for NVec<T, N> {
+    type Output = NVec<T, N>;
+
+    fn mul(self, other: Self) -> Self::Output {
+        let mut copy = NVec {
+            inner: std::array::from_fn(|_| T::default()),
+        };
+        for idx in 0..N {
+            copy.inner[idx] = self.inner[idx] * other.inner[idx];
+        }
+        copy
+    }
+}
+
+impl<T: Vc + Default + Div<Output = T>, const N: usize> Div for NVec<T, N> {
+    type Output = NVec<T, N>;
+
+    fn div(self, other: Self) -> Self::Output {
+        let mut copy = NVec {
+            inner: std::array::from_fn(|_| T::default()),
+        };
+        for idx in 0..N {
+            copy.inner[idx] = self.inner[idx] / other.inner[idx];
+        }
+        copy
+    }
+}
+
+impl<T: Vc + DefaultCodec<OT, O>, const N: usize, OT: Clone, O: CodecOps<OT>> DefaultCodec<OT, O>
     for NVec<T, N>
 {
     fn codec() -> impl datafix::serialization::Codec<Self, OT, O> {
@@ -107,16 +193,28 @@ impl<T: Copy + DefaultCodec<OT, O>, const N: usize, OT: Clone, O: CodecOps<OT>> 
     }
 }
 
-impl<const N: usize> NVec<f64, N> {
+impl<T: Vc + Default + Float, const N: usize> NVec<T, N> {
     pub fn floor(&self) -> NVec<i32, N> {
-        self.map(|x| x.floor() as i32)
+        self.map(|x| x.floor().to_i32().unwrap_or(0))
+    }
+
+    pub fn sin(&self) -> NVec<i32, N> {
+        self.map(|x| x.sin().to_i32().unwrap_or(0))
+    }
+
+    pub fn cos(&self) -> NVec<i32, N> {
+        self.map(|x| x.cos().to_i32().unwrap_or(0))
+    }
+
+    pub fn tan(&self) -> NVec<i32, N> {
+        self.map(|x| x.tan().to_i32().unwrap_or(0))
     }
 }
 
-impl NVec<f32, 2> {
+impl<T: Vc + Float> NVec<T, 2> {
     pub fn to_3d_direction(&self) -> Vec3<f64> {
-        let yaw = (self.inner[0].to_radians() as f64) + (PI / 2.0);
-        let pitch = self.inner[1].to_radians() as f64;
+        let yaw = (self.inner[0].to_radians().to_f64().unwrap_or(0.0)) + (PI / 2.0);
+        let pitch = self.inner[1].to_radians().to_f64().unwrap_or(0.0);
 
         let cos_pitch = pitch.cos();
         let sin_pitch = pitch.sin();

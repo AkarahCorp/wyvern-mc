@@ -46,10 +46,7 @@ impl Chunk {
         let section_y = pos.y().div_euclid(16);
         let local_y = pos.y().rem_euclid(16);
         if let Some(section) = self.section_at_mut(section_y) {
-            section.set_block_at(
-                Vec3::new(pos.x() as usize, local_y as usize, pos.z() as usize),
-                block,
-            );
+            section.set_block_at(pos.map(|x| x as usize).with_y(local_y as usize), block);
         }
     }
 
@@ -58,11 +55,7 @@ impl Chunk {
         let local_y = pos.y().rem_euclid(16); // Always positive in [0, 15]
 
         if let Some(section) = self.section_at_mut(section_y) {
-            section.get_block_at(Vec3::new(
-                pos.x() as usize,
-                local_y as usize,
-                pos.z() as usize,
-            ))
+            section.get_block_at(pos.map(|x| x as usize).with_y(local_y as usize))
         } else {
             BlockState::from_protocol_id(0)
         }

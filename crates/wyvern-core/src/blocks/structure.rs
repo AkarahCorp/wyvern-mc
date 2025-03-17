@@ -58,11 +58,7 @@ impl<OT: Clone, O: CodecOps<OT>> DefaultCodec<OT, O> for StructureBlock {
 impl Structure {
     pub fn place(&self, dim: Dimension, base_position: Vec3<i32>) -> ActorResult<()> {
         for block in &self.blocks {
-            let new_pos = Vec3::new(
-                base_position.x() + block.pos.x(),
-                base_position.y() + block.pos.y(),
-                base_position.z() + block.pos.z(),
-            );
+            let new_pos = base_position + block.pos;
             let block_state = &self.palette[block.state as usize];
             dim.set_block(new_pos, block_state.clone())?;
         }

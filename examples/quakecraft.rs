@@ -20,7 +20,7 @@ use wyvern_mc::{
     macros::server,
     player::{Player, PlayerComponents},
     server::{Server, ServerBuilder},
-    values::{Vec3, id},
+    values::{NVec, Vec3, id},
 };
 
 #[server]
@@ -190,7 +190,7 @@ fn respawn_player(player: &Player) -> ActorResult<()> {
     let rand_y = rand::random_range(3.0..16.0);
     let rand_z = rand::random_range(2.0..32.0);
 
-    let mut step = Vec3::new(rand_x, rand_y, rand_z);
+    let mut step: NVec<f64, 3> = Vec3::new(rand_x, rand_y, rand_z);
     while *player.dimension()?.get_block(step.floor())?.name() == id![minecraft:air] {
         step = step.with_y(step.y() - 0.5);
         continue;
