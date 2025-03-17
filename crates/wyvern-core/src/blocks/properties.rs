@@ -73,7 +73,9 @@ make_enum! {
 }
 
 make_enum! {
-    ChestType =>
+    BlockType =>
         Single as "single",
         Double as "double",
+        Top as "top",
+        Bottom as "bottom",
 }

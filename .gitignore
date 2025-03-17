@@ -17,3 +17,5 @@ dxil.dll
 flamegraph.svg
 perf.data
 perf.data.old
+
+/examples/violet.nbt

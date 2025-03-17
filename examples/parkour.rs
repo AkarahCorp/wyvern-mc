@@ -71,43 +71,39 @@ fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
             1 => {
                 let ys = rand::random_range(-1..=1);
                 block_pos = block_pos
-                    .with_x(block_pos.x() + 4 - ys)
-                    .with_y(block_pos.y() + ys)
-                    .with_z(block_pos.z() + rand::random_range(-2..=2));
+                    .shift_x(4 - ys)
+                    .shift_y(ys)
+                    .shift_z(rand::random_range(-2..=2));
             }
             2 => {
                 block_pos = block_pos
-                    .with_x(block_pos.x() + 6)
-                    .with_y(block_pos.y() - 5)
-                    .with_z(block_pos.z() + rand::random_range(-2..=2));
+                    .shift_x(6)
+                    .shift_y(-5)
+                    .shift_z(rand::random_range(-2..=2));
                 event
                     .dimension
                     .set_block(block_pos, BlockState::new(Blocks::SLIME_BLOCK))?;
 
                 let ys = rand::random_range(-1..=1);
                 block_pos = block_pos
-                    .with_x(block_pos.x() + 4 - ys)
-                    .with_y(block_pos.y() + ys + 2)
-                    .with_z(block_pos.z() + rand::random_range(-2..=2));
+                    .shift_x(4 - ys)
+                    .shift_y(ys + 2)
+                    .shift_z(rand::random_range(-2..=2));
             }
             3 => {
-                block_pos = block_pos.with_x(block_pos.x() + 1);
+                block_pos = block_pos.shift_x(1);
                 event
                     .dimension
                     .set_block(block_pos, BlockState::new(Blocks::POLISHED_ANDESITE))?;
-                block_pos = block_pos.with_x(block_pos.x() + 1);
+                block_pos = block_pos.shift_x(1);
                 event
                     .dimension
                     .set_block(block_pos, BlockState::new(Blocks::POLISHED_ANDESITE))?;
-                block_pos = block_pos
-                    .with_x(block_pos.x() + 1)
-                    .with_y(block_pos.y() + 2);
+                block_pos = block_pos.shift_x(2).shift_y(2);
                 event
                     .dimension
                     .set_block(block_pos, BlockState::new(Blocks::POLISHED_ANDESITE))?;
-                block_pos = block_pos
-                    .with_x(block_pos.x() + 1)
-                    .with_y(block_pos.y() - 2);
+                block_pos = block_pos.shift_x(1).shift_y(-2);
                 event
                     .dimension
                     .set_block(block_pos, BlockState::new(Blocks::POLISHED_ANDESITE))?;

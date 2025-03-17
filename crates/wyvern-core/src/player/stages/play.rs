@@ -20,7 +20,8 @@ use crate::{
     events::{
         BreakBlockEvent, ChangeHeldSlotEvent, ChatMessageEvent, DropItemEvent, PlaceBlockEvent,
         PlayerAttackEntityEvent, PlayerAttackPlayerEvent, PlayerCommandEvent, PlayerJoinEvent,
-        PlayerMoveEvent, RightClickEvent, StartBreakBlockEvent, SwapHandsEvent,
+        PlayerLeftClickEvent, PlayerLoadEvent, PlayerMoveEvent, RightClickEvent,
+        StartBreakBlockEvent, SwapHandsEvent,
     },
     inventory::Inventory,
     item::{ITEM_REGISTRY, ItemComponents, ItemStack},
@@ -388,6 +389,9 @@ impl ConnectionData {
                         let player = this.as_actor();
                         let eid = this.associated_data.entity_id;
                         let uuid = this.get(PlayerComponents::UUID)?;
+                        Server::get()?.spawn_event(PlayerLeftClickEvent {
+                            player: this.as_actor(),
+                        })?;
                         Runtime::spawn_task(move || {
                             let players = player.dimension()?.players()?;
 
@@ -420,6 +424,12 @@ impl ConnectionData {
                             Ok(())
                         });
                     }
+                    C2SPlayPackets::PlayerLoaded(_packet) => {
+                        println!("A");
+                        Server::get()?.spawn_event(PlayerLoadEvent {
+                            player: this.as_actor(),
+                        })?;
+                    }
                     packet => {
                         log::warn!(
                             "Received unknown play packet, this packet will be ignored. {:?}",
@@ -439,6 +449,7 @@ impl ConnectionData {
         let key = Id::constant("null", "null");
         let token = Token::new(Id::constant("null", "null"));
         let token_copy = token.clone();
+
         self.connected_server.spawn_event(PlayerJoinEvent {
             player: self.as_actor(),
             new_dimension: token_copy,

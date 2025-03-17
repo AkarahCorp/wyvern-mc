@@ -12,8 +12,8 @@ use wyvern_mc::{
     },
     entities::{AttributeContainer, Attributes},
     events::{
-        BreakBlockEvent, ChatMessageEvent, DimensionCreateEvent, PlaceBlockEvent,
-        PlayerCommandEvent, PlayerJoinEvent, RightClickEvent, ServerStartEvent, ServerTickEvent,
+        BreakBlockEvent, ChatMessageEvent, DimensionCreateEvent, PlaceBlockEvent, PlayerJoinEvent,
+        PlayerLeftClickEvent, PlayerLoadEvent, RightClickEvent, ServerStartEvent, ServerTickEvent,
     },
     inventory::Inventory,
     item::{ItemComponents, ItemStack},
@@ -34,7 +34,8 @@ fn server() -> ServerBuilder {
         .event(on_shoot)
         .event(on_chat)
         .event(on_tick)
-        .event(on_command)
+        .event(on_dash)
+        .event(on_load)
         .registries(|registries| {
             registries.add_defaults();
         })
@@ -47,22 +48,11 @@ fn on_server_start(event: Arc<ServerStartEvent>) -> ActorResult<()> {
 }
 
 fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
-    let bytes = std::fs::read("./quake.nbt").unwrap();
+    let bytes = include_bytes!("./violet.nbt").to_vec();
     let nbt = Nbt::new(NbtCompound::try_from(bytes).unwrap());
     let structure = Structure::codec().decode(&NbtOps, &nbt).unwrap();
 
     structure.place(event.dimension.clone(), Vec3::new(0, 0, 0))?;
-    Ok(())
-}
-
-fn on_command(event: Arc<PlayerCommandEvent>) -> ActorResult<()> {
-    if event.command.contains("reload") {
-        let bytes = std::fs::read("./quake.nbt").unwrap();
-        let nbt = Nbt::new(NbtCompound::try_from(bytes).unwrap());
-        let structure = Structure::codec().decode(&NbtOps, &nbt).unwrap();
-
-        structure.place(event.player.dimension()?.clone(), Vec3::new(0, 0, 0))?;
-    }
     Ok(())
 }
 
@@ -77,6 +67,12 @@ fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
         PlayerComponents::ATTRIBUTES,
         AttributeContainer::new().with(Attributes::ATTACK_SPEED, 1000.0),
     )?;
+    respawn_player(&event.player)?;
+    Ok(())
+}
+
+fn on_load(event: Arc<PlayerLoadEvent>) -> ActorResult<()> {
+    event.player.send_message(Texts::literal("a"))?;
     respawn_player(&event.player)?;
     Ok(())
 }
@@ -186,17 +182,57 @@ fn on_shoot(event: Arc<RightClickEvent>) -> ActorResult<()> {
 }
 
 fn respawn_player(player: &Player) -> ActorResult<()> {
-    let rand_x = rand::random_range(2.0..32.0);
-    let rand_y = rand::random_range(3.0..16.0);
-    let rand_z = rand::random_range(2.0..32.0);
+    player.send_message(Texts::literal("a"))?;
 
-    let mut step: NVec<f64, 3> = Vec3::new(rand_x, rand_y, rand_z);
-    while *player.dimension()?.get_block(step.floor())?.name() == id![minecraft:air] {
-        step = step.with_y(step.y() - 0.5);
-        continue;
-    }
-    step = step.with_y(step.y() + 1.0);
+    let spawn_pos = loop {
+        let rand_x = rand::random_range(40.0..90.0);
+        let rand_y = rand::random_range(20.0..40.0);
+        let rand_z = rand::random_range(40.0..90.0);
 
-    player.set(PlayerComponents::TELEPORT_POSITION, step)?;
+        let mut pos: NVec<f64, 3> = Vec3::new(rand_x, rand_y, rand_z);
+        let mut descent_steps = 0;
+
+        while *player.dimension()?.get_block(pos.floor())?.name() == id![minecraft:air] {
+            pos = pos.with_y(pos.y() - 0.5);
+            descent_steps += 1;
+            if descent_steps > 100 {
+                break;
+            }
+        }
+
+        if descent_steps > 10 {
+            continue;
+        }
+
+        let candidate_spawn = pos.with_y(pos.y() + 1.0);
+
+        if *player
+            .dimension()?
+            .get_block(candidate_spawn.floor())?
+            .name()
+            != id![minecraft:air]
+        {
+            continue;
+        }
+
+        let head_space = candidate_spawn.with_y(candidate_spawn.y() + 1.0);
+        if *player.dimension()?.get_block(head_space.floor())?.name() != id![minecraft:air] {
+            continue;
+        }
+
+        break candidate_spawn;
+    };
+
+    player.set(PlayerComponents::TELEPORT_POSITION, spawn_pos)?;
+    Ok(())
+}
+
+fn on_dash(event: Arc<PlayerLeftClickEvent>) -> ActorResult<()> {
+    let dir = event
+        .player
+        .get(PlayerComponents::DIRECTION)?
+        .to_3d_direction()
+        .with_y(0.1);
+    event.player.set(PlayerComponents::TELEPORT_VELOCITY, dir)?;
     Ok(())
 }

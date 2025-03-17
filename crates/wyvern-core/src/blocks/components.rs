@@ -3,7 +3,7 @@ use wyvern_components::{DataComponentMap, DataComponentType};
 use wyvern_datatypes::nbt::Nbt;
 use wyvern_values::id;
 
-use super::{Axis, BlockDirection, ChestType, Half, StairShape};
+use super::{Axis, BlockDirection, BlockType, Half, StairShape};
 
 macro_rules! generate_block_components {
     (
@@ -66,7 +66,7 @@ generate_block_components! {
 
     pub const BANNER_ROTATION: i32 = id![minecraft:banner/rotation], "rotation";
     pub const TNT_UNSTABLE: bool = id![minecraft:tnt/unstable], "unstable";
-    pub const CHEST_TYPE: ChestType = id![minecraft:chest/type], "type";
+    pub const BLOCK_TYPE: BlockType = id![minecraft:type], "type";
     pub const WATER_LEVEL: i32 = id![minecraft:water/level], "level";
 
     pub const FACING_NORTH: bool = id![minecraft:north], "north";

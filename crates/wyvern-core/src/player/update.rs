@@ -3,7 +3,9 @@ use core::f64;
 use voxidian_protocol::{
     packet::s2c::play::{
         GameEvent, GameEventS2CPlayPacket, NumberFormat, ObjectiveKind, ObjectiveLocation,
-        PlayerPositionS2CPlayPacket, SetDisplayObjectiveS2CPlayPacket, SetObjectiveS2CPlayPacket,
+        PlayerPositionS2CPlayPacket, SetBorderCenterS2CPlayPacket, SetBorderSizeS2CPlayPacket,
+        SetBorderWarningDelayS2CPlayPacket, SetBorderWarningDistanceS2CPlayPacket,
+        SetDisplayObjectiveS2CPlayPacket, SetHealthS2CPlayPacket, SetObjectiveS2CPlayPacket,
         SetScoreS2CPlayPacket, TeleportFlags, UpdateObjectiveAction,
     },
     value::{Text, VarInt},
@@ -168,6 +170,30 @@ impl Player {
                     },
                 })?;
             }
+        }
+
+        if let Ok(health) = patch.added_fields().get(PlayerComponents::HEALTH) {
+            self.write_packet(SetHealthS2CPlayPacket {
+                hp: health.health,
+                food: health.food.into(),
+                sat: health.saturation,
+            })?;
+        }
+
+        if let Ok(world_border) = patch.added_fields().get(PlayerComponents::WORLD_BORDER) {
+            self.write_packet(SetBorderSizeS2CPlayPacket {
+                diameter: world_border.size,
+            })?;
+            self.write_packet(SetBorderCenterS2CPlayPacket {
+                x: world_border.center.x(),
+                z: world_border.center.y(),
+            })?;
+            self.write_packet(SetBorderWarningDelayS2CPlayPacket {
+                warning_time: world_border.warning_delay.into(),
+            })?;
+            self.write_packet(SetBorderWarningDistanceS2CPlayPacket {
+                warning_dist: world_border.warning_distance.into(),
+            })?;
         }
 
         self.set_saved_components(current_components.clone())?;

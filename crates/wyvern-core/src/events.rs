@@ -60,6 +60,8 @@ event_bus! {
     on_right_click: RightClickEvent
     on_attack_entity: PlayerAttackEntityEvent
     on_attack_player: PlayerAttackPlayerEvent
+    on_left_click: PlayerLeftClickEvent
+    on_load: PlayerLoadEvent
 }
 
 impl Debug for EventBus {
@@ -181,4 +183,14 @@ pub struct PlayerAttackEntityEvent {
 pub struct PlayerAttackPlayerEvent {
     pub attacker: Player,
     pub victim: Player,
+}
+
+#[derive(Debug, Clone)]
+pub struct PlayerLeftClickEvent {
+    pub player: Player,
+}
+
+#[derive(Debug, Clone)]
+pub struct PlayerLoadEvent {
+    pub player: Player,
 }

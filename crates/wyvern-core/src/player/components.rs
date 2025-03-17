@@ -45,6 +45,11 @@ impl PlayerComponents {
         DataComponentType::new(id![minecraft:sidebar_name]);
     pub const SIDEBAR_LINES: DataComponentType<Vec<TextKinds>> =
         DataComponentType::new(id![minecraft:sidebar_lines]);
+
+    pub const HEALTH: DataComponentType<HealthComponent> =
+        DataComponentType::new(id![minecraft:health]);
+    pub const WORLD_BORDER: DataComponentType<WorldBorderComponent> =
+        DataComponentType::new(id![minecraft:world_border]);
 }
 
 impl Player {
@@ -64,4 +69,19 @@ impl Player {
     ) -> ActorResult<()> {
         self.set_component_unchecked(component.into_name(), Arc::new(value))
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct HealthComponent {
+    pub health: f32,
+    pub food: i32,
+    pub saturation: f32,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct WorldBorderComponent {
+    pub center: Vec2<f64>,
+    pub size: f64,
+    pub warning_delay: i32,
+    pub warning_distance: i32,
 }

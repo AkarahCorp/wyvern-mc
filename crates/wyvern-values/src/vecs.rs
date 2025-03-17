@@ -59,6 +59,17 @@ where
     }
 }
 
+impl<T: Vc + Add<Output = T>, const N: usize> NVec<T, N>
+where
+    Guard<{ N >= 1 }>: True,
+{
+    pub fn shift_x(&self, x: T) -> Self {
+        let mut copy = *self;
+        copy.inner[0] = copy.inner[0] + x;
+        copy
+    }
+}
+
 impl<T: Vc, const N: usize> NVec<T, N>
 where
     Guard<{ N >= 2 }>: True,
@@ -70,6 +81,17 @@ where
     pub fn with_y(&self, y: T) -> Self {
         let mut copy = *self;
         copy.inner[1] = y;
+        copy
+    }
+}
+
+impl<T: Vc + Add<Output = T>, const N: usize> NVec<T, N>
+where
+    Guard<{ N >= 2 }>: True,
+{
+    pub fn shift_y(&self, x: T) -> Self {
+        let mut copy = *self;
+        copy.inner[1] = copy.inner[1] + x;
         copy
     }
 }
@@ -89,6 +111,17 @@ where
     }
 }
 
+impl<T: Vc + Add<Output = T>, const N: usize> NVec<T, N>
+where
+    Guard<{ N >= 3 }>: True,
+{
+    pub fn shift_z(&self, z: T) -> Self {
+        let mut copy = *self;
+        copy.inner[2] = copy.inner[2] + z;
+        copy
+    }
+}
+
 impl<T: Vc, const N: usize> NVec<T, N>
 where
     Guard<{ N >= 4 }>: True,
@@ -100,6 +133,17 @@ where
     pub fn with_w(&self, w: T) -> Self {
         let mut copy = *self;
         copy.inner[3] = w;
+        copy
+    }
+}
+
+impl<T: Vc + Add<Output = T>, const N: usize> NVec<T, N>
+where
+    Guard<{ N >= 4 }>: True,
+{
+    pub fn shift_w(&self, w: T) -> Self {
+        let mut copy = *self;
+        copy.inner[3] = copy.inner[3] + w;
         copy
     }
 }
