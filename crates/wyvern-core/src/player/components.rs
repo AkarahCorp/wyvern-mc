@@ -3,7 +3,7 @@ use std::sync::Arc;
 use dyn_clone::clone_box;
 use voxidian_protocol::{packet::c2s::play::InputFlags, value::Uuid};
 use wyvern_components::{ComponentElement, DataComponentType};
-use wyvern_datatypes::gamemode::Gamemode;
+use wyvern_datatypes::{gamemode::Gamemode, text::TextKinds};
 
 use crate::{
     actors::{ActorError, ActorResult},
@@ -38,6 +38,13 @@ impl PlayerComponents {
         DataComponentType::new(id![minecraft:teleport_sent]);
     pub const TELEPORT_SYNC_RECEIVED: DataComponentType<i32> =
         DataComponentType::new(id![minecraft:teleport_sync]);
+
+    pub const SIDEBAR_PRESENT: DataComponentType<bool> =
+        DataComponentType::new(id![minecraft:sidebar_present]);
+    pub const SIDEBAR_NAME: DataComponentType<TextKinds> =
+        DataComponentType::new(id![minecraft:sidebar_name]);
+    pub const SIDEBAR_LINES: DataComponentType<Vec<TextKinds>> =
+        DataComponentType::new(id![minecraft:sidebar_lines]);
 }
 
 impl Player {

@@ -2,12 +2,14 @@ use core::f64;
 
 use voxidian_protocol::{
     packet::s2c::play::{
-        GameEvent, GameEventS2CPlayPacket, PlayerPositionS2CPlayPacket, TeleportFlags,
+        GameEvent, GameEventS2CPlayPacket, NumberFormat, ObjectiveKind, ObjectiveLocation,
+        PlayerPositionS2CPlayPacket, SetDisplayObjectiveS2CPlayPacket, SetObjectiveS2CPlayPacket,
+        SetScoreS2CPlayPacket, TeleportFlags, UpdateObjectiveAction,
     },
-    value::VarInt,
+    value::{Text, VarInt},
 };
 use wyvern_components::{DataComponentHolder, DataComponentPatch};
-use wyvern_datatypes::gamemode::Gamemode;
+use wyvern_datatypes::{gamemode::Gamemode, text::Texts};
 
 use crate::{actors::ActorResult, entities::EntityComponents, item::ItemStack, runtime::Runtime};
 use wyvern_values::{Vec3, id};
@@ -110,6 +112,59 @@ impl Player {
                         relative_vy: true,
                         relative_vz: true,
                         rotate_velocity: false,
+                    },
+                })?;
+            }
+        }
+
+        if let Ok(sidebar_present) = patch.added_fields().get(PlayerComponents::SIDEBAR_PRESENT) {
+            if sidebar_present {
+                self.write_packet(SetObjectiveS2CPlayPacket {
+                    name: "wyvern_objective".into(),
+                    action: UpdateObjectiveAction::Create {
+                        value: Text::from(
+                            self.get(PlayerComponents::SIDEBAR_NAME)
+                                .unwrap_or_else(|_| Texts::literal("Untitled Objective").into()),
+                        )
+                        .to_nbt(),
+                        kind: ObjectiveKind::Integer,
+                        format: Some(NumberFormat::Blank),
+                    },
+                })?;
+                self.write_packet(SetDisplayObjectiveS2CPlayPacket {
+                    to: ObjectiveLocation::Sidebar,
+                    name: "wyvern_objective".into(),
+                })?;
+            } else {
+                self.write_packet(SetObjectiveS2CPlayPacket {
+                    name: "wyvern_objective".into(),
+                    action: UpdateObjectiveAction::Remove,
+                })?;
+            }
+        }
+
+        if self.get(PlayerComponents::SIDEBAR_PRESENT).unwrap_or(false) {
+            if let Ok(sidebar_lines) = patch.added_fields().get(PlayerComponents::SIDEBAR_LINES) {
+                for (idx, line) in sidebar_lines.into_iter().enumerate() {
+                    let idx = usize::min(idx, i32::MAX as usize) as i32;
+                    self.write_packet(SetScoreS2CPlayPacket {
+                        entity_name: format!("line_{}", idx),
+                        objective_name: "wyvern_objective".into(),
+                        value: VarInt::new(i32::MAX - idx),
+                        display_name: Some(Text::from(line).to_nbt()),
+                        number_format: Some(NumberFormat::Blank),
+                    })?;
+                }
+                self.write_packet(SetObjectiveS2CPlayPacket {
+                    name: "wyvern_objective".into(),
+                    action: UpdateObjectiveAction::Update {
+                        value: Text::from(
+                            self.get(PlayerComponents::SIDEBAR_NAME)
+                                .unwrap_or_else(|_| Texts::literal("Untitled Objective").into()),
+                        )
+                        .to_nbt(),
+                        kind: ObjectiveKind::Integer,
+                        format: Some(NumberFormat::Blank),
                     },
                 })?;
             }

@@ -13,14 +13,14 @@ use wyvern_mc::{
     entities::{AttributeContainer, Attributes},
     events::{
         BreakBlockEvent, ChatMessageEvent, DimensionCreateEvent, PlaceBlockEvent,
-        PlayerCommandEvent, PlayerJoinEvent, RightClickEvent, ServerStartEvent,
+        PlayerCommandEvent, PlayerJoinEvent, RightClickEvent, ServerStartEvent, ServerTickEvent,
     },
     inventory::Inventory,
     item::{ItemComponents, ItemStack},
     macros::server,
     player::{Player, PlayerComponents},
     server::{Server, ServerBuilder},
-    values::{Vec3, id},
+    values::{Uuid, Vec3, id},
 };
 
 #[server]
@@ -33,6 +33,7 @@ fn server() -> ServerBuilder {
         .event(on_place)
         .event(on_shoot)
         .event(on_chat)
+        .event(on_tick)
         .event(on_command)
         .registries(|registries| {
             registries.add_defaults();
@@ -99,6 +100,22 @@ fn on_chat(event: Arc<ChatMessageEvent>) -> ActorResult<()> {
             event.player.get(PlayerComponents::USERNAME)?,
             event.message
         )))?;
+    }
+    Ok(())
+}
+
+fn on_tick(_event: Arc<ServerTickEvent>) -> ActorResult<()> {
+    for player in Server::get()?.players()? {
+        player.set(
+            PlayerComponents::SIDEBAR_NAME,
+            Texts::literal("QUAKECRAFT").into(),
+        )?;
+        player.set(PlayerComponents::SIDEBAR_LINES, vec![
+            Texts::literal(format!("QUAKECRAFT1 {}", Uuid::new_v4())).into(),
+            Texts::literal("QUAKECRAFT22").into(),
+            Texts::literal("QUAKECRAFT333").into(),
+        ])?;
+        player.set(PlayerComponents::SIDEBAR_PRESENT, true)?;
     }
     Ok(())
 }
