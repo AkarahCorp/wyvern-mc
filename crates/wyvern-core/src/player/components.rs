@@ -43,7 +43,6 @@ impl PlayerComponents {
 impl Player {
     pub fn get<T: ComponentElement>(&self, component: DataComponentType<T>) -> ActorResult<T> {
         let component = self.get_component_unchecked(component.into_name());
-        println!("{:#?}", &component);
         let component = component?;
         ((*component).as_any().downcast_ref::<T>())
             .map(|x| clone_box(x))

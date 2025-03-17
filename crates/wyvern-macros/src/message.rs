@@ -217,12 +217,14 @@ fn create_fn_from_variant(variant: &MessageVariant) -> TokenStream {
             };
             let (tx, mut rx) = flume::bounded(1);
             match sender.try_send(#enum_type::#enum_variant(#(#param_names,)* tx)) {
-                Ok(v) => {},
+                Ok(v) => {
+                    drop(sender);
+                },
                 Err(flume::TrySendError::Disconnected(v)) => {
                     return Err(ActorError::ActorHasBeenDropped);
                 }
                 Err(e) => {
-                    std::thread::yield_now();
+                    panic!("something went wrong :(");
                 }
             }
             loop {
@@ -232,7 +234,6 @@ fn create_fn_from_variant(variant: &MessageVariant) -> TokenStream {
                         return Err(ActorError::ActorHasBeenDropped);
                     }
                     Err(e) => {
-                        println!("message yielding {:?} {:?}", e, std::thread::current().name());
                         std::thread::yield_now();
                     }
                 };
@@ -266,7 +267,6 @@ fn create_match_arm_from_variant(variant: &MessageVariant) -> TokenStream {
     let r = quote! {
         #enum_type::#enum_variant(#(#param_names,)* tx) => {
             let r = self.#name(#(#param_names,)*);
-            println!("r: {:#?}", r);
             let _ = tx.try_send(r);
         }
     };
