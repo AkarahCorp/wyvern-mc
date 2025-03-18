@@ -4,7 +4,7 @@ use wyvern_mc::{
     actors::ActorResult,
     blocks::{BlockComponents, BlockState},
     components::DataComponentHolder,
-    datatypes::{particle::Particle, sound::Sounds, text::Texts},
+    datatypes::{particle::Particle, sound::Sounds, text::Text},
     entities::{AttributeContainer, Attributes, EntityComponents, PlayerSkinData},
     events::{
         DimensionCreateEvent, PlayerAttackEntityEvent, PlayerAttackPlayerEvent, PlayerJoinEvent,
@@ -65,7 +65,7 @@ fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
         ItemStack::new(id![minecraft:diamond_sword])
             .with(
                 ItemComponents::ITEM_NAME,
-                Texts::literal("Diamond Sword").into(),
+                Text::literal("Diamond Sword").into(),
             )
             .with(ItemComponents::ITEM_MODEL, id![minecraft:diamond_sword]),
     )?;

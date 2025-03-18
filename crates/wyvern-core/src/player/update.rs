@@ -8,10 +8,10 @@ use voxidian_protocol::{
         SetDisplayObjectiveS2CPlayPacket, SetExperienceS2CPlayPacket, SetHealthS2CPlayPacket,
         SetObjectiveS2CPlayPacket, SetScoreS2CPlayPacket, TeleportFlags, UpdateObjectiveAction,
     },
-    value::{Text, VarInt},
+    value::{Text as PtcText, VarInt},
 };
 use wyvern_components::{DataComponentHolder, DataComponentPatch};
-use wyvern_datatypes::{gamemode::Gamemode, text::Texts};
+use wyvern_datatypes::{gamemode::Gamemode, text::Text};
 
 use crate::{actors::ActorResult, entities::EntityComponents, item::ItemStack, runtime::Runtime};
 use wyvern_values::{Vec3, id};
@@ -124,9 +124,9 @@ impl Player {
                 self.write_packet(SetObjectiveS2CPlayPacket {
                     name: "wyvern_objective".into(),
                     action: UpdateObjectiveAction::Create {
-                        value: Text::from(
+                        value: PtcText::from(
                             self.get(PlayerComponents::SIDEBAR_NAME)
-                                .unwrap_or_else(|_| Texts::literal("Untitled Objective").into()),
+                                .unwrap_or_else(|_| Text::literal("Untitled Objective").into()),
                         )
                         .to_nbt(),
                         kind: ObjectiveKind::Integer,
@@ -153,16 +153,16 @@ impl Player {
                         entity_name: format!("line_{}", idx),
                         objective_name: "wyvern_objective".into(),
                         value: VarInt::new(i32::MAX - idx),
-                        display_name: Some(Text::from(line).to_nbt()),
+                        display_name: Some(PtcText::from(line).to_nbt()),
                         number_format: Some(NumberFormat::Blank),
                     })?;
                 }
                 self.write_packet(SetObjectiveS2CPlayPacket {
                     name: "wyvern_objective".into(),
                     action: UpdateObjectiveAction::Update {
-                        value: Text::from(
+                        value: PtcText::from(
                             self.get(PlayerComponents::SIDEBAR_NAME)
-                                .unwrap_or_else(|_| Texts::literal("Untitled Objective").into()),
+                                .unwrap_or_else(|_| Text::literal("Untitled Objective").into()),
                         )
                         .to_nbt(),
                         kind: ObjectiveKind::Integer,

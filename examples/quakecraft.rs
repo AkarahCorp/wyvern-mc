@@ -8,7 +8,7 @@ use wyvern_mc::{
     datatypes::{
         nbt::{Nbt, NbtCompound, NbtOps},
         particle::Particle,
-        text::{Text, TextColor, Texts},
+        text::{Text, TextColor},
     },
     entities::{AttributeContainer, Attributes},
     events::{
@@ -61,7 +61,7 @@ fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
     event.player.inventory()?.set_slot(
         36,
         ItemStack::new(id![minecraft:iron_hoe])
-            .with(ItemComponents::ITEM_NAME, Texts::literal("Railgun").into()),
+            .with(ItemComponents::ITEM_NAME, Text::literal("Railgun").into()),
     )?;
     event.player.set(
         PlayerComponents::ATTRIBUTES,
@@ -72,7 +72,7 @@ fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
 }
 
 fn on_load(event: Arc<PlayerLoadEvent>) -> ActorResult<()> {
-    event.player.send_message(Texts::literal("a"))?;
+    event.player.send_message(Text::literal("a"))?;
     respawn_player(&event.player)?;
     Ok(())
 }
@@ -91,7 +91,7 @@ fn on_place(event: Arc<PlaceBlockEvent>) -> ActorResult<()> {
 
 fn on_chat(event: Arc<ChatMessageEvent>) -> ActorResult<()> {
     for player in Server::get()?.players()? {
-        player.send_message(Texts::literal(format!(
+        player.send_message(Text::literal(format!(
             "<{}> {}",
             event.player.get(PlayerComponents::USERNAME)?,
             event.message
@@ -104,7 +104,7 @@ fn on_tick(_event: Arc<ServerTickEvent>) -> ActorResult<()> {
     for player in Server::get()?.players()? {
         player.set(
             PlayerComponents::SIDEBAR_NAME,
-            Texts::literal("QUAKECRAFT")
+            Text::literal("QUAKECRAFT")
                 .with_color(TextColor::new(255, 255, 0))
                 .bold(true)
                 .into(),
@@ -112,13 +112,13 @@ fn on_tick(_event: Arc<ServerTickEvent>) -> ActorResult<()> {
         player.set(
             PlayerComponents::SIDEBAR_LINES,
             vec![
-                Texts::literal("").into(),
-                Texts::literal("Kills: ")
+                Text::literal("").into(),
+                Text::literal("Kills: ")
                     .with_color(TextColor::new(133, 133, 133))
-                    .and_then(Texts::literal("Untracked").with_color(TextColor::new(255, 133, 133)))
+                    .and_then(Text::literal("Untracked").with_color(TextColor::new(255, 133, 133)))
                     .into(),
-                Texts::literal("").into(),
-                Texts::literal("www.example.org")
+                Text::literal("").into(),
+                Text::literal("www.example.org")
                     .with_color(TextColor::new(255, 255, 0))
                     .into(),
             ],
@@ -170,7 +170,7 @@ fn on_shoot(event: Arc<RightClickEvent>) -> ActorResult<()> {
 
                 for subplayer in &players {
                     let subplayer = Server::get()?.player(*subplayer)?;
-                    subplayer.send_message(Texts::literal(format!(
+                    subplayer.send_message(Text::literal(format!(
                         "{} pommed {}",
                         event.player.get(PlayerComponents::USERNAME)?,
                         player.get(PlayerComponents::USERNAME)?
@@ -185,7 +185,7 @@ fn on_shoot(event: Arc<RightClickEvent>) -> ActorResult<()> {
 }
 
 fn respawn_player(player: &Player) -> ActorResult<()> {
-    player.send_message(Texts::literal("a"))?;
+    player.send_message(Text::literal("a"))?;
 
     let spawn_pos = loop {
         let rand_x = rand::random_range(40.0..90.0);

@@ -10,7 +10,7 @@ use wyvern_mc::{
     datatypes::{
         nbt::NbtCompound,
         sound::{SoundCategory, Sounds},
-        text::Texts,
+        text::Text,
         window::InventoryKind,
     },
     entities::{Entities, EntityComponents},
@@ -76,10 +76,7 @@ fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
                 compound.set("clicker_data", 10.into());
                 compound
             })
-            .with(
-                ItemComponents::ITEM_NAME,
-                Texts::literal("Click me!").into(),
-            ),
+            .with(ItemComponents::ITEM_NAME, Text::literal("Click me!").into()),
     )?;
     Ok(())
 }
@@ -100,7 +97,7 @@ fn on_tick(event: Arc<ServerTickEvent>) -> ActorResult<()> {
             }
         };
 
-        player.send_action_bar(Texts::literal(format!("Clicks: {:?}", count)))?;
+        player.send_action_bar(Text::literal(format!("Clicks: {:?}", count)))?;
 
         for entity in player.dimension()?.entities()? {
             entity.set(

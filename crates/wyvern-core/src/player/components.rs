@@ -3,7 +3,7 @@ use std::sync::Arc;
 use dyn_clone::clone_box;
 use voxidian_protocol::{packet::c2s::play::InputFlags, value::Uuid};
 use wyvern_components::{ComponentElement, DataComponentType};
-use wyvern_datatypes::{gamemode::Gamemode, text::TextKinds};
+use wyvern_datatypes::{gamemode::Gamemode, text::Text};
 
 use crate::{
     actors::{ActorError, ActorResult},
@@ -41,9 +41,9 @@ impl PlayerComponents {
 
     pub const SIDEBAR_PRESENT: DataComponentType<bool> =
         DataComponentType::new(id![minecraft:sidebar_present]);
-    pub const SIDEBAR_NAME: DataComponentType<TextKinds> =
+    pub const SIDEBAR_NAME: DataComponentType<Text> =
         DataComponentType::new(id![minecraft:sidebar_name]);
-    pub const SIDEBAR_LINES: DataComponentType<Vec<TextKinds>> =
+    pub const SIDEBAR_LINES: DataComponentType<Vec<Text>> =
         DataComponentType::new(id![minecraft:sidebar_lines]);
 
     pub const HEALTH: DataComponentType<HealthComponent> =

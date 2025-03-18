@@ -1,11 +1,13 @@
-use super::TextKinds;
+use voxidian_protocol::value::{TextColour as PtcTextColor, TextStyle as PtcTextStyle};
+
+use super::Text;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TextMeta {
     pub(crate) color: TextColor,
     pub(crate) style: TextStyle,
     #[allow(unused)] // currently uneditable by vxptc :(
-    pub(crate) children: Vec<TextKinds>,
+    pub(crate) children: Vec<Text>,
 }
 
 impl Default for TextMeta {
@@ -41,4 +43,25 @@ impl TextColor {
 pub struct TextStyle {
     pub(crate) italic: bool,
     pub(crate) bold: bool,
+}
+
+impl From<TextMeta> for PtcTextStyle {
+    fn from(value: TextMeta) -> Self {
+        PtcTextStyle {
+            colour: Some(PtcTextColor::RGB(
+                value.color.r,
+                value.color.g,
+                value.color.b,
+            )),
+            font: None,
+            bold: Some(value.style.bold),
+            italic: Some(value.style.italic),
+            underline: Some(value.style.italic),
+            strikethrough: None,
+            obfuscate: None,
+            insertion: None,
+            click_event: None,
+            hover_event: None,
+        }
+    }
 }

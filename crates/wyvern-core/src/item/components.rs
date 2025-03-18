@@ -1,7 +1,7 @@
 use voxidian_protocol::packet::s2c::play::EquipmentSlot as PtcEquipmentSlot;
 
 use wyvern_components::DataComponentType;
-use wyvern_datatypes::{nbt::NbtCompound, text::TextKinds};
+use wyvern_datatypes::{nbt::NbtCompound, text::Text};
 use wyvern_values::{Id, id};
 
 pub struct ItemComponents;
@@ -15,9 +15,8 @@ impl ItemComponents {
     pub const ITEM_MODEL: DataComponentType<Id> = DataComponentType::new(id![minecraft:item_model]);
     pub const CUSTOM_DATA: DataComponentType<NbtCompound> =
         DataComponentType::new(id![minecraft:custom_data]);
-    pub const ITEM_NAME: DataComponentType<TextKinds> =
-        DataComponentType::new(id![minecraft:item_name]);
-    pub const LORE: DataComponentType<Vec<TextKinds>> = DataComponentType::new(id![minecraft:lore]);
+    pub const ITEM_NAME: DataComponentType<Text> = DataComponentType::new(id![minecraft:item_name]);
+    pub const LORE: DataComponentType<Vec<Text>> = DataComponentType::new(id![minecraft:lore]);
     pub const EQUIPPABLE: DataComponentType<EquippableComponent> =
         DataComponentType::new(id![minecraft:equippable]);
 }

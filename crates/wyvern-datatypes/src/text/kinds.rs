@@ -1,22 +1,36 @@
-use voxidian_protocol::value::{Text as PtcText, TextColour, TextComponent};
+use voxidian_protocol::value::{
+    Text as PtcText, TextColour, TextComponent, TextContent as PtcTextContent,
+};
 
-use super::{Text, TextMeta};
+use super::TextMeta;
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum TextKinds {
-    Group(Vec<TextKinds>),
-    Literal(TextLiteral),
+pub struct Text {
+    pub(crate) meta: TextMeta,
+    pub(crate) content: TextContent,
 }
 
-impl From<TextKinds> for PtcText {
-    fn from(value: TextKinds) -> Self {
-        match value {
-            TextKinds::Literal(text_literal) => {
+#[derive(Debug, Clone, PartialEq)]
+pub enum TextContent {
+    Group(Vec<Text>),
+    Literal(String),
+}
+
+impl From<Text> for PtcText {
+    fn from(value: Text) -> Self {
+        match value.content {
+            TextContent::Literal(text_literal) => {
                 let mut text = PtcText::new();
-                text.push(text_literal.into());
+                text.push(TextComponent {
+                    content: PtcTextContent::Literal {
+                        literal: text_literal,
+                    },
+                    style: value.meta.into(),
+                    extra: vec![],
+                });
                 text
             }
-            TextKinds::Group(texts) => {
+            TextContent::Group(texts) => {
                 let mut text = PtcText::new();
                 for part in texts {
                     for compound in PtcText::from(part).into_components() {
@@ -44,55 +58,5 @@ impl From<TextLiteral> for TextComponent {
                 value.meta.color.g,
                 value.meta.color.b,
             ))
-    }
-}
-
-impl From<TextLiteral> for TextKinds {
-    fn from(value: TextLiteral) -> Self {
-        TextKinds::Literal(value)
-    }
-}
-
-impl Text for TextLiteral {
-    fn text_meta(&mut self) -> &mut TextMeta {
-        &mut self.meta
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct TextGroup<L: Text, R: Text> {
-    pub(crate) left: L,
-    pub(crate) right: R,
-    pub(crate) meta: TextMeta,
-}
-
-impl<L: Text, R: Text> From<TextGroup<L, R>> for TextKinds {
-    fn from(value: TextGroup<L, R>) -> Self {
-        TextKinds::Group(vec![value.left.into(), value.right.into()])
-    }
-}
-
-impl<L: Text, R: Text> From<TextGroup<L, R>> for PtcText {
-    fn from(value: TextGroup<L, R>) -> Self {
-        let mut text = PtcText::new();
-        let vec: Vec<TextKinds> = vec![value.left.into(), value.right.into()];
-        for part in vec {
-            for compound in PtcText::from(part).into_components() {
-                text.push(compound);
-            }
-        }
-        text
-    }
-}
-
-impl<L: Text, R: Text> From<TextGroup<L, R>> for TextComponent {
-    fn from(_value: TextGroup<L, R>) -> Self {
-        unimplemented!()
-    }
-}
-
-impl<L: Text, R: Text> Text for TextGroup<L, R> {
-    fn text_meta(&mut self) -> &mut TextMeta {
-        &mut self.meta
     }
 }

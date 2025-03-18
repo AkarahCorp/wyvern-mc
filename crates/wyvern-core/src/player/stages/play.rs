@@ -5,15 +5,14 @@ use voxidian_protocol::{
             AddEntityS2CPlayPacket, AnimateS2CPlayPacket, BlockChangedAckS2CPlayPacket,
             ContainerSlotGroup, DisconnectS2CPlayPacket, EntityAnimation, GameEvent,
             GameEventS2CPlayPacket, Hand, PlayerActionEntry, PlayerInfoUpdateS2CPlayPacket,
-            PlayerPositionS2CPlayPacket, PongResponseS2CPlayPacket, RespawnDataKept,
-            RespawnS2CPlayPacket, ScreenWindowKind, TeleportFlags,
+            PongResponseS2CPlayPacket, RespawnDataKept, RespawnS2CPlayPacket, ScreenWindowKind,
         },
     },
     registry::RegEntry,
-    value::{Angle, ProfileProperty, Text, TextComponent, VarInt},
+    value::{Angle, ProfileProperty, Text as PtcText, TextComponent, VarInt},
 };
 use wyvern_components::DataComponentHolder;
-use wyvern_datatypes::{gamemode::Gamemode, text::Texts};
+use wyvern_datatypes::{gamemode::Gamemode, text::Text};
 
 use crate::{
     actors::{Actor, ActorError, ActorResult},
@@ -233,7 +232,7 @@ impl ConnectionData {
                             .with(ItemComponents::ITEM_MODEL, item_id.id.clone().into())
                             .with(
                                 ItemComponents::ITEM_NAME,
-                                Texts::literal("Creative Mode Item").into(),
+                                Text::literal("Creative Mode Item").into(),
                             );
 
                         this.set_inv_slot(packet.slot as usize, stack.clone())?;
@@ -514,7 +513,7 @@ impl ConnectionData {
         self.associated_data.dimension = self.connected_server.dimension(token.get()).ok();
 
         if self.associated_data.dimension.is_none() {
-            let mut text = Text::new();
+            let mut text = PtcText::new();
             text.push(TextComponent::of_literal(
                 "Failed to set dimension in PlayerJoinEvent",
             ));

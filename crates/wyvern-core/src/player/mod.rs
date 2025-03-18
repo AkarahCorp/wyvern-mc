@@ -27,15 +27,11 @@ use voxidian_protocol::{
         },
     },
     registry::RegEntry,
-    value::{Angle, ProfileProperty, Text as PtcText, TextComponent, VarInt},
+    value::{Angle, ProfileProperty, Text as PtcText, VarInt},
 };
 use wyvern_components::{ComponentElement, DataComponentHolder, DataComponentMap};
 use wyvern_datatypes::{
-    gamemode::Gamemode,
-    particle::Particle,
-    sound::Sound,
-    text::{Text, TextKinds},
-    window::InventoryKind,
+    gamemode::Gamemode, particle::Particle, sound::Sound, text::Text, window::InventoryKind,
 };
 use wyvern_macros::{actor, message};
 
@@ -136,7 +132,7 @@ impl ConnectionData {
     }
 
     #[Disconnect]
-    pub(crate) fn disconnect_internal(&mut self, message: TextKinds) -> ActorResult<()> {
+    pub(crate) fn disconnect_internal(&mut self, message: Text) -> ActorResult<()> {
         let stage = *self.stage.lock().unwrap();
         match stage {
             Stage::Handshake => Ok(()),
@@ -366,7 +362,7 @@ impl ConnectionData {
     }
 
     #[SendMessage]
-    pub(crate) fn send_message_component(&mut self, message: TextComponent) -> ActorResult<()> {
+    pub fn send_message(&mut self, message: Text) -> ActorResult<()> {
         self.write_packet(SystemChatS2CPlayPacket {
             content: PtcText::from(message).to_nbt(),
             is_actionbar: false,
@@ -375,7 +371,7 @@ impl ConnectionData {
     }
 
     #[SendActionBar]
-    pub(crate) fn send_action_bar_component(&mut self, message: TextComponent) -> ActorResult<()> {
+    pub fn send_action_bar(&mut self, message: Text) -> ActorResult<()> {
         self.write_packet(SystemChatS2CPlayPacket {
             content: PtcText::from(message).to_nbt(),
             is_actionbar: true,
@@ -495,18 +491,6 @@ impl Player {
         Ok(PlayerInventory {
             player: self.clone(),
         })
-    }
-
-    pub fn send_message(&self, text: impl Text) -> ActorResult<()> {
-        self.send_message_component(text.into())
-    }
-
-    pub fn send_action_bar(&self, text: impl Text) -> ActorResult<()> {
-        self.send_action_bar_component(text.into())
-    }
-
-    pub fn kick(&mut self, text: impl Text) -> ActorResult<()> {
-        self.disconnect_internal(text.into())
     }
 }
 
