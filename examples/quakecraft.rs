@@ -61,7 +61,7 @@ fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
     event.player.inventory()?.set_slot(
         36,
         ItemStack::new(id![minecraft:iron_hoe])
-            .with(ItemComponents::ITEM_NAME, Text::literal("Railgun").into()),
+            .with(ItemComponents::ITEM_NAME, Text::literal("Railgun")),
     )?;
     event.player.set(
         PlayerComponents::ATTRIBUTES,
@@ -106,23 +106,16 @@ fn on_tick(_event: Arc<ServerTickEvent>) -> ActorResult<()> {
             PlayerComponents::SIDEBAR_NAME,
             Text::literal("QUAKECRAFT")
                 .with_color(TextColor::new(255, 255, 0))
-                .bold(true)
-                .into(),
+                .bold(true),
         )?;
-        player.set(
-            PlayerComponents::SIDEBAR_LINES,
-            vec![
-                Text::literal("").into(),
-                Text::literal("Kills: ")
-                    .with_color(TextColor::new(133, 133, 133))
-                    .and_then(Text::literal("Untracked").with_color(TextColor::new(255, 133, 133)))
-                    .into(),
-                Text::literal("").into(),
-                Text::literal("www.example.org")
-                    .with_color(TextColor::new(255, 255, 0))
-                    .into(),
-            ],
-        )?;
+        player.set(PlayerComponents::SIDEBAR_LINES, vec![
+            Text::literal(""),
+            Text::literal("Kills: ")
+                .with_color(TextColor::new(133, 133, 133))
+                .and_then(Text::literal("Untracked").with_color(TextColor::new(255, 133, 133))),
+            Text::literal(""),
+            Text::literal("www.example.org").with_color(TextColor::new(255, 255, 0)),
+        ])?;
         player.set(PlayerComponents::SIDEBAR_PRESENT, true)?;
     }
     Ok(())

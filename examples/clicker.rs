@@ -76,7 +76,7 @@ fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
                 compound.set("clicker_data", 10.into());
                 compound
             })
-            .with(ItemComponents::ITEM_NAME, Text::literal("Click me!").into()),
+            .with(ItemComponents::ITEM_NAME, Text::literal("Click me!")),
     )?;
     Ok(())
 }

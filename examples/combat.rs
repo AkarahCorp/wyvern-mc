@@ -63,10 +63,7 @@ fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
     event.player.inventory()?.set_slot(
         36,
         ItemStack::new(id![minecraft:diamond_sword])
-            .with(
-                ItemComponents::ITEM_NAME,
-                Text::literal("Diamond Sword").into(),
-            )
+            .with(ItemComponents::ITEM_NAME, Text::literal("Diamond Sword"))
             .with(ItemComponents::ITEM_MODEL, id![minecraft:diamond_sword]),
     )?;
 

@@ -126,7 +126,7 @@ impl Player {
                     action: UpdateObjectiveAction::Create {
                         value: PtcText::from(
                             self.get(PlayerComponents::SIDEBAR_NAME)
-                                .unwrap_or_else(|_| Text::literal("Untitled Objective").into()),
+                                .unwrap_or_else(|_| Text::literal("Untitled Objective")),
                         )
                         .to_nbt(),
                         kind: ObjectiveKind::Integer,
@@ -162,7 +162,7 @@ impl Player {
                     action: UpdateObjectiveAction::Update {
                         value: PtcText::from(
                             self.get(PlayerComponents::SIDEBAR_NAME)
-                                .unwrap_or_else(|_| Text::literal("Untitled Objective").into()),
+                                .unwrap_or_else(|_| Text::literal("Untitled Objective")),
                         )
                         .to_nbt(),
                         kind: ObjectiveKind::Integer,

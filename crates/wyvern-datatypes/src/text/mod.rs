@@ -10,7 +10,7 @@ impl From<PtcText> for Text {
         let mut group = Vec::new();
         for component in value.into_components() {
             group.push(match component.content {
-                PtcTextContent::Literal { literal } => Text::literal(literal).into(),
+                PtcTextContent::Literal { literal } => Text::literal(literal),
                 PtcTextContent::Translate { .. } => todo!(),
                 PtcTextContent::Keybind { .. } => todo!(),
             });
