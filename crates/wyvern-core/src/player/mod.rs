@@ -20,9 +20,10 @@ use voxidian_protocol::{
                 AddEntityS2CPlayPacket, ContainerSetSlotS2CPlayPacket, DisconnectS2CPlayPacket,
                 ForgetLevelChunkS2CPlayPacket, GameEvent, GameEventS2CPlayPacket,
                 Gamemode as PtcGamemode, LevelParticlesS2CPlayPacket, OpenScreenS2CPlayPacket,
-                PlayerPositionS2CPlayPacket, PlayerRotationS2CPlayPacket, RespawnDataKept,
-                RespawnS2CPlayPacket, ScreenWindowKind, SoundCategory, SoundEntityS2CPlayPacket,
-                SystemChatS2CPlayPacket, TeleportFlags,
+                PlayerPositionS2CPlayPacket, PlayerRotationS2CPlayPacket,
+                RemoveEntitiesS2CPlayPacket, RespawnDataKept, RespawnS2CPlayPacket,
+                ScreenWindowKind, SoundCategory, SoundEntityS2CPlayPacket, SystemChatS2CPlayPacket,
+                TeleportFlags,
             },
         },
     },
@@ -44,7 +45,7 @@ use crate::{
     server::Server,
 };
 
-use wyvern_values::{Id, Vec2, Vec3};
+use wyvern_values::{Id, Uuid, Vec2, Vec3};
 
 mod components;
 pub use components::*;
@@ -460,6 +461,20 @@ impl ConnectionData {
             max_speed: 0.0,
             count: 1,
             particle: particle.into(),
+        });
+        Ok(())
+    }
+
+    #[HideEntity]
+    pub fn hide_entity(&mut self, uuid: Uuid) -> ActorResult<()> {
+        let entity = self
+            .associated_data
+            .dimension
+            .as_ref()
+            .unwrap()
+            .get_entity(uuid);
+        self.write_packet(RemoveEntitiesS2CPlayPacket {
+            entities: vec![entity.get(EntityComponents::ENTITY_ID)?.into()].into(),
         });
         Ok(())
     }
