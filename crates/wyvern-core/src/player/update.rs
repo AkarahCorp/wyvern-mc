@@ -5,8 +5,8 @@ use voxidian_protocol::{
         GameEvent, GameEventS2CPlayPacket, NumberFormat, ObjectiveKind, ObjectiveLocation,
         PlayerPositionS2CPlayPacket, SetBorderCenterS2CPlayPacket, SetBorderSizeS2CPlayPacket,
         SetBorderWarningDelayS2CPlayPacket, SetBorderWarningDistanceS2CPlayPacket,
-        SetDisplayObjectiveS2CPlayPacket, SetHealthS2CPlayPacket, SetObjectiveS2CPlayPacket,
-        SetScoreS2CPlayPacket, TeleportFlags, UpdateObjectiveAction,
+        SetDisplayObjectiveS2CPlayPacket, SetExperienceS2CPlayPacket, SetHealthS2CPlayPacket,
+        SetObjectiveS2CPlayPacket, SetScoreS2CPlayPacket, TeleportFlags, UpdateObjectiveAction,
     },
     value::{Text, VarInt},
 };
@@ -196,10 +196,41 @@ impl Player {
             })?;
         }
 
+        if let Ok(experience) = patch.added_fields().get(PlayerComponents::EXPERIENCE) {
+            self.write_packet(SetExperienceS2CPlayPacket {
+                frac: experience.progress,
+                level: experience.level.into(),
+                total: (calculate_total_experience(experience.level, experience.progress) as i32)
+                    .into(),
+            })?;
+        }
+
         self.set_saved_components(current_components.clone())?;
 
         Ok(())
     }
+}
+
+fn calculate_total_experience(level: i32, progress: f32) -> f32 {
+    let progress = progress.clamp(0.0, 1.0);
+
+    let experience_required = if level <= 15 {
+        2.0 * level as f32 + 7.0
+    } else if level <= 30 {
+        5.0 * level as f32 - 38.0
+    } else {
+        9.0 * level as f32 - 158.0
+    };
+
+    let total_experience = if level <= 16 {
+        (level as f32).powi(2) + 6.0 * level as f32
+    } else if level <= 31 {
+        2.5 * (level as f32).powi(2) - 40.5 * level as f32 + 360.0
+    } else {
+        4.5 * (level as f32).powi(2) - 162.5 * level as f32 + 2220.0
+    };
+
+    total_experience + progress * experience_required
 }
 
 impl ConnectionData {

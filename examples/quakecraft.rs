@@ -48,7 +48,7 @@ fn on_server_start(event: Arc<ServerStartEvent>) -> ActorResult<()> {
 }
 
 fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
-    let bytes = include_bytes!("./violet.nbt").to_vec();
+    let bytes = include_bytes!("./quake.nbt").to_vec();
     let nbt = Nbt::new(NbtCompound::try_from(bytes).unwrap());
     let structure = Structure::codec().decode(&NbtOps, &nbt).unwrap();
 
@@ -109,17 +109,20 @@ fn on_tick(_event: Arc<ServerTickEvent>) -> ActorResult<()> {
                 .bold(true)
                 .into(),
         )?;
-        player.set(PlayerComponents::SIDEBAR_LINES, vec![
-            Texts::literal("").into(),
-            Texts::literal("Kills: ")
-                .with_color(TextColor::new(133, 133, 133))
-                .and_then(Texts::literal("Untracked").with_color(TextColor::new(255, 133, 133)))
-                .into(),
-            Texts::literal("").into(),
-            Texts::literal("www.example.org")
-                .with_color(TextColor::new(255, 255, 0))
-                .into(),
-        ])?;
+        player.set(
+            PlayerComponents::SIDEBAR_LINES,
+            vec![
+                Texts::literal("").into(),
+                Texts::literal("Kills: ")
+                    .with_color(TextColor::new(133, 133, 133))
+                    .and_then(Texts::literal("Untracked").with_color(TextColor::new(255, 133, 133)))
+                    .into(),
+                Texts::literal("").into(),
+                Texts::literal("www.example.org")
+                    .with_color(TextColor::new(255, 255, 0))
+                    .into(),
+            ],
+        )?;
         player.set(PlayerComponents::SIDEBAR_PRESENT, true)?;
     }
     Ok(())

@@ -50,6 +50,8 @@ impl PlayerComponents {
         DataComponentType::new(id![minecraft:health]);
     pub const WORLD_BORDER: DataComponentType<WorldBorderComponent> =
         DataComponentType::new(id![minecraft:world_border]);
+    pub const EXPERIENCE: DataComponentType<ExperienceComponent> =
+        DataComponentType::new(id![minecraft:experience]);
 }
 
 impl Player {
@@ -84,4 +86,10 @@ pub struct WorldBorderComponent {
     pub size: f64,
     pub warning_delay: i32,
     pub warning_distance: i32,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct ExperienceComponent {
+    pub level: i32,
+    pub progress: f32,
 }
