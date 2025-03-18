@@ -1,13 +1,15 @@
 use voxidian_protocol::{
     packet::{
-        c2s::play::{BlockFace, C2SPlayPackets, InteractAction, PlayerStatus},
+        c2s::play::{BlockFace, C2SPlayPackets, CommandAction, InteractAction, PlayerStatus},
         s2c::play::{
             AddEntityS2CPlayPacket, AnimateS2CPlayPacket, BlockChangedAckS2CPlayPacket,
             ContainerSlotGroup, DisconnectS2CPlayPacket, EntityAnimation, GameEvent,
             GameEventS2CPlayPacket, Hand, PlayerActionEntry, PlayerInfoUpdateS2CPlayPacket,
-            PongResponseS2CPlayPacket, ScreenWindowKind,
+            PlayerPositionS2CPlayPacket, PongResponseS2CPlayPacket, RespawnDataKept,
+            RespawnS2CPlayPacket, ScreenWindowKind, TeleportFlags,
         },
     },
+    registry::RegEntry,
     value::{Angle, ProfileProperty, Text, TextComponent, VarInt},
 };
 use wyvern_components::DataComponentHolder;
@@ -20,17 +22,17 @@ use crate::{
     events::{
         BreakBlockEvent, ChangeHeldSlotEvent, ChatMessageEvent, DropItemEvent, PlaceBlockEvent,
         PlayerAttackEntityEvent, PlayerAttackPlayerEvent, PlayerCommandEvent, PlayerJoinEvent,
-        PlayerLeftClickEvent, PlayerLoadEvent, PlayerMoveEvent, RightClickEvent,
-        StartBreakBlockEvent, SwapHandsEvent,
+        PlayerLeftClickEvent, PlayerLoadEvent, PlayerMoveEvent, PlayerRespawnEvent,
+        RightClickEvent, StartBreakBlockEvent, SwapHandsEvent,
     },
     inventory::Inventory,
     item::{ITEM_REGISTRY, ItemComponents, ItemStack},
-    player::{ConnectionData, PlayerComponents},
+    player::{ConnectionData, HealthComponent, PlayerComponents},
     runtime::Runtime,
     server::Server,
 };
 
-use wyvern_values::{Id, Vec2, Vec3, cell::Token};
+use wyvern_values::{Id, Vec2, Vec3, cell::Token, id};
 
 impl ConnectionData {
     pub fn play_phase(&mut self) -> ActorResult<()> {
@@ -425,11 +427,55 @@ impl ConnectionData {
                         });
                     }
                     C2SPlayPackets::PlayerLoaded(_packet) => {
-                        println!("A");
                         Server::get()?.spawn_event(PlayerLoadEvent {
                             player: this.as_actor(),
                         })?;
                     }
+                    C2SPlayPackets::ClientCommand(packet) => match packet.action {
+                        CommandAction::PerformRespawn => {
+                            this.write_packet(RespawnS2CPlayPacket {
+                                dim: unsafe { RegEntry::new_unchecked(0) },
+                                dim_name: id![wyvern:fake].into(),
+                                seed: 0,
+                                gamemode: Gamemode::Survival.into(),
+                                is_debug: false,
+                                is_flat: false,
+                                death_loc: None,
+                                portal_cooldown: VarInt::from(0),
+                                sea_level: VarInt::from(64),
+                                prev_gamemode: Gamemode::Survival.into(),
+                                data_kept: RespawnDataKept {
+                                    keep_attributes: true,
+                                    keep_metadata: true,
+                                },
+                            });
+                            this.associated_data.loaded_chunks.clear();
+
+                            this.set(
+                                PlayerComponents::HEALTH,
+                                HealthComponent {
+                                    food: 20,
+                                    saturation: 20.0,
+                                    health: 20.0,
+                                },
+                            );
+                            this.write_packet(GameEventS2CPlayPacket {
+                                event: GameEvent::WaitForChunks,
+                                value: 0.0,
+                            });
+
+                            this.set(
+                                PlayerComponents::TELEPORT_POSITION,
+                                this.get(PlayerComponents::POSITION)?.shift_y(0.1),
+                            );
+                            Server::get()?.spawn_event(PlayerRespawnEvent {
+                                player: this.as_actor(),
+                            })?;
+                        }
+                        CommandAction::RequestStats => {
+                            // todo: send statistics packet
+                        }
+                    },
                     packet => {
                         log::warn!(
                             "Received unknown play packet, this packet will be ignored. {:?}",
@@ -504,13 +550,16 @@ impl ConnectionData {
 
             Runtime::spawn_task(move || {
                 let _ = player.write_packet(PlayerInfoUpdateS2CPlayPacket {
-                    actions: vec![(uuid, vec![
-                        PlayerActionEntry::AddPlayer {
-                            name: username.clone(),
-                            props: props.into(),
-                        },
-                        PlayerActionEntry::Listed(true),
-                    ])],
+                    actions: vec![(
+                        uuid,
+                        vec![
+                            PlayerActionEntry::AddPlayer {
+                                name: username.clone(),
+                                props: props.into(),
+                            },
+                            PlayerActionEntry::Listed(true),
+                        ],
+                    )],
                 });
                 Ok(())
             });
@@ -538,25 +587,31 @@ impl ConnectionData {
                 };
 
                 self.write_packet(PlayerInfoUpdateS2CPlayPacket {
-                    actions: vec![(uuid, vec![
-                        PlayerActionEntry::AddPlayer {
-                            name: username.clone(),
-                            props: props.into(),
-                        },
-                        PlayerActionEntry::Listed(true),
-                    ])],
+                    actions: vec![(
+                        uuid,
+                        vec![
+                            PlayerActionEntry::AddPlayer {
+                                name: username.clone(),
+                                props: props.into(),
+                            },
+                            PlayerActionEntry::Listed(true),
+                        ],
+                    )],
                 });
             } else {
                 let uuid = player.get(PlayerComponents::UUID)?;
                 let username = player.get(PlayerComponents::USERNAME)?;
                 self.write_packet(PlayerInfoUpdateS2CPlayPacket {
-                    actions: vec![(uuid, vec![
-                        PlayerActionEntry::AddPlayer {
-                            name: username.clone(),
-                            props: player.auth_props().unwrap_or(Vec::new()).into(),
-                        },
-                        PlayerActionEntry::Listed(true),
-                    ])],
+                    actions: vec![(
+                        uuid,
+                        vec![
+                            PlayerActionEntry::AddPlayer {
+                                name: username.clone(),
+                                props: player.auth_props().unwrap_or(Vec::new()).into(),
+                            },
+                            PlayerActionEntry::Listed(true),
+                        ],
+                    )],
                 });
             }
         }
@@ -586,10 +641,13 @@ impl ConnectionData {
                     sig: Some(skin.signature),
                 }];
                 self.write_packet(PlayerInfoUpdateS2CPlayPacket {
-                    actions: vec![(*entity.uuid(), vec![PlayerActionEntry::AddPlayer {
-                        name,
-                        props: props.into(),
-                    }])],
+                    actions: vec![(
+                        *entity.uuid(),
+                        vec![PlayerActionEntry::AddPlayer {
+                            name,
+                            props: props.into(),
+                        }],
+                    )],
                 });
             }
             self.write_packet(AddEntityS2CPlayPacket {

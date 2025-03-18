@@ -62,6 +62,7 @@ event_bus! {
     on_attack_player: PlayerAttackPlayerEvent
     on_left_click: PlayerLeftClickEvent
     on_load: PlayerLoadEvent
+    on_respawn: PlayerRespawnEvent
 }
 
 impl Debug for EventBus {
@@ -192,5 +193,10 @@ pub struct PlayerLeftClickEvent {
 
 #[derive(Debug, Clone)]
 pub struct PlayerLoadEvent {
+    pub player: Player,
+}
+
+#[derive(Debug, Clone)]
+pub struct PlayerRespawnEvent {
     pub player: Player,
 }

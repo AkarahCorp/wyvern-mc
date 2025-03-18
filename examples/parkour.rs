@@ -5,10 +5,10 @@ use wyvern_mc::{
     blocks::{BlockState, Blocks},
     datatypes::regval::DimensionType,
     events::{
-        DimensionCreateEvent, PlayerCommandEvent, PlayerJoinEvent, ServerStartEvent,
-        ServerTickEvent,
+        DimensionCreateEvent, PlayerCommandEvent, PlayerJoinEvent, PlayerRespawnEvent,
+        ServerStartEvent, ServerTickEvent,
     },
-    player::PlayerComponents,
+    player::{HealthComponent, PlayerComponents},
     server::Server,
     values::{Vec3, id},
 };
@@ -22,6 +22,7 @@ fn main() {
         .event(on_join)
         .event(tick)
         .event(on_command)
+        .event(on_respawn)
         .registries(|registries| {
             registries.add_defaults();
             registries.dimension_type(
@@ -43,7 +44,15 @@ fn tick(event: Arc<ServerTickEvent>) -> ActorResult<()> {
         if player.get(PlayerComponents::POSITION)?.y() < -64.0 {
             player.set(
                 PlayerComponents::TELEPORT_POSITION,
-                Vec3::new(0.0, 11.0, 0.0),
+                Vec3::new(0.0, 1000.0, 0.0),
+            )?;
+            player.set(
+                PlayerComponents::HEALTH,
+                HealthComponent {
+                    health: 0.0,
+                    food: 20,
+                    saturation: 20.0,
+                },
             )?;
         }
     }
@@ -123,6 +132,14 @@ fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
     event.player.set(
         PlayerComponents::TELEPORT_POSITION,
         Vec3::new(0.0, 11.0, 0.0),
+    )?;
+    Ok(())
+}
+
+fn on_respawn(event: Arc<PlayerRespawnEvent>) -> ActorResult<()> {
+    event.player.set(
+        PlayerComponents::TELEPORT_POSITION,
+        Vec3::new(0.0, 100.0, 0.0),
     )?;
     Ok(())
 }
