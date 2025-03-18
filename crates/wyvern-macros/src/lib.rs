@@ -35,6 +35,11 @@ pub fn generate_attrs_types(input: TokenStream) -> TokenStream {
     registries::attrs(input.into()).into()
 }
 
+#[proc_macro]
+pub fn generate_items_types(input: TokenStream) -> TokenStream {
+    registries::items(input.into()).into()
+}
+
 #[proc_macro_attribute]
 pub fn server(attr: TokenStream, item: TokenStream) -> TokenStream {
     server::server(attr.into(), item.into()).into()

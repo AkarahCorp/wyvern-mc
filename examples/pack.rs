@@ -2,7 +2,7 @@ use std::{sync::Arc, time::Duration};
 
 use wyvern_mc::{
     actors::ActorResult,
-    blocks::{BlockComponents, BlockState},
+    blocks::{BlockComponents, BlockState, Blocks},
     components::DataComponentHolder,
     datatypes::gamemode::Gamemode,
     entities::{AttributeContainer, Attributes},
@@ -90,6 +90,6 @@ fn on_break(event: Arc<BreakBlockEvent>) -> ActorResult<()> {
 
 fn on_place(event: Arc<PlaceBlockEvent>) -> ActorResult<()> {
     let dim = event.player.dimension()?;
-    dim.set_block(event.position, BlockState::new(id![minecraft:air]))?;
+    dim.set_block(event.position, BlockState::new(Blocks::AIR))?;
     Ok(())
 }

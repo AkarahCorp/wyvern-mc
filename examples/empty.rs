@@ -2,7 +2,7 @@ use std::{sync::Arc, time::Duration};
 
 use wyvern_mc::{
     actors::ActorResult,
-    blocks::{BlockComponents, BlockState},
+    blocks::{BlockComponents, BlockState, Blocks},
     components::DataComponentHolder,
     datatypes::gamemode::Gamemode,
     entities::{AttributeContainer, Attributes},
@@ -10,7 +10,7 @@ use wyvern_mc::{
         BreakBlockEvent, DimensionCreateEvent, PlaceBlockEvent, PlayerJoinEvent, ServerStartEvent,
     },
     inventory::Inventory,
-    item::{ItemComponents, ItemStack},
+    item::{ItemComponents, ItemStack, Items},
     macros::server,
     player::PlayerComponents,
     runtime::Runtime,
@@ -42,7 +42,7 @@ fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
         for z in 0..10 {
             event.dimension.set_block(
                 Vec3::new(x, 0, z),
-                BlockState::new(id![minecraft:grass_block]).with(BlockComponents::SNOWY, false),
+                BlockState::new(Blocks::GRASS_BLOCK).with(BlockComponents::SNOWY, false),
             )?;
         }
     }
@@ -55,16 +55,16 @@ fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
     event
         .player
         .inventory()?
-        .set_slot(36, ItemStack::new(id![minecraft:diamond_pickaxe]))?;
+        .set_slot(36, ItemStack::new(Items::DIAMOND_PICKAXE))?;
 
     event
         .player
         .inventory()?
-        .set_slot(37, ItemStack::new(id![minecraft:diamond_shovel]))?;
+        .set_slot(37, ItemStack::new(Items::DIAMOND_SHOVEL))?;
 
     event.player.inventory()?.set_slot(
         38,
-        ItemStack::new(id![minecraft:cobblestone]).with(ItemComponents::ITEM_COUNT, 64),
+        ItemStack::new(Items::COBBLESTONE).with(ItemComponents::ITEM_COUNT, 64),
     )?;
 
     Runtime::spawn_task(move || {
@@ -88,6 +88,6 @@ fn on_break(event: Arc<BreakBlockEvent>) -> ActorResult<()> {
 
 fn on_place(event: Arc<PlaceBlockEvent>) -> ActorResult<()> {
     let dim = event.player.dimension()?;
-    dim.set_block(event.position, BlockState::new(id![minecraft:air]))?;
+    dim.set_block(event.position, BlockState::new(Blocks::AIR))?;
     Ok(())
 }

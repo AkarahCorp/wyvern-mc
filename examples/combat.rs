@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use wyvern_mc::{
     actors::ActorResult,
-    blocks::{BlockComponents, BlockState},
+    blocks::{BlockComponents, BlockState, Blocks},
     components::DataComponentHolder,
     datatypes::{particle::Particle, sound::Sounds, text::Text},
     entities::{AttributeContainer, Attributes, EntityComponents, PlayerSkinData},
@@ -11,7 +11,7 @@ use wyvern_mc::{
         ServerStartEvent,
     },
     inventory::Inventory,
-    item::{EquipmentSlot, EquippableComponent, ItemComponents, ItemStack},
+    item::{EquipmentSlot, EquippableComponent, ItemComponents, ItemStack, Items},
     player::PlayerComponents,
     runtime::Runtime,
     server::Server,
@@ -46,7 +46,7 @@ fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
         for z in -20..20 {
             event.dimension.set_block(
                 Vec3::new(x, 0, z),
-                BlockState::new(id![minecraft:grass_block]).with(BlockComponents::SNOWY, false),
+                BlockState::new(Blocks::GRASS_BLOCK).with(BlockComponents::SNOWY, false),
             )?;
         }
     }
@@ -62,9 +62,8 @@ fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
 
     event.player.inventory()?.set_slot(
         36,
-        ItemStack::new(id![minecraft:diamond_sword])
-            .with(ItemComponents::ITEM_NAME, Text::literal("Diamond Sword"))
-            .with(ItemComponents::ITEM_MODEL, id![minecraft:diamond_sword]),
+        ItemStack::new(Items::DIAMOND_SWORD)
+            .with(ItemComponents::ITEM_NAME, Text::literal("Diamond Sword")),
     )?;
 
     event.player.set(
@@ -90,7 +89,7 @@ fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
 
         entity.set(
             EntityComponents::HELMET_ITEM,
-            ItemStack::new(id![minecraft:golden_helmet]).with(
+            ItemStack::new(Items::GOLDEN_HELMET).with(
                 ItemComponents::EQUIPPABLE,
                 EquippableComponent {
                     slot: EquipmentSlot::Helmet,
@@ -101,7 +100,7 @@ fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
         )?;
         entity.set(
             EntityComponents::CHESTPLATE_ITEM,
-            ItemStack::new(id![minecraft:chainmail_chestplate]).with(
+            ItemStack::new(Items::CHAINMAIL_CHESTPLATE).with(
                 ItemComponents::EQUIPPABLE,
                 EquippableComponent {
                     slot: EquipmentSlot::Chestplate,
@@ -112,7 +111,7 @@ fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
         )?;
         entity.set(
             EntityComponents::LEGGINGS_ITEM,
-            ItemStack::new(id![minecraft:chainmail_leggings]).with(
+            ItemStack::new(Items::DIAMOND_LEGGINGS).with(
                 ItemComponents::EQUIPPABLE,
                 EquippableComponent {
                     slot: EquipmentSlot::Leggings,
@@ -123,7 +122,7 @@ fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
         )?;
         entity.set(
             EntityComponents::BOOTS_ITEM,
-            ItemStack::new(id![minecraft:diamond_boots]).with(
+            ItemStack::new(Items::DIAMOND_BOOTS).with(
                 ItemComponents::EQUIPPABLE,
                 EquippableComponent {
                     slot: EquipmentSlot::Boots,

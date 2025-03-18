@@ -5,7 +5,7 @@ use std::{
 
 use wyvern_mc::{
     actors::ActorResult,
-    blocks::BlockState,
+    blocks::{BlockState, Blocks},
     components::DataComponentHolder,
     datatypes::{
         nbt::NbtCompound,
@@ -19,10 +19,10 @@ use wyvern_mc::{
         SwapHandsEvent,
     },
     inventory::Inventory,
-    item::{ItemComponents, ItemStack},
+    item::{ItemComponents, ItemStack, Items},
     player::PlayerComponents,
     server::Server,
-    values::{Id, Uuid, Vec2, Vec3, id},
+    values::{Uuid, Vec2, Vec3, id},
 };
 
 static COUNTER: LazyLock<Mutex<HashMap<Uuid, i32>>> = LazyLock::new(|| Mutex::new(HashMap::new()));
@@ -52,10 +52,9 @@ fn on_server_start(event: Arc<ServerStartEvent>) -> ActorResult<()> {
 fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
     for x in 0..6 {
         for z in 0..6 {
-            event.dimension.set_block(
-                Vec3::new(x, 0, z),
-                BlockState::new(id![minecraft:grass_block]),
-            )?;
+            event
+                .dimension
+                .set_block(Vec3::new(x, 0, z), BlockState::new(Blocks::GRASS_BLOCK))?;
         }
     }
 
@@ -70,7 +69,7 @@ fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
 
     event.player.inventory()?.set_slot(
         40,
-        ItemStack::new(Id::new("minecraft", "diamond"))
+        ItemStack::new(Items::DIAMOND)
             .with(ItemComponents::CUSTOM_DATA, {
                 let mut compound = NbtCompound::new();
                 compound.set("clicker_data", 10.into());

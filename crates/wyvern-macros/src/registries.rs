@@ -1,6 +1,8 @@
 use proc_macro2::TokenStream;
 use quote::quote;
-use voxidian_protocol::value::{AttributeType, BlockState, EntityType, Identifier, SoundEvent};
+use voxidian_protocol::value::{
+    AttributeType, BlockState, EntityType, Identifier, Item, SoundEvent,
+};
 
 pub fn entities(_item: TokenStream) -> TokenStream {
     let entities: Vec<TokenStream> = EntityType::vanilla_registry()
@@ -108,5 +110,34 @@ fn attr_to_tokens(id: &Identifier) -> TokenStream {
 
     quote! {
         pub const #fn_name_ident: DataComponentType<f64> = DataComponentType::new(Id::constant(#namespace, #path));
+    }
+}
+
+pub fn items(_item: TokenStream) -> TokenStream {
+    let mut attrs: Vec<Identifier> = Item::vanilla_registry()
+        .keys()
+        .cloned()
+        .map(|x| Identifier::new(x.namespace.to_lowercase(), x.path.to_lowercase()))
+        .collect::<Vec<_>>();
+    attrs.dedup();
+    let blocks = attrs.iter().map(items_to_tokens);
+
+    quote! {
+        impl Items {
+            #(#blocks)*
+        }
+    }
+}
+
+fn items_to_tokens(id: &Identifier) -> TokenStream {
+    let path = &id.path;
+    let namespace = &id.namespace;
+    let fn_name_ident = proc_macro2::Ident::new(
+        &path.to_uppercase().replace(".", "_"),
+        proc_macro2::Span::call_site(),
+    );
+
+    quote! {
+        pub const #fn_name_ident: Id = Id::constant(#namespace, #path);
     }
 }

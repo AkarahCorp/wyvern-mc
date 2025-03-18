@@ -58,3 +58,6 @@ impl Default for ItemStack {
 }
 
 pub(crate) static ITEM_REGISTRY: LazyLock<Registry<Item>> = LazyLock::new(Item::vanilla_registry);
+
+pub struct Items;
+wyvern_macros::generate_items_types!();

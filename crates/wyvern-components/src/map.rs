@@ -1,7 +1,7 @@
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use dyn_clone::clone_box;
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxBuildHasher, FxHashMap};
 
 use wyvern_actors::{ActorError, ActorResult};
 use wyvern_values::Id;
@@ -29,9 +29,9 @@ impl PartialEq for DataComponentMap {
 }
 
 impl DataComponentMap {
-    pub fn new() -> DataComponentMap {
+    pub const fn new() -> DataComponentMap {
         DataComponentMap {
-            inner: FxHashMap::default(),
+            inner: HashMap::with_hasher(FxBuildHasher {}),
         }
     }
 
