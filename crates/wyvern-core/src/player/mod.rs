@@ -31,9 +31,7 @@ use voxidian_protocol::{
     value::{Angle, ProfileProperty, Text as PtcText, VarInt},
 };
 use wyvern_components::{ComponentElement, DataComponentHolder, DataComponentMap};
-use wyvern_datatypes::{
-    gamemode::Gamemode, particle::Particle, sound::Sound, text::Text, window::InventoryKind,
-};
+use wyvern_datatypes::{particle::Particle, sound::Sound, text::Text, window::InventoryKind};
 use wyvern_macros::{actor, message};
 
 use crate::{
@@ -53,6 +51,7 @@ pub use components::*;
 pub mod chunkload;
 pub mod data;
 pub mod inventory;
+pub mod itf;
 pub mod net;
 pub mod stages;
 pub mod update;
@@ -161,12 +160,6 @@ impl ConnectionData {
             }
             Stage::Transfer => Ok(()),
         }
-    }
-
-    #[SetGamemode]
-    pub fn set_gamemode(&mut self, gamemode: Gamemode) -> ActorResult<()> {
-        self.set(PlayerComponents::GAMEMODE, gamemode);
-        Ok(())
     }
 
     #[SetStage]
