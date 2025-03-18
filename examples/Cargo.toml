@@ -39,7 +39,10 @@ path = "./structures.rs"
 name = "combat"
 path = "./combat.rs"
 
-
 [[example]]
 name = "quakecraft"
 path = "./quakecraft.rs"
+
+[[example]]
+name = "pack"
+path = "./pack.rs"

@@ -1,9 +1,9 @@
 use voxidian_protocol::{
     packet::{
         Stage,
-        c2s::config::C2SConfigPackets,
+        c2s::config::{C2SConfigPackets, ResourcePackStatus},
         s2c::{
-            config::FinishConfigurationS2CConfigPacket,
+            config::{FinishConfigurationS2CConfigPacket, ResourcePackPushS2CConfigPacket},
             play::{Gamemode, LoginS2CPlayPacket, PlayerPositionS2CPlayPacket, TeleportFlags},
         },
     },
@@ -11,7 +11,7 @@ use voxidian_protocol::{
     value::{Identifier, VarInt},
 };
 
-use crate::{actors::ActorResult, player::ConnectionData};
+use crate::{actors::ActorResult, player::ConnectionData, server::Server};
 
 impl ConnectionData {
     pub fn configuration_stage(&mut self) -> ActorResult<()> {
@@ -72,7 +72,18 @@ impl ConnectionData {
                             },
                         });
                     }
-                    C2SConfigPackets::ResourcePack(_packet) => todo!(),
+                    C2SConfigPackets::ResourcePack(packet) => match packet.status {
+                        ResourcePackStatus::SuccessfullyDownloaded => {
+                            this.write_packet(FinishConfigurationS2CConfigPacket);
+                        }
+                        ResourcePackStatus::Declined => todo!(),
+                        ResourcePackStatus::FailedDownload => todo!(),
+                        ResourcePackStatus::Accepted => {}
+                        ResourcePackStatus::Downloaded => {}
+                        ResourcePackStatus::InvalidURL => todo!(),
+                        ResourcePackStatus::FailedReload => {}
+                        ResourcePackStatus::Discarded => todo!(),
+                    },
                     C2SConfigPackets::CookieResponse(_packet) => todo!(),
                     C2SConfigPackets::Pong(_packet) => todo!(),
                     C2SConfigPackets::ClientInformation(packet) => {
@@ -118,7 +129,17 @@ impl ConnectionData {
                                 .to_registry_data_packet(),
                         );
 
-                        this.write_packet(FinishConfigurationS2CConfigPacket);
+                        if let Ok(pack) = Server::get()?.resource_pack() {
+                            this.write_packet(ResourcePackPushS2CConfigPacket {
+                                uuid: pack.uuid,
+                                url: "http://localhost:62000".to_string(),
+                                hash: "NoHash_".to_string(),
+                                forced: true,
+                                prompt: None,
+                            });
+                        } else {
+                            this.write_packet(FinishConfigurationS2CConfigPacket);
+                        }
                     }
                 }
             }

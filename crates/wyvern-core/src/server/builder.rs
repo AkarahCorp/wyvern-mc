@@ -7,6 +7,7 @@ use voxidian_protocol::{
     registry::Registry,
     value::{Biome, DamageType, EntityType},
 };
+use wyvern_textures::TexturePack;
 
 use crate::{
     actors::ActorResult,
@@ -22,6 +23,7 @@ pub struct ServerBuilder {
     registries: RegistryContainerBuilder,
     dimensions: DimensionContainer,
     mojauth_enabled: bool,
+    texture_pack: Option<TexturePack>,
 }
 
 impl Default for ServerBuilder {
@@ -46,6 +48,7 @@ impl ServerBuilder {
                 dimensions: HashMap::new(),
             },
             mojauth_enabled: true,
+            texture_pack: None,
         }
     }
 
@@ -70,6 +73,11 @@ impl ServerBuilder {
         self
     }
 
+    pub fn pack(mut self, pack: TexturePack) -> Self {
+        self.texture_pack = Some(pack);
+        self
+    }
+
     pub fn run(self) {
         let chan = flume::unbounded();
         let server = ServerData {
@@ -84,6 +92,7 @@ impl ServerBuilder {
 
             last_entity_id: 0,
             mojauth_enabled: self.mojauth_enabled,
+            texture_pack: self.texture_pack.map(Arc::new),
         };
 
         log::info!("Initializing some lazy values...");

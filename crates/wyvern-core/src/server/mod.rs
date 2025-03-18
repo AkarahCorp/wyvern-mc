@@ -15,6 +15,7 @@ use dimensions::DimensionContainer;
 use flume::Sender;
 use registries::RegistryContainer;
 use voxidian_protocol::{packet::Stage, value::Uuid};
+use wyvern_textures::TexturePack;
 
 use crate::{
     dimension::{Dimension, DimensionData},
@@ -40,6 +41,7 @@ pub(crate) struct ServerData {
     pub(crate) events: Arc<EventBus>,
     pub(crate) last_entity_id: i32,
     pub(crate) mojauth_enabled: bool,
+    pub(crate) texture_pack: Option<Arc<TexturePack>>,
 }
 
 impl Server {
@@ -62,6 +64,11 @@ impl Server {
 
 #[message(Server, ServerMessage)]
 impl ServerData {
+    #[ResourcePack]
+    pub fn resource_pack(&self) -> ActorResult<Arc<TexturePack>> {
+        self.texture_pack.clone().ok_or(ActorError::BadRequest)
+    }
+
     #[MojauthEnabled]
     pub fn mojauth_enabled(&self) -> ActorResult<bool> {
         Ok(self.mojauth_enabled)
@@ -171,6 +178,12 @@ impl ServerData {
     pub fn start(self) {
         log::info!("A server is starting!");
         let snd = self.as_actor();
+
+        if let Some(pack) = self.texture_pack.clone() {
+            std::thread::spawn(move || {
+                pack.host();
+            });
+        }
 
         SERVER_INSTANCE.set(snd.clone()).unwrap_or_else(|_| {
             log::error!("WyvernMC does not support running two servers at once. Bugs may occur.");

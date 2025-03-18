@@ -12,6 +12,7 @@ wyvern-actors = { path = "./crates/wyvern-actors" }
 wyvern-core = { path = "./crates/wyvern-core" }
 wyvern-values = { path = "./crates/wyvern-values" }
 wyvern-datatypes = { path = "./crates/wyvern-datatypes" }
+wyvern-textures = { path = "./crates/wyvern-textures" }
 proc-macro2 = { version = "*" }
 syn = { version = "*", features = ["full"] }
 quote = { version = "*" }
@@ -24,6 +25,6 @@ dyn-clone = "1.0.18"
 rustc-hash = { version = "*" }
 uuid = { version = "*" }
 num-traits = { version = "*" }
-
+zip = { version = "*" }
 [profile.release]
 debug = true

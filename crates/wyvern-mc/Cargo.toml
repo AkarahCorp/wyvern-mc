@@ -11,3 +11,4 @@ wyvern-actors = { workspace = true }
 wyvern-components = { workspace = true }
 wyvern-datatypes = { workspace = true }
 wyvern-macros = { workspace = true }
+wyvern-textures = { workspace = true }

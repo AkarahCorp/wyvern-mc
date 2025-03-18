@@ -15,3 +15,4 @@ rand = { workspace = true }
 dyn-clone = { workspace = true }
 wyvern-actors = { workspace = true }
 wyvern-components = { workspace = true }
+wyvern-textures = { workspace = true }

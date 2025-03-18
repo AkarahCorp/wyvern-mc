@@ -14,3 +14,6 @@ pub mod actors {
 pub mod macros {
     pub use wyvern_macros::server;
 }
+pub mod textures {
+    pub use wyvern_textures::*;
+}
