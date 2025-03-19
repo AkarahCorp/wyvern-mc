@@ -83,12 +83,9 @@ impl SNbtParser {
                     reader.expect('{');
                     loop {
                         reader.skip_whitespace();
-                        match *reader.peek()? {
-                            '}' => {
-                                reader.skip();
-                                break;
-                            }
-                            _ => {}
+                        if *reader.peek()? == '}' {
+                            reader.skip();
+                            break;
                         }
                         reader.skip_whitespace();
                         let name = reader.read_identifier()?;
@@ -110,12 +107,9 @@ impl SNbtParser {
                     reader.expect('[');
                     loop {
                         reader.skip_whitespace();
-                        match *reader.peek()? {
-                            ']' => {
-                                reader.skip();
-                                break;
-                            }
-                            _ => {}
+                        if *reader.peek()? == ']' {
+                            reader.skip();
+                            break;
                         }
                         reader.skip_whitespace();
                         let value = Self::parse_from_reader(reader)?;
@@ -131,7 +125,7 @@ impl SNbtParser {
                 }
                 '-' | '0'..='9' | '.' => {
                     let mut num_str = String::new();
-                    while matches!(*reader.peek()?, '-' | '0'..'9' | '.') {
+                    while matches!(*reader.peek()?, '-' | '0'..='9' | '.') {
                         num_str.push(reader.read()?);
                     }
                     let wl = &num_str[0..num_str.len() - 1];
