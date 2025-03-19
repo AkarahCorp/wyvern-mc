@@ -31,13 +31,13 @@ fn server() -> ServerBuilder {
         })
 }
 
-fn on_server_start(event: Arc<ServerStartEvent>) -> ActorResult<()> {
+async fn on_server_start(event: Arc<ServerStartEvent>) -> ActorResult<()> {
     event.server.create_dimension(id!(example:root))?;
 
     Ok(())
 }
 
-fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
+async fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
     for x in 0..10 {
         for z in 0..10 {
             event.dimension.set_block(
@@ -49,7 +49,7 @@ fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
     Ok(())
 }
 
-fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
+async fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
     event.new_dimension.set(id![example:root]);
     event.player.set_gamemode(Gamemode::Survival)?;
     event
@@ -67,7 +67,7 @@ fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
         ItemStack::new(Items::COBBLESTONE).with(ItemComponents::ITEM_COUNT, 64),
     )?;
 
-    Runtime::spawn_task(move || {
+    Runtime::spawn_task(async move {
         std::thread::sleep(Duration::from_millis(10000));
         event.player.set(
             PlayerComponents::ATTRIBUTES,
@@ -80,13 +80,13 @@ fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
     Ok(())
 }
 
-fn on_break(event: Arc<BreakBlockEvent>) -> ActorResult<()> {
+async fn on_break(event: Arc<BreakBlockEvent>) -> ActorResult<()> {
     let dim = event.player.dimension()?;
     dim.set_block(event.position, event.old_block.clone())?;
     Ok(())
 }
 
-fn on_place(event: Arc<PlaceBlockEvent>) -> ActorResult<()> {
+async fn on_place(event: Arc<PlaceBlockEvent>) -> ActorResult<()> {
     let dim = event.player.dimension()?;
     dim.set_block(event.position, BlockState::new(Blocks::AIR))?;
     Ok(())

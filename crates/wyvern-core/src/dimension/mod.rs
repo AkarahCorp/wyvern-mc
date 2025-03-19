@@ -128,7 +128,7 @@ impl DimensionData {
         chunk.set_block_at(pos_in_chunk, block_state.clone());
 
         let server = self.server.clone().unwrap();
-        Runtime::spawn_task(move || {
+        Runtime::spawn_task(async move {
             for conn in server.players().unwrap_or_else(|_| Vec::new()) {
                 let block_state = block_state.clone();
                 let pos = position;
@@ -221,14 +221,17 @@ impl DimensionData {
         components.set(EntityComponents::VELOCITY, Vec3::new(0.0, 0.0, 0.0));
         components.set(EntityComponents::PLAYER_CONTROLLED, false);
 
-        self.entities.insert(uuid, EntityData {
-            last_components: DataComponentMap::new(),
-            components,
-        });
+        self.entities.insert(
+            uuid,
+            EntityData {
+                last_components: DataComponentMap::new(),
+                components,
+            },
+        );
 
         let dim = self.as_actor();
 
-        Runtime::spawn_task(move || {
+        Runtime::spawn_task(async move {
             for conn in dim.players().unwrap_or_else(|_| Vec::new()) {
                 let conn = dim.server().unwrap().player(conn).unwrap();
                 let _ = conn.write_packet(AddEntityS2CPlayPacket {
@@ -278,14 +281,17 @@ impl DimensionData {
         components.set(EntityComponents::PLAYER_CONTROLLED, false);
         components.set(EntityComponents::PLAYER_SKIN, skin.clone());
 
-        self.entities.insert(uuid, EntityData {
-            last_components: DataComponentMap::new(),
-            components,
-        });
+        self.entities.insert(
+            uuid,
+            EntityData {
+                last_components: DataComponentMap::new(),
+                components,
+            },
+        );
 
         let dim = self.as_actor();
 
-        Runtime::spawn_task(move || {
+        Runtime::spawn_task(async move {
             for conn in dim.players().unwrap_or_else(|_| Vec::new()) {
                 let conn = dim.server().unwrap().player(conn).unwrap();
                 let name = format!("NPC_{:?}", id);
@@ -295,10 +301,13 @@ impl DimensionData {
                     sig: Some(skin.signature.clone()),
                 }];
                 let _ = conn.write_packet(PlayerInfoUpdateS2CPlayPacket {
-                    actions: vec![(uuid, vec![PlayerActionEntry::AddPlayer {
-                        name,
-                        props: props.into(),
-                    }])],
+                    actions: vec![(
+                        uuid,
+                        vec![PlayerActionEntry::AddPlayer {
+                            name,
+                            props: props.into(),
+                        }],
+                    )],
                 });
                 let _ = conn.write_packet(AddEntityS2CPlayPacket {
                     id: id.into(),
@@ -341,14 +350,17 @@ impl DimensionData {
         components.set(EntityComponents::DIRECTION, Vec2::new(0.0, 0.0));
         components.set(EntityComponents::VELOCITY, Vec3::new(0.0, 0.0, 0.0));
         components.set(EntityComponents::PLAYER_CONTROLLED, true);
-        self.entities.insert(uuid, EntityData {
-            last_components: DataComponentMap::new(),
-            components,
-        });
+        self.entities.insert(
+            uuid,
+            EntityData {
+                last_components: DataComponentMap::new(),
+                components,
+            },
+        );
 
         let dim = self.as_actor();
 
-        Runtime::spawn_task(move || {
+        Runtime::spawn_task(async move {
             for conn in dim.players().unwrap_or_else(|_| Vec::new()) {
                 if conn != uuid {
                     let conn = dim.server().unwrap().player(conn).unwrap();
@@ -391,7 +403,7 @@ impl DimensionData {
                 .ok_or(ActorError::ActorDoesNotExist)?
                 .clone();
 
-            Runtime::spawn_task(move || {
+            Runtime::spawn_task(async move {
                 for conn in server.players()? {
                     let _ = conn.write_packet(RemoveEntitiesS2CPlayPacket {
                         entities: vec![VarInt::new(

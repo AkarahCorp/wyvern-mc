@@ -29,7 +29,7 @@ fn main() {
         .run();
 }
 
-fn on_server_start(event: Arc<ServerStartEvent>) -> ActorResult<()> {
+async fn on_server_start(event: Arc<ServerStartEvent>) -> ActorResult<()> {
     event.server.create_dimension(id!(example:root))?;
 
     Ok(())
@@ -37,7 +37,7 @@ fn on_server_start(event: Arc<ServerStartEvent>) -> ActorResult<()> {
 
 static SIMPLEX: LazyLock<Simplex> = LazyLock::new(|| Simplex::new(0));
 
-fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
+async fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
     event
         .dimension
         .set_chunk_generator(move |chunk: &mut Chunk, x, z| {
@@ -72,7 +72,7 @@ fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
     Ok(())
 }
 
-fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
+async fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
     event.new_dimension.set(id![example:root]);
     Ok(())
 }

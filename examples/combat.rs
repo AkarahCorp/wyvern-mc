@@ -35,13 +35,13 @@ fn main() {
         .run();
 }
 
-fn on_server_start(event: Arc<ServerStartEvent>) -> ActorResult<()> {
+async fn on_server_start(event: Arc<ServerStartEvent>) -> ActorResult<()> {
     event.server.create_dimension(id!(example:root))?;
 
     Ok(())
 }
 
-fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
+async fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
     for x in -20..20 {
         for z in -20..20 {
             event.dimension.set_block(
@@ -54,7 +54,7 @@ fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
     Ok(())
 }
 
-fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
+async fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
     event.new_dimension.set(id![example:root]);
     event
         .player
@@ -75,7 +75,7 @@ fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
             .with(Attributes::ENTITY_INTERACTION_RANGE, 20.0),
     )?;
 
-    Runtime::spawn_task(move || {
+    Runtime::spawn_task(async move {
         let entity = event
             .player
             .dimension()?
@@ -142,7 +142,7 @@ fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
     Ok(())
 }
 
-fn on_attack(event: Arc<PlayerAttackEntityEvent>) -> ActorResult<()> {
+async fn on_attack(event: Arc<PlayerAttackEntityEvent>) -> ActorResult<()> {
     let dir = event
         .attacker
         .get(PlayerComponents::DIRECTION)?
@@ -165,7 +165,7 @@ fn on_attack(event: Arc<PlayerAttackEntityEvent>) -> ActorResult<()> {
     Ok(())
 }
 
-fn on_attack_player(event: Arc<PlayerAttackPlayerEvent>) -> ActorResult<()> {
+async fn on_attack_player(event: Arc<PlayerAttackPlayerEvent>) -> ActorResult<()> {
     event
         .attacker
         .play_sound(Sounds::ENTITY_PLAYER_ATTACK_CRIT)?;

@@ -34,7 +34,7 @@ impl DimensionData {
                 let dir = entity.1.components.get(EntityComponents::DIRECTION)?;
                 for player in &players {
                     let player = *player;
-                    Runtime::spawn_task(move || {
+                    Runtime::spawn_task(async move {
                         let player = Server::get()?.player(player)?;
                         player.write_packet(EntityPositionSyncS2CPlayPacket {
                             entity_id: id.into(),
@@ -69,7 +69,7 @@ impl DimensionData {
                 uuid: *entity.0,
             };
             let dimension = self.as_actor();
-            Runtime::spawn_task(move || {
+            Runtime::spawn_task(async move {
                 if let Ok(true) = entity.get(EntityComponents::PHYSICS_ENABLED) {
                     if let Ok(mut velocity) = entity.get(EntityComponents::VELOCITY) {
                         let mut pos = entity.get(EntityComponents::POSITION)?;

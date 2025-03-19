@@ -41,22 +41,24 @@ fn server() -> ServerBuilder {
         })
 }
 
-fn on_server_start(event: Arc<ServerStartEvent>) -> ActorResult<()> {
+async fn on_server_start(event: Arc<ServerStartEvent>) -> ActorResult<()> {
     event.server.create_dimension(id!(example:root))?;
 
     Ok(())
 }
 
-fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
+async fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
     let bytes = include_bytes!("./quake.nbt").to_vec();
     let nbt = Nbt::new(NbtCompound::try_from(bytes).unwrap());
     let structure = Structure::codec().decode(&NbtOps, &nbt).unwrap();
 
     structure.place(event.dimension.clone(), Vec3::new(0, 0, 0))?;
+
+    println!("Placed structure!");
     Ok(())
 }
 
-fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
+async fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
     event.new_dimension.set(id![example:root]);
     event.player.inventory()?.set_slot(
         36,
@@ -71,25 +73,25 @@ fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
     Ok(())
 }
 
-fn on_load(event: Arc<PlayerLoadEvent>) -> ActorResult<()> {
+async fn on_load(event: Arc<PlayerLoadEvent>) -> ActorResult<()> {
     event.player.send_message(Text::literal("a"))?;
     respawn_player(&event.player)?;
     Ok(())
 }
 
-fn on_break(event: Arc<BreakBlockEvent>) -> ActorResult<()> {
+async fn on_break(event: Arc<BreakBlockEvent>) -> ActorResult<()> {
     let dim = event.player.dimension()?;
     dim.set_block(event.position, event.old_block.clone())?;
     Ok(())
 }
 
-fn on_place(event: Arc<PlaceBlockEvent>) -> ActorResult<()> {
+async fn on_place(event: Arc<PlaceBlockEvent>) -> ActorResult<()> {
     let dim = event.player.dimension()?;
     dim.set_block(event.position, BlockState::new(id![minecraft:air]))?;
     Ok(())
 }
 
-fn on_chat(event: Arc<ChatMessageEvent>) -> ActorResult<()> {
+async fn on_chat(event: Arc<ChatMessageEvent>) -> ActorResult<()> {
     for player in Server::get()?.players()? {
         player.send_message(Text::literal(format!(
             "<{}> {}",
@@ -100,7 +102,7 @@ fn on_chat(event: Arc<ChatMessageEvent>) -> ActorResult<()> {
     Ok(())
 }
 
-fn on_tick(_event: Arc<ServerTickEvent>) -> ActorResult<()> {
+async fn on_tick(_event: Arc<ServerTickEvent>) -> ActorResult<()> {
     for player in Server::get()?.players()? {
         player.set(
             PlayerComponents::SIDEBAR_NAME,
@@ -108,20 +110,23 @@ fn on_tick(_event: Arc<ServerTickEvent>) -> ActorResult<()> {
                 .with_color(TextColor::new(255, 255, 0))
                 .bold(true),
         )?;
-        player.set(PlayerComponents::SIDEBAR_LINES, vec![
-            Text::literal(""),
-            Text::literal("Kills: ")
-                .with_color(TextColor::new(133, 133, 133))
-                .and_then(Text::literal("Untracked").with_color(TextColor::new(255, 133, 133))),
-            Text::literal(""),
-            Text::literal("www.example.org").with_color(TextColor::new(255, 255, 0)),
-        ])?;
+        player.set(
+            PlayerComponents::SIDEBAR_LINES,
+            vec![
+                Text::literal(""),
+                Text::literal("Kills: ")
+                    .with_color(TextColor::new(133, 133, 133))
+                    .and_then(Text::literal("Untracked").with_color(TextColor::new(255, 133, 133))),
+                Text::literal(""),
+                Text::literal("www.example.org").with_color(TextColor::new(255, 255, 0)),
+            ],
+        )?;
         player.set(PlayerComponents::SIDEBAR_PRESENT, true)?;
     }
     Ok(())
 }
 
-fn on_shoot(event: Arc<RightClickEvent>) -> ActorResult<()> {
+async fn on_shoot(event: Arc<RightClickEvent>) -> ActorResult<()> {
     let position = event.player.get(PlayerComponents::POSITION)?;
     let direction = event
         .player
@@ -181,9 +186,9 @@ fn respawn_player(player: &Player) -> ActorResult<()> {
     player.send_message(Text::literal("a"))?;
 
     let spawn_pos = loop {
-        let rand_x = rand::random_range(40.0..90.0);
-        let rand_y = rand::random_range(20.0..40.0);
-        let rand_z = rand::random_range(40.0..90.0);
+        let rand_x = rand::random_range(0.0..20.0);
+        let rand_y = rand::random_range(0.0..20.0);
+        let rand_z = rand::random_range(0.0..20.0);
 
         let mut pos: NVec<f64, 3> = Vec3::new(rand_x, rand_y, rand_z);
         let mut descent_steps = 0;
@@ -195,6 +200,8 @@ fn respawn_player(player: &Player) -> ActorResult<()> {
                 break;
             }
         }
+
+        // println!("pos: {:?} ({:#?})", pos, descent_steps);
 
         if descent_steps > 10 {
             continue;
@@ -223,7 +230,7 @@ fn respawn_player(player: &Player) -> ActorResult<()> {
     Ok(())
 }
 
-fn on_dash(event: Arc<PlayerLeftClickEvent>) -> ActorResult<()> {
+async fn on_dash(event: Arc<PlayerLeftClickEvent>) -> ActorResult<()> {
     let dir = event
         .player
         .get(PlayerComponents::DIRECTION)?

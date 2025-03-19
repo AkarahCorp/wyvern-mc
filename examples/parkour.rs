@@ -33,13 +33,13 @@ fn main() {
         .run();
 }
 
-fn on_server_start(event: Arc<ServerStartEvent>) -> ActorResult<()> {
+async fn on_server_start(event: Arc<ServerStartEvent>) -> ActorResult<()> {
     event.server.create_dimension(id!(example:root))?;
 
     Ok(())
 }
 
-fn tick(event: Arc<ServerTickEvent>) -> ActorResult<()> {
+async fn tick(event: Arc<ServerTickEvent>) -> ActorResult<()> {
     for player in event.server.players()? {
         if player.get(PlayerComponents::POSITION)?.y() < -64.0 {
             player.set(
@@ -59,7 +59,7 @@ fn tick(event: Arc<ServerTickEvent>) -> ActorResult<()> {
     Ok(())
 }
 
-fn on_command(event: Arc<PlayerCommandEvent>) -> ActorResult<()> {
+async fn on_command(event: Arc<PlayerCommandEvent>) -> ActorResult<()> {
     if event.command == "restart" {
         event.player.set(
             PlayerComponents::TELEPORT_POSITION,
@@ -69,7 +69,7 @@ fn on_command(event: Arc<PlayerCommandEvent>) -> ActorResult<()> {
     Ok(())
 }
 
-fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
+async fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
     let mut block_pos = Vec3::new(0, 10, 0);
     for _ in 0..20 {
         event
@@ -127,7 +127,7 @@ fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
     Ok(())
 }
 
-fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
+async fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
     event.new_dimension.set(id![example:root]);
     event.player.set(
         PlayerComponents::TELEPORT_POSITION,
@@ -136,7 +136,7 @@ fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
     Ok(())
 }
 
-fn on_respawn(event: Arc<PlayerRespawnEvent>) -> ActorResult<()> {
+async fn on_respawn(event: Arc<PlayerRespawnEvent>) -> ActorResult<()> {
     event.player.set(
         PlayerComponents::TELEPORT_POSITION,
         Vec3::new(0.0, 100.0, 0.0),

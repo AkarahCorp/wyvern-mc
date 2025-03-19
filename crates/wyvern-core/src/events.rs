@@ -11,12 +11,15 @@ macro_rules! event_bus {
     ($($name:ident : $t:ty)*) => {
         #[derive(Default)]
         pub struct EventBus {
-            $(pub(crate) $name: Vec<Arc<Box<dyn Fn(Arc<$t>) -> ActorResult<()> + Send + Sync>>>,)*
+            $(pub(crate) $name: Vec<Arc<dyn Fn(Arc<$t>) -> BoxedFuture + Sync + Send>>,)*
         }
 
         $(impl crate::events::Event for $t {
-            fn add_handler(bus: &mut EventBus, f: Box<dyn Fn(Arc<$t>) -> ActorResult<()> + Send + Sync>) {
-                bus.$name.push(Arc::new(f));
+            fn add_handler<F: 'static + Future<Output = ActorResult<()>> + Send + Sync, N: 'static + Fn(Arc<$t>) -> F + Send + Sync>(bus: &mut EventBus, f: N) {
+                bus.$name.push(Arc::new(move |event| {
+                    let result = f(event);
+                    Box::pin(result)
+                }));
             }
 
             fn dispatch(self, bus: std::sync::Arc<EventBus>) {
@@ -32,7 +35,7 @@ macro_rules! event_bus {
                 let start = std::time::Instant::now();
                 let event = Arc::new(self);
                 for event_func in bus.$name.clone().into_iter() {
-                    let _ = event_func(event.clone());
+                    $crate::runtime::Runtime::spawn_task(event_func(event.clone()));
                 }
                 let end = std::time::Instant::now();
                 log::debug!("Event {:?} took {:?} to execute", std::any::type_name::<Self>(), (end - start) - (time_time));
@@ -72,7 +75,13 @@ impl Debug for EventBus {
 }
 
 pub trait Event {
-    fn add_handler(bus: &mut EventBus, f: Box<dyn Fn(Arc<Self>) -> ActorResult<()> + Send + Sync>);
+    fn add_handler<
+        F: 'static + Future<Output = ActorResult<()>> + Send + Sync,
+        N: 'static + Fn(Arc<Self>) -> F + Send + Sync,
+    >(
+        bus: &mut EventBus,
+        f: N,
+    );
     fn dispatch(self, bus: Arc<EventBus>);
     fn dispatch_sync(self, bus: Arc<EventBus>);
 }

@@ -43,13 +43,13 @@ fn main() {
         .run();
 }
 
-fn on_server_start(event: Arc<ServerStartEvent>) -> ActorResult<()> {
+async fn on_server_start(event: Arc<ServerStartEvent>) -> ActorResult<()> {
     event.server.create_dimension(id!(clicker:root))?;
 
     Ok(())
 }
 
-fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
+async fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
     for x in 0..6 {
         for z in 0..6 {
             event
@@ -64,7 +64,7 @@ fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
     Ok(())
 }
 
-fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
+async fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
     event.new_dimension.set(id!(clicker:root));
 
     event.player.inventory()?.set_slot(
@@ -80,7 +80,7 @@ fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
     Ok(())
 }
 
-fn on_tick(event: Arc<ServerTickEvent>) -> ActorResult<()> {
+async fn on_tick(event: Arc<ServerTickEvent>) -> ActorResult<()> {
     for player in event.server.players()? {
         let uuid = player.get(PlayerComponents::UUID)?;
 
@@ -119,7 +119,7 @@ fn on_tick(event: Arc<ServerTickEvent>) -> ActorResult<()> {
     Ok(())
 }
 
-fn on_right_click(event: Arc<RightClickEvent>) -> ActorResult<()> {
+async fn on_right_click(event: Arc<RightClickEvent>) -> ActorResult<()> {
     let uuid = event.player.get(PlayerComponents::UUID)?;
     {
         let mut counter = COUNTER.lock().unwrap();
@@ -142,7 +142,7 @@ fn on_right_click(event: Arc<RightClickEvent>) -> ActorResult<()> {
     Ok(())
 }
 
-fn on_swap_hands(event: Arc<SwapHandsEvent>) -> ActorResult<()> {
+async fn on_swap_hands(event: Arc<SwapHandsEvent>) -> ActorResult<()> {
     event.player.open_screen(InventoryKind::Chest1Row)?;
     Ok(())
 }

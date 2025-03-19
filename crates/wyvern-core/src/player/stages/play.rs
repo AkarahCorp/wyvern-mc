@@ -280,7 +280,7 @@ impl ConnectionData {
                                 .clone();
 
                             this.write_packet(BlockChangedAckS2CPlayPacket(packet.sequence));
-                            Runtime::spawn_task(move || {
+                            Runtime::spawn_task(async move {
                                 let _ = dim.set_block(final_pos, state_clone);
 
                                 Ok(())
@@ -362,7 +362,7 @@ impl ConnectionData {
                     }
                     C2SPlayPackets::Interact(packet) => {
                         let player = this.as_actor();
-                        Runtime::spawn_task(move || {
+                        Runtime::spawn_task(async move {
                             match packet.action {
                                 InteractAction::Interact(_hand) => {}
                                 InteractAction::Attack => {
@@ -393,7 +393,7 @@ impl ConnectionData {
                         Server::get()?.spawn_event(PlayerLeftClickEvent {
                             player: this.as_actor(),
                         })?;
-                        Runtime::spawn_task(move || {
+                        Runtime::spawn_task(async move {
                             let players = player.dimension()?.players()?;
 
                             match packet.hand {
@@ -450,11 +450,14 @@ impl ConnectionData {
                             });
                             this.associated_data.loaded_chunks.clear();
 
-                            this.set(PlayerComponents::HEALTH, HealthComponent {
-                                food: 20,
-                                saturation: 20.0,
-                                health: 20.0,
-                            });
+                            this.set(
+                                PlayerComponents::HEALTH,
+                                HealthComponent {
+                                    food: 20,
+                                    saturation: 20.0,
+                                    health: 20.0,
+                                },
+                            );
                             this.write_packet(GameEventS2CPlayPacket {
                                 event: GameEvent::WaitForChunks,
                                 value: 0.0,
@@ -498,8 +501,6 @@ impl ConnectionData {
         })?;
 
         loop {
-            std::thread::yield_now();
-
             self.handle_messages();
 
             if token.get() != key {
@@ -544,15 +545,18 @@ impl ConnectionData {
                 Vec::new()
             };
 
-            Runtime::spawn_task(move || {
+            Runtime::spawn_task(async move {
                 let _ = player.write_packet(PlayerInfoUpdateS2CPlayPacket {
-                    actions: vec![(uuid, vec![
-                        PlayerActionEntry::AddPlayer {
-                            name: username.clone(),
-                            props: props.into(),
-                        },
-                        PlayerActionEntry::Listed(true),
-                    ])],
+                    actions: vec![(
+                        uuid,
+                        vec![
+                            PlayerActionEntry::AddPlayer {
+                                name: username.clone(),
+                                props: props.into(),
+                            },
+                            PlayerActionEntry::Listed(true),
+                        ],
+                    )],
                 });
                 Ok(())
             });
@@ -580,25 +584,31 @@ impl ConnectionData {
                 };
 
                 self.write_packet(PlayerInfoUpdateS2CPlayPacket {
-                    actions: vec![(uuid, vec![
-                        PlayerActionEntry::AddPlayer {
-                            name: username.clone(),
-                            props: props.into(),
-                        },
-                        PlayerActionEntry::Listed(true),
-                    ])],
+                    actions: vec![(
+                        uuid,
+                        vec![
+                            PlayerActionEntry::AddPlayer {
+                                name: username.clone(),
+                                props: props.into(),
+                            },
+                            PlayerActionEntry::Listed(true),
+                        ],
+                    )],
                 });
             } else {
                 let uuid = player.get(PlayerComponents::UUID)?;
                 let username = player.get(PlayerComponents::USERNAME)?;
                 self.write_packet(PlayerInfoUpdateS2CPlayPacket {
-                    actions: vec![(uuid, vec![
-                        PlayerActionEntry::AddPlayer {
-                            name: username.clone(),
-                            props: player.auth_props().unwrap_or(Vec::new()).into(),
-                        },
-                        PlayerActionEntry::Listed(true),
-                    ])],
+                    actions: vec![(
+                        uuid,
+                        vec![
+                            PlayerActionEntry::AddPlayer {
+                                name: username.clone(),
+                                props: player.auth_props().unwrap_or(Vec::new()).into(),
+                            },
+                            PlayerActionEntry::Listed(true),
+                        ],
+                    )],
                 });
             }
         }
@@ -628,10 +638,13 @@ impl ConnectionData {
                     sig: Some(skin.signature),
                 }];
                 self.write_packet(PlayerInfoUpdateS2CPlayPacket {
-                    actions: vec![(*entity.uuid(), vec![PlayerActionEntry::AddPlayer {
-                        name,
-                        props: props.into(),
-                    }])],
+                    actions: vec![(
+                        *entity.uuid(),
+                        vec![PlayerActionEntry::AddPlayer {
+                            name,
+                            props: props.into(),
+                        }],
+                    )],
                 });
             }
             self.write_packet(AddEntityS2CPlayPacket {
@@ -661,7 +674,7 @@ impl ConnectionData {
         let uuid = self.get(PlayerComponents::UUID)?;
         let entity_id = self.associated_data.entity_id;
 
-        Runtime::spawn_task(move || {
+        Runtime::spawn_task(async move {
             let _ = dim.spawn_player_entity(uuid, entity_id);
             Ok(())
         });

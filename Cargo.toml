@@ -26,5 +26,8 @@ rustc-hash = { version = "*" }
 uuid = { version = "*" }
 num-traits = { version = "*" }
 zip = { version = "*" }
+async-executor = { version = "*" }
+futures = { version = "*" }
+
 [profile.release]
 debug = true

@@ -16,3 +16,5 @@ dyn-clone = { workspace = true }
 wyvern-actors = { workspace = true }
 wyvern-components = { workspace = true }
 wyvern-textures = { workspace = true }
+async-executor = { workspace = true }
+futures = { workspace = true }

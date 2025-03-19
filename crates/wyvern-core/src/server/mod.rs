@@ -54,7 +54,7 @@ impl Server {
 
     pub fn spawn_event<E: Event + Send + 'static>(&self, event: E) -> ActorResult<()> {
         let server = self.clone();
-        Runtime::spawn_task(move || {
+        Runtime::spawn_task(async move {
             event.dispatch(server.event_bus().unwrap());
             Ok(())
         });
@@ -189,13 +189,16 @@ impl ServerData {
             log::error!("WyvernMC does not support running two servers at once. Bugs may occur.");
         });
         let snd_clone = snd.clone();
-        Runtime::spawn_task(move || {
-            let _ = snd_clone.spawn_event(ServerStartEvent {
-                server: snd_clone.clone(),
-            });
+        Runtime::spawn_task(async move {
+            snd_clone
+                .spawn_event(ServerStartEvent {
+                    server: snd_clone.clone(),
+                })
+                .unwrap();
             Ok(())
         });
         let snd_clone = snd.clone();
+
         Runtime::spawn_actor(
             move || Self::networking_loop(snd_clone),
             "ServerNetworkingThread",
@@ -220,7 +223,7 @@ impl ServerData {
                 for c in self.connections.iter() {
                     let mut player = c.lower();
                     if c.stage.lock().map(|x| *x).unwrap_or(Stage::Handshake) == Stage::Play {
-                        Runtime::spawn_task(move || player.update_components());
+                        Runtime::spawn_task(async move { player.update_components() });
                     }
                 }
             }

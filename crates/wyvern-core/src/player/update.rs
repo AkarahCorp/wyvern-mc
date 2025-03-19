@@ -244,7 +244,7 @@ impl ConnectionData {
             .get_inv_slot(self.associated_data.held_slot as usize)
             .unwrap_or_else(|_| ItemStack::new(id![minecraft:air]));
 
-        Runtime::spawn_task(move || {
+        Runtime::spawn_task(async move {
             dim.get_entity(uuid).set(EntityComponents::POSITION, pos)?;
             dim.get_entity(uuid).set(EntityComponents::DIRECTION, dir)?;
             dim.get_entity(uuid)

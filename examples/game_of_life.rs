@@ -42,12 +42,12 @@ fn main() {
         .run();
 }
 
-fn on_server_start(event: Arc<ServerStartEvent>) -> ActorResult<()> {
+async fn on_server_start(event: Arc<ServerStartEvent>) -> ActorResult<()> {
     event.server.create_dimension(id!(game_of_life:overworld))?;
     Ok(())
 }
 
-fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
+async fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
     for x in 0..MAX_X {
         for z in 0..MAX_Z {
             event.dimension.set_block(
@@ -59,12 +59,12 @@ fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
     Ok(())
 }
 
-fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
+async fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
     event.new_dimension.set(id!(game_of_life:overworld));
     Ok(())
 }
 
-fn on_start_break(event: Arc<StartBreakBlockEvent>) -> ActorResult<()> {
+async fn on_start_break(event: Arc<StartBreakBlockEvent>) -> ActorResult<()> {
     let dim = event.player.dimension()?;
     let block = event.position;
 
@@ -79,16 +79,16 @@ fn on_start_break(event: Arc<StartBreakBlockEvent>) -> ActorResult<()> {
     Ok(())
 }
 
-fn on_swap_hands(event: Arc<SwapHandsEvent>) -> ActorResult<()> {
+async fn on_swap_hands(event: Arc<SwapHandsEvent>) -> ActorResult<()> {
     IS_RUNNING.store(!IS_RUNNING.load(Ordering::Acquire), Ordering::Release);
     while IS_RUNNING.load(Ordering::Acquire) {
-        run_tick(&event.player.server()?)?;
+        run_tick(&event.player.server()?).await?;
     }
     Ok(())
 }
 
 #[allow(clippy::needless_range_loop)]
-fn run_tick(server: &Server) -> ActorResult<()> {
+async fn run_tick(server: &Server) -> ActorResult<()> {
     let start = Instant::now();
     let dim = server.dimension(id![game_of_life:overworld])?;
     let mut copies = std::array::from_fn::<_, { MAX_X }, _>(|_| {

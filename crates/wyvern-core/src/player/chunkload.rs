@@ -65,7 +65,7 @@ impl ConnectionData {
         if let Some(pos) = chunks.first() {
             let pos = *pos;
             self.associated_data.loaded_chunks.push(pos);
-            Runtime::spawn_task(move || {
+            Runtime::spawn_task(async move {
                 let dim_type_entry = dimension.dimension_type().unwrap();
 
                 let (min_y, max_y) = {
