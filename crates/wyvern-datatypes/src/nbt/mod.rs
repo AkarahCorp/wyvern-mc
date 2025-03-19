@@ -1,5 +1,7 @@
 mod ops;
 pub use ops::*;
+mod snbt;
+pub use snbt::*;
 use voxidian_protocol::packet::PacketBuf;
 
 use std::collections::HashMap;
@@ -91,6 +93,18 @@ impl From<NbtArray> for Nbt {
 impl From<NbtCompound> for Nbt {
     fn from(value: NbtCompound) -> Self {
         Nbt::Compound(value)
+    }
+}
+
+impl From<&str> for Nbt {
+    fn from(value: &str) -> Self {
+        Nbt::String(value.into())
+    }
+}
+
+impl From<bool> for Nbt {
+    fn from(value: bool) -> Self {
+        Nbt::Boolean(value)
     }
 }
 
@@ -279,6 +293,7 @@ macro_rules! compound {
     (
         $($key:ident: $value:expr),*
     ) => {{
+        #[allow(unused_mut)]
         let mut compound = $crate::nbt::NbtCompound::new();
 
         $(
