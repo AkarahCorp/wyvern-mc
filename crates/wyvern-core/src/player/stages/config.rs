@@ -129,6 +129,50 @@ impl ConnectionData {
                                 .to_registry_data_packet(),
                         );
 
+                        this.write_packet(
+                            this.connected_server
+                                .registries()?
+                                .cat_variants
+                                .inner()
+                                .to_registry_data_packet(),
+                        );
+
+                        this.write_packet(
+                            this.connected_server
+                                .registries()?
+                                .pig_variants
+                                .inner()
+                                .to_registry_data_packet(),
+                        );
+                        this.write_packet(
+                            this.connected_server
+                                .registries()?
+                                .cow_variants
+                                .inner()
+                                .to_registry_data_packet(),
+                        );
+                        this.write_packet(
+                            this.connected_server
+                                .registries()?
+                                .chicken_variants
+                                .inner()
+                                .to_registry_data_packet(),
+                        );
+                        this.write_packet(
+                            this.connected_server
+                                .registries()?
+                                .frog_variants
+                                .inner()
+                                .to_registry_data_packet(),
+                        );
+                        this.write_packet(
+                            this.connected_server
+                                .registries()?
+                                .wolf_sound_variants
+                                .inner()
+                                .to_registry_data_packet(),
+                        );
+
                         if let Ok(pack) = Server::get()?.resource_pack() {
                             this.write_packet(ResourcePackPushS2CConfigPacket {
                                 uuid: pack.uuid,

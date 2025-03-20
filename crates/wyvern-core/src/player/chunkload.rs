@@ -3,7 +3,7 @@ use voxidian_protocol::{
         ChunkBatchFinishedS2CPlayPacket, ChunkBatchStartS2CPlayPacket,
         LevelChunkWithLightS2CPlayPacket, SetChunkCacheCenterS2CPlayPacket,
     },
-    value::{ChunkSectionData, Nbt, NbtCompound, VarInt},
+    value::{ChunkSectionData, LengthPrefixVec, VarInt},
 };
 use wyvern_components::DataComponentHolder;
 
@@ -94,10 +94,7 @@ impl ConnectionData {
                 let packet = LevelChunkWithLightS2CPlayPacket {
                     chunk_x,
                     chunk_z,
-                    heightmaps: Nbt {
-                        name: "".to_string(),
-                        root: NbtCompound::new(),
-                    },
+                    heightmaps: LengthPrefixVec::new(),
                     data: ChunkSectionData { sections },
                     block_entities: vec![].into(),
                     sky_light_mask: vec![0].into(),

@@ -43,7 +43,13 @@ impl ServerBuilder {
                 wolf_variants: Registry::new().into(),
                 painting_variants: Registry::new().into(),
                 dimension_types: Registry::new().into(),
+                pig_variants: Registry::new().into(),
+                cat_variants: Registry::new().into(),
+                chicken_variants: Registry::new().into(),
                 entity_types: EntityType::vanilla_registry().into(),
+                cow_variants: Registry::new().into(),
+                frog_variants: Registry::new().into(),
+                wolf_sound_variants: Registry::new().into(),
             },
             dimensions: DimensionContainer {
                 dimensions: HashMap::new(),
