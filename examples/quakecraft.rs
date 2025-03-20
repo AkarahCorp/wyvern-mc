@@ -8,6 +8,7 @@ use wyvern_mc::{
     datatypes::{
         nbt::{Nbt, NbtCompound, NbtOps},
         particle::Particle,
+        regval::DimensionType,
         text::{Text, TextColor},
     },
     entities::{AttributeContainer, Attributes},
@@ -26,6 +27,7 @@ use wyvern_mc::{
 #[server]
 fn server() -> ServerBuilder {
     Server::builder()
+        .task_threads(16)
         .event(on_server_start)
         .event(on_dim_init)
         .event(on_join)
@@ -38,6 +40,10 @@ fn server() -> ServerBuilder {
         .event(on_load)
         .registries(|registries| {
             registries.add_defaults();
+            registries.dimension_type(
+                id![minecraft:overworld],
+                DimensionType::default().height(1024).min_y(0),
+            );
         })
 }
 

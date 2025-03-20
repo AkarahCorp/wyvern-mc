@@ -24,6 +24,7 @@ pub struct ServerBuilder {
     dimensions: DimensionContainer,
     mojauth_enabled: bool,
     texture_pack: Option<TexturePack>,
+    task_threads: usize,
 }
 
 impl Default for ServerBuilder {
@@ -49,6 +50,7 @@ impl ServerBuilder {
             },
             mojauth_enabled: true,
             texture_pack: None,
+            task_threads: 1,
         }
     }
 
@@ -62,6 +64,11 @@ impl ServerBuilder {
     ) -> Self {
         E::add_handler(&mut self.events, f);
 
+        self
+    }
+
+    pub fn task_threads(mut self, threads: usize) -> Self {
+        self.task_threads = threads;
         self
     }
 
@@ -109,11 +116,13 @@ impl ServerBuilder {
         let _ = ID_TO_BLOCK_STATE.deref();
         let _ = BLOCK_STATE_KEYS.deref();
 
-        let _ = Builder::new().name("AsyncEventLoop".into()).spawn(|| {
-            loop {
-                futures::executor::block_on(crate::runtime::GLOBAL_EXECUTOR.tick())
-            }
-        });
+        for _ in 0..self.task_threads {
+            let _ = Builder::new().name("AsyncEventLoop".into()).spawn(|| {
+                loop {
+                    futures::executor::block_on(crate::runtime::GLOBAL_EXECUTOR.tick())
+                }
+            });
+        }
 
         server.start();
     }
