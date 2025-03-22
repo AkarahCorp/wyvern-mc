@@ -2,6 +2,7 @@ use datafix::serialization::{CodecAdapters, CodecOps, DefaultCodec, MapCodecBuil
 use voxidian_protocol::value::WolfVariant as PtcWolfVariant;
 use wyvern_values::Id;
 
+#[derive(Debug, Clone)]
 pub struct WolfVariant {
     pub angry_texture: Id,
     pub wild_texture: Id,

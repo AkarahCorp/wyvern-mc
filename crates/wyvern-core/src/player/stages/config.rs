@@ -8,10 +8,16 @@ use voxidian_protocol::{
         },
     },
     registry::RegEntry,
-    value::{Identifier, VarInt},
+    value::{
+        Identifier, PaintingVariant as PtcPaintingVariant, VarInt, WolfVariant as PtcWolfVariant,
+    },
 };
 
-use crate::{actors::ActorResult, player::ConnectionData, server::Server};
+use crate::{
+    actors::ActorResult,
+    player::ConnectionData,
+    server::{Server, registries::RegistryKeys},
+};
 
 impl ConnectionData {
     pub fn configuration_stage(&mut self) -> ActorResult<()> {
@@ -94,29 +100,22 @@ impl ConnectionData {
                         this.write_packet(
                             this.connected_server
                                 .registries()?
-                                .biomes
+                                .get(RegistryKeys::BIOME)
                                 .inner()
                                 .to_registry_data_packet(),
                         );
                         this.write_packet(
                             this.connected_server
                                 .registries()?
-                                .damage_types
+                                .get(RegistryKeys::DAMAGE_TYPE)
                                 .inner()
                                 .to_registry_data_packet(),
                         );
                         this.write_packet(
                             this.connected_server
                                 .registries()?
-                                .wolf_variants
-                                .inner()
-                                .to_registry_data_packet(),
-                        );
-
-                        this.write_packet(
-                            this.connected_server
-                                .registries()?
-                                .painting_variants
+                                .get(RegistryKeys::WOLF_VARIANT)
+                                .map(|x| PtcWolfVariant::from(x.clone()))
                                 .inner()
                                 .to_registry_data_packet(),
                         );
@@ -124,7 +123,8 @@ impl ConnectionData {
                         this.write_packet(
                             this.connected_server
                                 .registries()?
-                                .dimension_types
+                                .get(RegistryKeys::PAINTING_VARIANT)
+                                .map(|x| PtcPaintingVariant::from(x.clone()))
                                 .inner()
                                 .to_registry_data_packet(),
                         );
@@ -132,7 +132,7 @@ impl ConnectionData {
                         this.write_packet(
                             this.connected_server
                                 .registries()?
-                                .cat_variants
+                                .get(RegistryKeys::DIMENSION_TYPE)
                                 .inner()
                                 .to_registry_data_packet(),
                         );
@@ -140,35 +140,43 @@ impl ConnectionData {
                         this.write_packet(
                             this.connected_server
                                 .registries()?
-                                .pig_variants
+                                .get(RegistryKeys::CAT_VARIANT)
+                                .inner()
+                                .to_registry_data_packet(),
+                        );
+
+                        this.write_packet(
+                            this.connected_server
+                                .registries()?
+                                .get(RegistryKeys::PIG_VARIANT)
                                 .inner()
                                 .to_registry_data_packet(),
                         );
                         this.write_packet(
                             this.connected_server
                                 .registries()?
-                                .cow_variants
+                                .get(RegistryKeys::COW_VARIANT)
                                 .inner()
                                 .to_registry_data_packet(),
                         );
                         this.write_packet(
                             this.connected_server
                                 .registries()?
-                                .chicken_variants
+                                .get(RegistryKeys::CHICKEN_VARIANT)
                                 .inner()
                                 .to_registry_data_packet(),
                         );
                         this.write_packet(
                             this.connected_server
                                 .registries()?
-                                .frog_variants
+                                .get(RegistryKeys::FROG_VARIANT)
                                 .inner()
                                 .to_registry_data_packet(),
                         );
                         this.write_packet(
                             this.connected_server
                                 .registries()?
-                                .wolf_sound_variants
+                                .get(RegistryKeys::WOLF_SOUND_VARIANT)
                                 .inner()
                                 .to_registry_data_packet(),
                         );

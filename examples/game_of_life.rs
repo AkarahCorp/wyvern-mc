@@ -15,7 +15,7 @@ use wyvern_mc::{
         SwapHandsEvent,
     },
     runtime::Runtime,
-    server::Server,
+    server::{Server, registries::RegistryKeys},
     values::{Id, Vec3, id},
 };
 
@@ -34,8 +34,7 @@ fn main() {
         .event(on_start_break)
         .event(on_swap_hands)
         .registries(|registries| {
-            registries.add_defaults();
-            registries.dimension_type(
+            registries.get_mut(RegistryKeys::DIMENSION_TYPE).insert(
                 Id::new("minecraft", "overworld"),
                 DimensionType::default().min_y(0).height(16),
             );

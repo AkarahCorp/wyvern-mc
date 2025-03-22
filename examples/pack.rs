@@ -28,9 +28,6 @@ fn server() -> ServerBuilder {
         .event(on_break)
         .event(on_place)
         .pack(TexturePack::new())
-        .registries(|registries| {
-            registries.add_defaults();
-        })
 }
 
 async fn on_server_start(event: Arc<ServerStartEvent>) -> ActorResult<()> {

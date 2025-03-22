@@ -9,8 +9,8 @@ use wyvern_mc::{
         ServerStartEvent, ServerTickEvent,
     },
     player::{HealthComponent, PlayerComponents},
-    server::Server,
-    values::{Vec3, id},
+    server::{Server, registries::RegistryKeys},
+    values::{Id, Vec3, id},
 };
 
 fn main() {
@@ -24,10 +24,9 @@ fn main() {
         .event(on_command)
         .event(on_respawn)
         .registries(|registries| {
-            registries.add_defaults();
-            registries.dimension_type(
-                id![minecraft:overworld],
-                DimensionType::default().height(128).min_y(-64),
+            registries.get_mut(RegistryKeys::DIMENSION_TYPE).insert(
+                Id::new("minecraft", "overworld"),
+                DimensionType::default().min_y(-64).height(128),
             );
         })
         .run();

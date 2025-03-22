@@ -29,9 +29,6 @@ fn main() {
         .event(on_join)
         .event(on_attack)
         .event(on_attack_player)
-        .registries(|registries| {
-            registries.add_defaults();
-        })
         .run();
 }
 

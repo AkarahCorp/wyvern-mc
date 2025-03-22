@@ -37,9 +37,6 @@ fn main() {
         .event(on_tick)
         .event(on_right_click)
         .event(on_swap_hands)
-        .registries(|registries| {
-            registries.add_defaults();
-        })
         .run();
 }
 

@@ -28,7 +28,7 @@ use crate::{
     item::{ITEM_REGISTRY, ItemComponents, ItemStack},
     player::{ConnectionData, HealthComponent, PlayerComponents},
     runtime::Runtime,
-    server::Server,
+    server::{Server, registries::RegistryKeys},
 };
 
 use wyvern_values::{Id, Vec2, Vec3, cell::Token, id};
@@ -653,7 +653,7 @@ impl ConnectionData {
                 kind: self
                     .connected_server
                     .registries()?
-                    .entity_types
+                    .get(RegistryKeys::ENTITY_TYPE)
                     .get_entry(ty)
                     .unwrap(),
                 x: position.x(),

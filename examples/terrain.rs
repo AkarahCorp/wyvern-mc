@@ -8,7 +8,7 @@ use wyvern_mc::{
     datatypes::regval::DimensionType,
     dimension::chunk::Chunk,
     events::{DimensionCreateEvent, PlayerJoinEvent, ServerStartEvent},
-    server::Server,
+    server::{Server, registries::RegistryKeys},
     values::{Vec3, id},
 };
 
@@ -20,8 +20,7 @@ fn main() {
         .event(on_dim_init)
         .event(on_join)
         .registries(|registries| {
-            registries.add_defaults();
-            registries.dimension_type(
+            registries.get_mut(RegistryKeys::DIMENSION_TYPE).insert(
                 id![minecraft:overworld],
                 DimensionType::default().height(64).min_y(0),
             );

@@ -53,6 +53,14 @@ impl<T> Registry<T> {
     pub fn inner_mut(&mut self) -> &mut PtcRegistry<T> {
         &mut self.inner
     }
+
+    pub fn map<U>(&self, f: impl Fn(&T) -> U) -> Registry<U> {
+        let mut rg = Registry::new();
+        for entry in self.entries() {
+            rg.insert(entry.0.clone(), f(entry.1));
+        }
+        rg
+    }
 }
 
 impl<T> Default for Registry<T> {

@@ -20,7 +20,7 @@ use wyvern_mc::{
     item::{ItemComponents, ItemStack},
     macros::server,
     player::{Player, PlayerComponents},
-    server::{Server, ServerBuilder},
+    server::{Server, ServerBuilder, registries::RegistryKeys},
     values::{NVec, Vec3, id},
 };
 
@@ -39,8 +39,7 @@ fn server() -> ServerBuilder {
         .event(on_dash)
         .event(on_load)
         .registries(|registries| {
-            registries.add_defaults();
-            registries.dimension_type(
+            registries.get_mut(RegistryKeys::DIMENSION_TYPE).insert(
                 id![minecraft:overworld],
                 DimensionType::default().height(1024).min_y(0),
             );

@@ -7,7 +7,7 @@ use voxidian_protocol::{
 };
 use wyvern_components::DataComponentHolder;
 
-use crate::{actors::ActorResult, runtime::Runtime};
+use crate::{actors::ActorResult, runtime::Runtime, server::registries::RegistryKeys};
 use wyvern_values::{Vec2, Vec3};
 
 use super::{ConnectionData, PlayerComponents};
@@ -70,7 +70,10 @@ impl ConnectionData {
 
                 let (min_y, max_y) = {
                     let registries = server.registries().unwrap();
-                    let dim_type = registries.dimension_types.get(dim_type_entry).unwrap();
+                    let dim_type = registries
+                        .get(RegistryKeys::DIMENSION_TYPE)
+                        .get(dim_type_entry)
+                        .unwrap();
 
                     let min_y = dim_type.min_y;
                     let max_y = dim_type.min_y + dim_type.height as i32;

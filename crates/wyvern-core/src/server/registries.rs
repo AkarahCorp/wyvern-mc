@@ -1,72 +1,89 @@
+use std::{any::Any, collections::HashMap, marker::PhantomData};
+
 use voxidian_protocol::value::{
     Biome, CatVariant, ChickenVariant, CowVariant, DamageType, EntityModelType, EntityType,
-    FrogVariant, PaintingVariant as PtcPaintingVariant, PigVariant, SoundEvent, WolfSoundVariant,
-    WolfVariant as PtcWolfVariant,
+    FrogVariant, PigVariant, SoundEvent, WolfSoundVariant,
 };
-
 use wyvern_datatypes::regval::{DimensionType, PaintingVariant, WolfVariant};
 use wyvern_values::{Id, Registry, id};
 
 #[allow(dead_code)]
 pub struct RegistryContainer {
-    pub(crate) damage_types: Registry<DamageType>,
-    pub(crate) biomes: Registry<Biome>,
-    pub(crate) wolf_variants: Registry<PtcWolfVariant>,
-    pub(crate) pig_variants: Registry<PigVariant>,
-    pub(crate) cat_variants: Registry<CatVariant>,
-    pub(crate) painting_variants: Registry<PtcPaintingVariant>,
-    pub(crate) dimension_types: Registry<DimensionType>,
-    pub(crate) entity_types: Registry<EntityType>,
-    pub(crate) chicken_variants: Registry<ChickenVariant>,
-    pub(crate) cow_variants: Registry<CowVariant>,
-    pub(crate) frog_variants: Registry<FrogVariant>,
-    pub(crate) wolf_sound_variants: Registry<WolfSoundVariant>,
+    pub(crate) registries: HashMap<Id, Box<dyn Send + Sync + Any>>,
 }
 
-impl std::fmt::Debug for RegistryContainer {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str("RegistryContainer { <fields hidden> }")
+impl RegistryContainer {
+    pub fn new() -> Self {
+        let mut rc = RegistryContainer {
+            registries: HashMap::new(),
+        };
+        rc.add_defaults();
+        rc
     }
-}
 
-pub struct RegistryContainerBuilder {
-    pub(crate) damage_types: Registry<DamageType>,
-    pub(crate) biomes: Registry<Biome>,
-    pub(crate) wolf_variants: Registry<PtcWolfVariant>,
-    pub(crate) pig_variants: Registry<PigVariant>,
-    pub(crate) cat_variants: Registry<CatVariant>,
-    pub(crate) painting_variants: Registry<PtcPaintingVariant>,
-    pub(crate) dimension_types: Registry<DimensionType>,
-    pub(crate) entity_types: Registry<EntityType>,
-    pub(crate) chicken_variants: Registry<ChickenVariant>,
-    pub(crate) cow_variants: Registry<CowVariant>,
-    pub(crate) frog_variants: Registry<FrogVariant>,
-    pub(crate) wolf_sound_variants: Registry<WolfSoundVariant>,
-}
-
-impl From<RegistryContainerBuilder> for RegistryContainer {
-    fn from(value: RegistryContainerBuilder) -> Self {
-        Self {
-            damage_types: value.damage_types,
-            biomes: value.biomes,
-            wolf_variants: value.wolf_variants,
-            painting_variants: value.painting_variants,
-            dimension_types: value.dimension_types,
-            entity_types: value.entity_types,
-            pig_variants: value.pig_variants,
-            cat_variants: value.cat_variants,
-            cow_variants: value.cow_variants,
-            chicken_variants: value.chicken_variants,
-            frog_variants: value.frog_variants,
-            wolf_sound_variants: value.wolf_sound_variants,
-        }
+    pub fn insert<T: 'static + Send + Sync>(&mut self, registry: RegistryKey<T>) {
+        self.registries
+            .insert(registry.id().clone(), Box::new(Registry::<T>::new()));
     }
-}
 
-impl RegistryContainerBuilder {
+    pub fn get<T: 'static + Send + Sync>(&self, registry: RegistryKey<T>) -> &Registry<T> {
+        self.registries
+            .get(registry.id())
+            .map(|x| x.downcast_ref::<Registry<T>>().unwrap())
+            .unwrap()
+    }
+
+    pub fn get_mut<T: 'static + Send + Sync>(
+        &mut self,
+        registry: RegistryKey<T>,
+    ) -> &mut Registry<T> {
+        self.registries
+            .get_mut(registry.id())
+            .map(|x| x.downcast_mut::<Registry<T>>().unwrap())
+            .unwrap()
+    }
+
     pub fn add_defaults(&mut self) {
-        self.dimension_type(id![minecraft:overworld], DimensionType::default());
-        self.wolf_variant(
+        self.insert(RegistryKeys::BIOME);
+        self.insert(RegistryKeys::CAT_VARIANT);
+        self.insert(RegistryKeys::CHICKEN_VARIANT);
+        self.insert(RegistryKeys::COW_VARIANT);
+        self.insert(RegistryKeys::DAMAGE_TYPE);
+        self.insert(RegistryKeys::DIMENSION_TYPE);
+        self.insert(RegistryKeys::ENTITY_TYPE);
+        self.insert(RegistryKeys::FROG_VARIANT);
+        self.insert(RegistryKeys::PAINTING_VARIANT);
+        self.insert(RegistryKeys::PIG_VARIANT);
+        self.insert(RegistryKeys::WOLF_SOUND_VARIANT);
+        self.insert(RegistryKeys::WOLF_VARIANT);
+
+        for entry in DamageType::vanilla_registry().entries() {
+            self.get_mut(RegistryKeys::DAMAGE_TYPE).insert(
+                entry.0.clone().into(),
+                DamageType {
+                    message_id: entry.1.message_id.clone(),
+                    scaling: entry.1.scaling,
+                    exhaustion: entry.1.exhaustion,
+                    effects: entry.1.effects,
+                    death_message_type: entry.1.death_message_type,
+                },
+            );
+        }
+
+        for entry in Biome::vanilla_registry().entries() {
+            self.get_mut(RegistryKeys::BIOME)
+                .insert(entry.0.clone().into(), entry.1.clone());
+        }
+
+        for entry in EntityType::vanilla_registry().entries() {
+            self.get_mut(RegistryKeys::ENTITY_TYPE)
+                .insert(entry.0.clone().into(), entry.1.clone());
+        }
+
+        self.get_mut(RegistryKeys::DIMENSION_TYPE)
+            .insert(id![minecraft:overworld], DimensionType::default());
+
+        self.get_mut(RegistryKeys::WOLF_VARIANT).insert(
             Id::empty(),
             WolfVariant {
                 angry_texture: Id::empty(),
@@ -74,39 +91,45 @@ impl RegistryContainerBuilder {
                 tame_texture: Id::empty(),
             },
         );
-        self.cat_variant(
+
+        self.get_mut(RegistryKeys::CAT_VARIANT).insert(
             Id::empty(),
             CatVariant {
                 asset_id: Id::empty().into(),
             },
         );
-        self.pig_variant(
+
+        self.get_mut(RegistryKeys::PIG_VARIANT).insert(
             Id::empty(),
             PigVariant {
                 asset_id: Id::empty().into(),
             },
         );
-        self.chicken_variant(
+
+        self.get_mut(RegistryKeys::CHICKEN_VARIANT).insert(
             Id::empty(),
             ChickenVariant {
                 asset_id: Id::empty().into(),
                 model: EntityModelType::Normal,
             },
         );
-        self.cow_variant(
+
+        self.get_mut(RegistryKeys::COW_VARIANT).insert(
             Id::empty(),
             CowVariant {
                 asset_id: Id::empty().into(),
                 model: EntityModelType::Normal,
             },
         );
-        self.frog_variant(
+
+        self.get_mut(RegistryKeys::FROG_VARIANT).insert(
             Id::empty(),
             FrogVariant {
                 asset_id: Id::empty().into(),
             },
         );
-        self.painting_variant(
+
+        self.get_mut(RegistryKeys::PAINTING_VARIANT).insert(
             Id::empty(),
             PaintingVariant {
                 asset: Id::empty(),
@@ -114,7 +137,8 @@ impl RegistryContainerBuilder {
                 height: 1,
             },
         );
-        self.wolf_sound_variant(
+
+        self.get_mut(RegistryKeys::WOLF_SOUND_VARIANT).insert(
             Id::empty(),
             WolfSoundVariant {
                 ambient: SoundEvent {
@@ -144,40 +168,57 @@ impl RegistryContainerBuilder {
             },
         );
     }
+}
 
-    pub fn wolf_variant(&mut self, key: Id, value: WolfVariant) {
-        self.wolf_variants.insert(key, value.into());
+impl Default for RegistryContainer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+pub struct RegistryKey<T> {
+    name: Id,
+    _phantom: PhantomData<T>,
+}
+
+impl<T> RegistryKey<T> {
+    pub const fn new(name: Id) -> RegistryKey<T> {
+        RegistryKey {
+            name,
+            _phantom: PhantomData,
+        }
     }
 
-    pub fn wolf_sound_variant(&mut self, key: Id, value: WolfSoundVariant) {
-        self.wolf_sound_variants.insert(key, value);
+    pub fn id(&self) -> &Id {
+        &self.name
     }
+}
 
-    pub fn cat_variant(&mut self, key: Id, value: CatVariant) {
-        self.cat_variants.insert(key, value);
-    }
+pub struct RegistryKeys;
 
-    pub fn frog_variant(&mut self, key: Id, value: FrogVariant) {
-        self.frog_variants.insert(key, value);
-    }
+impl RegistryKeys {
+    pub const DAMAGE_TYPE: RegistryKey<DamageType> = RegistryKey::new(id![minecraft:damage_type]);
+    pub const BIOME: RegistryKey<Biome> = RegistryKey::new(id![minecraft:biome]);
+    pub const WOLF_VARIANT: RegistryKey<WolfVariant> =
+        RegistryKey::new(id![minecraft:wolf_variant]);
+    pub const PIG_VARIANT: RegistryKey<PigVariant> = RegistryKey::new(id![minecraft:pig_variant]);
+    pub const CAT_VARIANT: RegistryKey<CatVariant> = RegistryKey::new(id![minecraft:cat_variant]);
+    pub const PAINTING_VARIANT: RegistryKey<PaintingVariant> =
+        RegistryKey::new(id![minecraft:painting_variant]);
+    pub const DIMENSION_TYPE: RegistryKey<DimensionType> =
+        RegistryKey::new(id![minecraft:dimension_type]);
+    pub const ENTITY_TYPE: RegistryKey<EntityType> = RegistryKey::new(id![minecraft:entity_type]);
+    pub const CHICKEN_VARIANT: RegistryKey<ChickenVariant> =
+        RegistryKey::new(id![minecraft:chicken_variant]);
+    pub const COW_VARIANT: RegistryKey<CowVariant> = RegistryKey::new(id![minecraft:cow_variant]);
+    pub const FROG_VARIANT: RegistryKey<FrogVariant> =
+        RegistryKey::new(id![minecraft:frog_variant]);
+    pub const WOLF_SOUND_VARIANT: RegistryKey<WolfSoundVariant> =
+        RegistryKey::new(id![minecraft:wolf_sound_variant]);
+}
 
-    pub fn pig_variant(&mut self, key: Id, value: PigVariant) {
-        self.pig_variants.insert(key, value);
-    }
-
-    pub fn chicken_variant(&mut self, key: Id, value: ChickenVariant) {
-        self.chicken_variants.insert(key, value);
-    }
-
-    pub fn cow_variant(&mut self, key: Id, value: CowVariant) {
-        self.cow_variants.insert(key, value);
-    }
-
-    pub fn painting_variant(&mut self, key: Id, value: PaintingVariant) {
-        self.painting_variants.insert(key, value.into());
-    }
-
-    pub fn dimension_type(&mut self, key: Id, value: DimensionType) {
-        self.dimension_types.insert(key, value);
+impl std::fmt::Debug for RegistryContainer {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("RegistryContainer { <fields hidden> }")
     }
 }

@@ -26,9 +26,6 @@ fn server() -> ServerBuilder {
         .event(on_join)
         .event(on_break)
         .event(on_place)
-        .registries(|registries| {
-            registries.add_defaults();
-        })
 }
 
 async fn on_server_start(event: Arc<ServerStartEvent>) -> ActorResult<()> {

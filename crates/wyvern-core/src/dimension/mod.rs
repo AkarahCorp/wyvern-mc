@@ -7,6 +7,7 @@ use std::{
 use crate::{
     blocks::BlockState,
     entities::{Entity, EntityComponents, EntityData, PlayerSkinData},
+    server::registries::RegistryKeys,
 };
 use chunk::{Chunk, ChunkSection};
 use flume::Sender;
@@ -501,7 +502,7 @@ impl DimensionData {
             let registries = server.registries()?;
 
             let dim_type = registries
-                .dimension_types
+                .get(RegistryKeys::DIMENSION_TYPE)
                 .get(self.dim_type.clone())
                 .unwrap();
 

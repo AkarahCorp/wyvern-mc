@@ -40,7 +40,7 @@ use crate::{
     entities::EntityComponents,
     inventory::{DataInventory, Inventory},
     item::ItemStack,
-    server::Server,
+    server::{Server, registries::RegistryKeys},
 };
 
 use wyvern_values::{Id, Uuid, Vec2, Vec3};
@@ -228,7 +228,7 @@ impl ConnectionData {
                 RegEntry::new_unchecked(
                     self.connected_server
                         .registries()?
-                        .dimension_types
+                        .get(RegistryKeys::DIMENSION_TYPE)
                         .get_entry(dimension.dimension_type()?)
                         .unwrap()
                         .id(),
@@ -287,12 +287,16 @@ impl ConnectionData {
             self.write_packet(AddEntityS2CPlayPacket {
                 id: id.into(),
                 uuid: *entity.uuid(),
-                kind: self
-                    .connected_server
-                    .registries()?
-                    .entity_types
-                    .get_entry(ty)
-                    .unwrap(),
+                kind: unsafe {
+                    RegEntry::new_unchecked(
+                        self.connected_server
+                            .registries()?
+                            .get(RegistryKeys::DIMENSION_TYPE)
+                            .get_entry(ty)
+                            .unwrap()
+                            .id(),
+                    )
+                },
                 x: position.x(),
                 y: position.y(),
                 z: position.z(),

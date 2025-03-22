@@ -10,7 +10,10 @@ use voxidian_protocol::{
 use wyvern_components::DataComponentHolder;
 use wyvern_datatypes::nbt::Nbt;
 
-use crate::{blocks::BlockComponents, server::Server};
+use crate::{
+    blocks::BlockComponents,
+    server::{Server, registries::RegistryKeys},
+};
 
 use wyvern_values::{Id, Vec3};
 
@@ -165,7 +168,7 @@ impl ChunkSection {
                         .unwrap()
                         .registries()
                         .unwrap()
-                        .biomes
+                        .get(RegistryKeys::BIOME)
                         .get_entry(Id::new("minecraft", "plains"))
                         .unwrap(),
                 },

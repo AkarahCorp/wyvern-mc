@@ -1,6 +1,7 @@
 use voxidian_protocol::value::{PaintingVariant as PtcPaintingVariant, TextComponent};
 use wyvern_values::Id;
 
+#[derive(Debug, Clone)]
 pub struct PaintingVariant {
     pub asset: Id,
     pub width: u32,
