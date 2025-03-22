@@ -3,6 +3,7 @@
 use std::{
     pin::Pin,
     sync::{LazyLock, OnceLock},
+    task::{Context, Poll},
     thread::Builder,
 };
 
@@ -34,5 +35,28 @@ impl Runtime {
         F: Future<Output = ActorResult<()>> + Send + 'static,
     {
         GLOBAL_EXECUTOR.spawn(fut).detach();
+    }
+
+    pub async fn yield_now() {
+        YieldNow(false).await
+    }
+}
+
+// thanks async-std
+pub struct YieldNow(bool);
+
+impl Future for YieldNow {
+    type Output = ();
+
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        if !self.0 {
+            self.0 = true;
+
+            cx.waker().wake_by_ref();
+
+            Poll::Pending
+        } else {
+            Poll::Ready(())
+        }
     }
 }

@@ -14,6 +14,7 @@ use wyvern_mc::{
         DimensionCreateEvent, PlayerJoinEvent, ServerStartEvent, StartBreakBlockEvent,
         SwapHandsEvent,
     },
+    runtime::Runtime,
     server::Server,
     values::{Id, Vec3, id},
 };
@@ -83,6 +84,7 @@ async fn on_swap_hands(event: Arc<SwapHandsEvent>) -> ActorResult<()> {
     IS_RUNNING.store(!IS_RUNNING.load(Ordering::Acquire), Ordering::Release);
     while IS_RUNNING.load(Ordering::Acquire) {
         run_tick(&event.player.server()?).await?;
+        Runtime::yield_now().await;
     }
     Ok(())
 }
@@ -148,6 +150,5 @@ async fn run_tick(server: &Server) -> ActorResult<()> {
     let end2 = Instant::now();
 
     log::error!("{:?}", (end2 - start, end1 - start, end2 - end1));
-
     Ok(())
 }
