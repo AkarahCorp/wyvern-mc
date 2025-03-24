@@ -1,11 +1,8 @@
-use std::{collections::HashMap, mem::MaybeUninit};
+use std::collections::HashMap;
 
 use voxidian_protocol::{
     registry::RegEntry,
-    value::{
-        BlockState as ProtocolState, ChunkSection as ProtocolSection, PaletteFormat,
-        PalettedContainer,
-    },
+    value::{ChunkSection as ProtocolSection, PaletteFormat, PalettedContainer, RawDataArray},
 };
 use wyvern_components::DataComponentHolder;
 use wyvern_datatypes::nbt::Nbt;
@@ -68,59 +65,52 @@ impl Chunk {
 #[derive(Clone, Debug)]
 pub(crate) struct ChunkSection {
     block_count: i16,
-    blocks: [[[ChunkBlock; 16]; 16]; 16],
+    blocks: RawDataArray,
     block_meta: HashMap<Vec3<usize>, Nbt>,
 }
 
-#[derive(Clone, Debug, Copy)]
-pub(crate) struct ChunkBlock {
-    block_state: u16,
-}
-
-impl ChunkBlock {
-    pub fn air() -> ChunkBlock {
-        ChunkBlock { block_state: 0 }
-    }
-
-    pub fn id(&self) -> u16 {
-        self.block_state
-    }
-}
-
 impl ChunkSection {
+    pub fn index_from_pos(pos: Vec3<usize>) -> usize {
+        pos.y() * 256 + pos.z() * 16 + pos.x()
+    }
+
     pub fn empty() -> ChunkSection {
         ChunkSection {
             block_count: 0,
-            blocks: std::array::from_fn(|_| {
-                std::array::from_fn(|_| std::array::from_fn(|_| ChunkBlock::air()))
-            }),
+            blocks: {
+                let mut arr = RawDataArray::new(15);
+                for _ in 0..4096 {
+                    arr.push(0);
+                }
+                arr
+            },
             block_meta: HashMap::new(),
         }
     }
 
     pub fn set_block_at(&mut self, pos: Vec3<usize>, block: BlockState) {
-        let old_block = self.blocks[pos.x()][pos.y()][pos.z()];
+        let idx = Self::index_from_pos(pos);
+        let old_block = self.blocks.get(idx).unwrap();
 
-        let new_block: RegEntry<BlockState> =
-            unsafe { RegEntry::new_unchecked(block.clone().protocol_id() as u32) };
+        let new_block =
+            unsafe { RegEntry::<BlockState>::new_unchecked(block.clone().protocol_id() as u32) }
+                .id();
 
-        if old_block.id() == 0 && new_block.id() != 0 {
+        if old_block == 0 && new_block != 0 {
             self.block_count += 1;
-        } else if old_block.id() != 0 && new_block.id() == 0 {
+        } else if old_block != 0 && new_block == 0 {
             self.block_count -= 1;
         }
 
-        self.blocks[pos.x()][pos.y()][pos.z()] = ChunkBlock {
-            block_state: new_block.id() as u16,
-        };
+        self.blocks.set(idx, new_block as u64);
         if let Ok(data) = block.get(BlockComponents::CUSTOM_DATA) {
             self.block_meta.insert(pos, data);
         }
     }
 
     pub fn get_block_at(&mut self, pos: Vec3<usize>) -> BlockState {
-        let ptc = self.blocks[pos.x()][pos.y()][pos.z()];
-        let mut state = BlockState::from_protocol_id(ptc.id() as i32);
+        let ptc = self.blocks.get(Self::index_from_pos(pos)).unwrap();
+        let mut state = BlockState::from_protocol_id(ptc as i32);
 
         if let Some(cdata) = self.block_meta.get(&pos) {
             state.set(BlockComponents::CUSTOM_DATA, cdata.clone());
@@ -129,36 +119,13 @@ impl ChunkSection {
         state
     }
 
-    pub fn flatten_blocks(&self) -> [RegEntry<ProtocolState>; 4096] {
-        // SAFETY: We are only setting values in `arr`, and we already assume underlying values aren't initialized, meaning this is safe.
-        let mut arr: [MaybeUninit<RegEntry<ProtocolState>>; 4096] =
-            unsafe { MaybeUninit::uninit().assume_init() };
-        let mut idx = 0;
-        for y in 0..16 {
-            for z in 0..16 {
-                for x in 0..16 {
-                    // SAFETY: This is safe since the underlying memory isn't initialized and writable.
-                    arr[idx] = unsafe {
-                        MaybeUninit::new(RegEntry::new_unchecked(
-                            self.blocks[x][y][z].block_state as u32,
-                        ))
-                    };
-                    idx += 1;
-                }
-            }
-        }
-        // SAFETY: `arr` is never transmuted back until all elements are set,
-        // allowing this to work without UB
-        unsafe { std::mem::transmute(arr) }
-    }
-
     pub fn as_protocol_section(&self) -> ProtocolSection {
         ProtocolSection {
             block_count: self.block_count,
             block_states: PalettedContainer {
                 bits_per_entry: 15,
-                format: PaletteFormat::Direct {
-                    data: self.flatten_blocks(),
+                format: PaletteFormat::RawDirect {
+                    data: self.blocks.clone(),
                 },
             },
             biomes: PalettedContainer {

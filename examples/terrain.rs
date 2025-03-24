@@ -5,9 +5,10 @@ use wyvern_mc::{
     actors::ActorResult,
     blocks::{BlockComponents, BlockState, Blocks},
     components::DataComponentHolder,
-    datatypes::regval::DimensionType,
+    datatypes::{gamemode::Gamemode, regval::DimensionType},
     dimension::chunk::Chunk,
     events::{DimensionCreateEvent, PlayerJoinEvent, ServerStartEvent},
+    player::PlayerComponents,
     server::{Server, registries::RegistryKeys},
     values::{Vec3, id},
 };
@@ -73,5 +74,8 @@ async fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
 
 async fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
     event.new_dimension.set(id![example:root]);
+    event
+        .player
+        .set(PlayerComponents::GAMEMODE, Gamemode::Creative)?;
     Ok(())
 }
