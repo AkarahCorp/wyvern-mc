@@ -28,7 +28,7 @@ impl ConnectionData {
         let cx = chunk_center.x();
         let cz = chunk_center.y();
 
-        let render_distance = (self.associated_data.render_distance / 2) + 2;
+        let render_distance = self.associated_data.render_distance + 2;
 
         self.associated_data.loaded_chunks = self
             .associated_data
