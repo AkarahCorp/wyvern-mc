@@ -34,8 +34,8 @@ pub struct BlockState {
     pub(crate) components: DataComponentMap,
 }
 
-impl<OT: Clone, O: CodecOps<OT>> DefaultCodec<OT, O> for BlockState {
-    fn codec() -> impl datafix::serialization::Codec<Self, OT, O> {
+impl<O: CodecOps> DefaultCodec<O> for BlockState {
+    fn codec() -> impl datafix::serialization::Codec<Self, O> {
         MapCodecBuilder::new()
             .field(Id::codec().field_of("Name", |state: &BlockState| &state.block))
             .field(

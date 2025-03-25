@@ -8,7 +8,9 @@ use super::{Nbt, NbtArray, NbtCompound};
 #[derive(Debug, Clone)]
 pub struct NbtOps;
 
-impl CodecOps<Nbt> for NbtOps {
+impl CodecOps for NbtOps {
+    type T = Nbt;
+
     fn create_double(&self, value: &f64) -> Nbt {
         Nbt::Double(*value)
     }

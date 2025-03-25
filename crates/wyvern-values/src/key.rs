@@ -1,6 +1,6 @@
 use std::{borrow::Cow, fmt::Debug, hash::Hash};
 
-use datafix::serialization::{CodecAdapters, CodecOps, DefaultCodec};
+use datafix::serialization::{Codec, CodecAdapters, CodecOps, DefaultCodec};
 use voxidian_protocol::value::Identifier;
 
 pub struct Id {
@@ -110,8 +110,8 @@ macro_rules! id {
     };
 }
 
-impl<OT: Clone, O: CodecOps<OT>> DefaultCodec<OT, O> for Id {
-    fn codec() -> impl datafix::serialization::Codec<Self, OT, O> {
+impl<O: CodecOps> DefaultCodec<O> for Id {
+    fn codec() -> impl Codec<Self, O> {
         String::codec().xmap(Id::from_string, Id::into_string)
     }
 }

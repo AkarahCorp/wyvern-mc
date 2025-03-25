@@ -3,7 +3,7 @@ use std::{
     ops::{Add, Div, Mul, Sub},
 };
 
-use datafix::serialization::{CodecAdapters, CodecOps, DefaultCodec};
+use datafix::serialization::{Codec, CodecAdapters, CodecOps, DefaultCodec};
 use num_traits::Float;
 
 pub type Vec2<T> = NVec<T, 2>;
@@ -224,10 +224,8 @@ impl<T: Vc + Default + Div<Output = T>, const N: usize> Div for NVec<T, N> {
     }
 }
 
-impl<T: Vc + DefaultCodec<OT, O>, const N: usize, OT: Clone, O: CodecOps<OT>> DefaultCodec<OT, O>
-    for NVec<T, N>
-{
-    fn codec() -> impl datafix::serialization::Codec<Self, OT, O> {
+impl<T: Vc + DefaultCodec<O>, const N: usize, O: CodecOps> DefaultCodec<O> for NVec<T, N> {
+    fn codec() -> impl Codec<Self, O> {
         T::codec().list_of().xmap(
             |n: &Vec<T>| NVec {
                 inner: n.as_slice().try_into().unwrap(),

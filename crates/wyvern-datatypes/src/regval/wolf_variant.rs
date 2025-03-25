@@ -1,4 +1,4 @@
-use datafix::serialization::{CodecAdapters, CodecOps, DefaultCodec, MapCodecBuilder};
+use datafix::serialization::{Codec, CodecAdapters, CodecOps, DefaultCodec, MapCodecBuilder};
 use voxidian_protocol::value::WolfVariant as PtcWolfVariant;
 use wyvern_values::Id;
 
@@ -19,8 +19,8 @@ impl From<WolfVariant> for PtcWolfVariant {
     }
 }
 
-impl<OT: Clone, O: CodecOps<OT>> DefaultCodec<OT, O> for WolfVariant {
-    fn codec() -> impl datafix::serialization::Codec<Self, OT, O> {
+impl<O: CodecOps> DefaultCodec<O> for WolfVariant {
+    fn codec() -> impl Codec<Self, O> {
         MapCodecBuilder::new()
             .field(Id::codec().field_of("angry", |w: &WolfVariant| &w.angry_texture))
             .field(Id::codec().field_of("wild", |w: &WolfVariant| &w.wild_texture))

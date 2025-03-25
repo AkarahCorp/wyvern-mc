@@ -1,4 +1,6 @@
-use datafix::serialization::{CodecAdapters, CodecOps, Codecs, DefaultCodec, MapCodecBuilder};
+use datafix::serialization::{
+    Codec, CodecAdapters, CodecOps, Codecs, DefaultCodec, MapCodecBuilder,
+};
 use wyvern_actors::ActorResult;
 use wyvern_values::Vec3;
 
@@ -14,8 +16,8 @@ pub struct Structure {
     data_version: i32,
 }
 
-impl<OT: Clone, O: CodecOps<OT>> DefaultCodec<OT, O> for Structure {
-    fn codec() -> impl datafix::serialization::Codec<Self, OT, O> {
+impl<O: CodecOps> DefaultCodec<O> for Structure {
+    fn codec() -> impl Codec<Self, O> {
         MapCodecBuilder::new()
             .field(Vec3::codec().field_of("size", |s: &Structure| &s.size))
             .field(
@@ -45,8 +47,8 @@ struct StructureBlock {
     nbt: (),
 }
 
-impl<OT: Clone, O: CodecOps<OT>> DefaultCodec<OT, O> for StructureBlock {
-    fn codec() -> impl datafix::serialization::Codec<Self, OT, O> {
+impl<O: CodecOps> DefaultCodec<O> for StructureBlock {
+    fn codec() -> impl datafix::serialization::Codec<Self, O> {
         MapCodecBuilder::new()
             .field(Vec3::codec().field_of("pos", |s: &StructureBlock| &s.pos))
             .field(i32::codec().field_of("state", |s: &StructureBlock| &s.state))
