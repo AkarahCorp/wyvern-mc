@@ -13,10 +13,13 @@ use voxidian_protocol::{
 use wyvern_components::{DataComponentHolder, DataComponentPatch};
 use wyvern_datatypes::{gamemode::Gamemode, text::Text};
 
-use crate::{actors::ActorResult, entities::EntityComponents, item::ItemStack, runtime::Runtime};
+use crate::{
+    actors::ActorResult, entities::EntityComponents, item::ItemStack, player::ConnectionData,
+    runtime::Runtime,
+};
 use wyvern_values::{Vec3, id};
 
-use super::{ConnectionData, Player, PlayerComponents};
+use super::{Player, PlayerComponents};
 
 impl Player {
     pub(crate) fn update_components(&mut self) -> ActorResult<()> {
@@ -24,11 +27,24 @@ impl Player {
         let last_components = self.get_saved_components()?;
         let patch = DataComponentPatch::from_maps(&last_components, &current_components);
 
+        self.update_gamemode(&patch)?;
+        self.update_sidebar(&patch)?;
+        self.update_stats(&patch)?;
+        self.update_teleport(&patch)?;
+        self.update_velocity(&patch)?;
+        self.update_attributes(&patch)?;
+
+        self.set_saved_components(current_components.clone())?;
+
+        Ok(())
+    }
+
+    pub(crate) fn update_gamemode(&mut self, patch: &DataComponentPatch) -> ActorResult<()> {
         if patch
             .added_fields()
             .contains_type(&PlayerComponents::GAMEMODE)
         {
-            let mode = current_components.get(PlayerComponents::GAMEMODE)?;
+            let mode = patch.added_fields().get(PlayerComponents::GAMEMODE)?;
             self.write_packet(GameEventS2CPlayPacket {
                 event: GameEvent::ChangeGameMode,
                 value: match mode {
@@ -39,15 +55,21 @@ impl Player {
                 },
             })?;
         }
+        Ok(())
+    }
 
+    pub(crate) fn update_attributes(&mut self, patch: &DataComponentPatch) -> ActorResult<()> {
         if patch
             .added_fields()
             .contains_type(&PlayerComponents::ATTRIBUTES)
         {
-            let container = current_components.get(PlayerComponents::ATTRIBUTES)?;
+            let container = patch.added_fields().get(PlayerComponents::ATTRIBUTES)?;
             self.write_packet(container.into_packet(self.entity_id()?))?;
         }
+        Ok(())
+    }
 
+    pub(crate) fn update_teleport(&mut self, _patch: &DataComponentPatch) -> ActorResult<()> {
         if let Ok(location) = self.get(PlayerComponents::TELEPORT_POSITION) {
             if location != Vec3::new(f64::MIN, f64::MIN, f64::MIN) {
                 self.set(
@@ -83,7 +105,10 @@ impl Player {
                 })?;
             }
         }
+        Ok(())
+    }
 
+    pub(crate) fn update_velocity(&mut self, _patch: &DataComponentPatch) -> ActorResult<()> {
         if let Ok(velocity) = self.get(PlayerComponents::TELEPORT_VELOCITY) {
             if velocity != Vec3::new(f64::MIN, f64::MIN, f64::MIN) {
                 self.set(
@@ -118,7 +143,10 @@ impl Player {
                 })?;
             }
         }
+        Ok(())
+    }
 
+    pub(crate) fn update_sidebar(&mut self, patch: &DataComponentPatch) -> ActorResult<()> {
         if let Ok(sidebar_present) = patch.added_fields().get(PlayerComponents::SIDEBAR_PRESENT) {
             if sidebar_present {
                 self.write_packet(SetObjectiveS2CPlayPacket {
@@ -171,7 +199,10 @@ impl Player {
                 })?;
             }
         }
+        Ok(())
+    }
 
+    pub(crate) fn update_stats(&mut self, patch: &DataComponentPatch) -> ActorResult<()> {
         if let Ok(health) = patch.added_fields().get(PlayerComponents::HEALTH) {
             self.write_packet(SetHealthS2CPlayPacket {
                 hp: health.health,
@@ -204,9 +235,6 @@ impl Player {
                     .into(),
             })?;
         }
-
-        self.set_saved_components(current_components.clone())?;
-
         Ok(())
     }
 }

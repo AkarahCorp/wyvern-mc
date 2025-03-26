@@ -118,7 +118,7 @@ pub fn message(attr: TokenStream, item: TokenStream) -> TokenStream {
         impl #target_type {
             #(#assoc_fns)*
 
-            fn as_actor(&self) -> #attr_actor_type {
+            pub fn as_actor(&self) -> #attr_actor_type {
                 #attr_actor_type { sender: self.sender.downgrade() }
             }
         }

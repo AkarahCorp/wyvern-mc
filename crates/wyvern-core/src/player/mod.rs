@@ -54,7 +54,6 @@ pub mod inventory;
 pub mod itf;
 pub mod net;
 pub mod stages;
-pub mod update;
 
 #[actor(Player, PlayerMessage)]
 pub(crate) struct ConnectionData {

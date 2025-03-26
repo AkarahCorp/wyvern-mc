@@ -12,6 +12,8 @@ use crate::{
 
 use wyvern_values::{Vec2, Vec3, id};
 
+pub mod update;
+
 use super::Player;
 
 pub struct PlayerComponents;

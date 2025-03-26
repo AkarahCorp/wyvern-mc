@@ -14,6 +14,8 @@ mod components;
 pub use components::*;
 mod attributes;
 pub use attributes::*;
+mod update;
+pub use update::*;
 
 #[derive(Clone, Debug)]
 pub struct Entity {

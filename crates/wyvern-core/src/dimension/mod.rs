@@ -31,7 +31,6 @@ use crate::actors::{ActorError, ActorResult};
 use wyvern_values::{Id, Vec2, Vec3};
 
 pub mod chunk;
-mod update;
 
 #[allow(dead_code)]
 #[crate::actor(Dimension, DimensionMessage)]
