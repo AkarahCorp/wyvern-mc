@@ -167,6 +167,13 @@ impl DimensionData {
         Ok(self.dim_type.clone())
     }
 
+    #[SetDimType]
+    #[doc = "Sets the Dimension Type value of this Dimension."]
+    pub fn set_dimension_type(&mut self, id: Id) -> ActorResult<()> {
+        self.dim_type = id;
+        Ok(())
+    }
+
     #[SetChunkGenerator]
     #[doc = "Overrides the function that will be called whenever a new Chunk is generated. The default chunk generator is a no-op."]
     pub fn set_boxed_chunk_generator(

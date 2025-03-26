@@ -482,6 +482,7 @@ impl Player {
         &self,
         packet: P,
     ) -> ActorResult<()> {
+        log::debug!("sending: {:#?}", packet);
         let mut buf = PacketBuf::new();
         packet.encode_prefixed(&mut buf).unwrap();
 
@@ -508,6 +509,7 @@ impl Player {
 
 impl ConnectionData {
     pub fn write_packet<P: PrefixedPacketEncode + std::fmt::Debug>(&mut self, packet: P) {
+        log::debug!("sending: {:#?}", packet);
         let mut buf = PacketBuf::new();
         packet.encode_prefixed(&mut buf).unwrap();
 

@@ -31,7 +31,10 @@ fn server() -> ServerBuilder {
 }
 
 async fn on_server_start(event: Arc<ServerStartEvent>) -> ActorResult<()> {
-    event.server.create_dimension(id!(example:root))?;
+    event
+        .server
+        .create_dimension(id!(example:root), id![minecraft:overworld])?;
+    event.server.set_default_dimension(id![example:root])?;
 
     Ok(())
 }

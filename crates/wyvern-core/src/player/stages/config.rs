@@ -8,14 +8,14 @@ use voxidian_protocol::{
         },
     },
     registry::RegEntry,
-    value::{
-        Identifier, PaintingVariant as PtcPaintingVariant, VarInt, WolfVariant as PtcWolfVariant,
-    },
+    value::{PaintingVariant as PtcPaintingVariant, VarInt, WolfVariant as PtcWolfVariant},
 };
+use wyvern_values::Id;
 
 use crate::{
     actors::ActorResult,
     player::ConnectionData,
+    runtime::Runtime,
     server::{Server, registries::RegistryKeys},
 };
 
@@ -29,53 +29,76 @@ impl ConnectionData {
                     C2SConfigPackets::FinishConfiguration(_packet) => {
                         *this.stage.lock().unwrap() = Stage::Play;
                         this.associated_data.entity_id = this.connected_server.new_entity_id()?;
-                        this.write_packet(LoginS2CPlayPacket {
-                            entity: this.associated_data.entity_id,
-                            hardcore: false,
-                            // fake dimensions so we can control client w/o extra storage
-                            dims: vec![Identifier::new("wyvern", "fake")].into(),
-                            max_players: VarInt::from(100),
-                            view_dist: VarInt::from(16),
-                            sim_dist: VarInt::from(16),
-                            reduced_debug: false,
-                            respawn_screen: true,
-                            limited_crafting: false,
-                            // TODO: Turn this into an actual Dimension Type lookup for
-                            // the root dimension
-                            dim: unsafe { RegEntry::new_unchecked(0) },
-                            dim_name: Identifier::new("wyvern", "fake"),
-                            seed: 0,
-                            gamemode: Gamemode::Survival,
-                            old_gamemode: Gamemode::None,
-                            is_debug: false,
-                            is_flat: false,
-                            death_loc: None,
-                            portal_cooldown: VarInt::from(0),
-                            sea_level: VarInt::from(64),
-                            enforce_chat_reports: false,
-                        });
+                        let id = this.associated_data.entity_id;
+                        let p = this.as_actor();
+                        Runtime::spawn_task(async move {
+                            log::error!("GOT HERE AAAHHHH");
+                            let default_dim = Server::get()?.default_dimension()?;
+                            let default_dim = Server::get()?.dimension(default_dim)?;
+                            p.write_packet(LoginS2CPlayPacket {
+                                entity: id,
+                                hardcore: false,
+                                dims: Server::get()?
+                                    .dimensions()?
+                                    .iter()
+                                    .map(|x| {
+                                        x.name()
+                                            .unwrap_or(Id::constant("minecraft", "overworld"))
+                                            .into()
+                                    })
+                                    .collect::<Vec<_>>()
+                                    .into(),
+                                max_players: VarInt::from(100000),
+                                view_dist: VarInt::from(10),
+                                sim_dist: VarInt::from(10),
+                                reduced_debug: false,
+                                respawn_screen: true,
+                                limited_crafting: false,
+                                dim: unsafe {
+                                    RegEntry::new_unchecked(
+                                        Server::get()?
+                                            .registries()?
+                                            .get(RegistryKeys::DIMENSION_TYPE)
+                                            .get_entry(default_dim.dimension_type()?)
+                                            .unwrap_or(RegEntry::new_unchecked(u32::MAX))
+                                            .id(),
+                                    )
+                                },
+                                dim_name: default_dim.name()?.into(),
+                                seed: 0,
+                                gamemode: Gamemode::Survival,
+                                old_gamemode: Gamemode::None,
+                                is_debug: false,
+                                is_flat: false,
+                                death_loc: None,
+                                portal_cooldown: VarInt::from(0),
+                                sea_level: VarInt::from(64),
+                                enforce_chat_reports: false,
+                            })?;
 
-                        this.write_packet(PlayerPositionS2CPlayPacket {
-                            teleport_id: VarInt::from(0),
-                            x: 1.0,
-                            y: 32.0,
-                            z: 2.0,
-                            vx: 0.0,
-                            vy: 0.5,
-                            vz: 0.0,
-                            adyaw_deg: 0.0,
-                            adpitch_deg: 0.0,
-                            flags: TeleportFlags {
-                                relative_x: false,
-                                relative_y: false,
-                                relative_z: false,
-                                relative_pitch: false,
-                                relative_yaw: false,
-                                relative_vx: false,
-                                relative_vy: false,
-                                relative_vz: false,
-                                rotate_velocity: false,
-                            },
+                            p.write_packet(PlayerPositionS2CPlayPacket {
+                                teleport_id: VarInt::from(0),
+                                x: 1.0,
+                                y: 32.0,
+                                z: 2.0,
+                                vx: 0.0,
+                                vy: 0.5,
+                                vz: 0.0,
+                                adyaw_deg: 0.0,
+                                adpitch_deg: 0.0,
+                                flags: TeleportFlags {
+                                    relative_x: false,
+                                    relative_y: false,
+                                    relative_z: false,
+                                    relative_pitch: false,
+                                    relative_yaw: false,
+                                    relative_vx: false,
+                                    relative_vy: false,
+                                    relative_vz: false,
+                                    rotate_velocity: false,
+                                },
+                            })?;
+                            Ok(())
                         });
                     }
                     C2SConfigPackets::ResourcePack(packet) => match packet.status {

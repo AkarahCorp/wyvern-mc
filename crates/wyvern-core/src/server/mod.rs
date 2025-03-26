@@ -42,6 +42,7 @@ pub(crate) struct ServerData {
     pub(crate) last_entity_id: i32,
     pub(crate) mojauth_enabled: bool,
     pub(crate) texture_pack: Option<Arc<TexturePack>>,
+    pub(crate) default_dimension: Id,
 }
 
 impl Server {
@@ -64,6 +65,17 @@ impl Server {
 
 #[message(Server, ServerMessage)]
 impl ServerData {
+    #[DefaultDimension]
+    pub fn default_dimension(&self) -> ActorResult<Id> {
+        Ok(self.default_dimension.clone())
+    }
+
+    #[SetDefaultDimension]
+    pub fn set_default_dimension(&mut self, id: Id) -> ActorResult<()> {
+        self.default_dimension = id;
+        Ok(())
+    }
+
     #[ResourcePack]
     pub fn resource_pack(&self) -> ActorResult<Arc<TexturePack>> {
         self.texture_pack.clone().ok_or(ActorError::BadRequest)
@@ -101,9 +113,7 @@ impl ServerData {
     pub fn dimension(&self, key: Id) -> ActorResult<Dimension> {
         self.dimensions
             .get(&key)
-            .map(|dim| Dimension {
-                sender: dim.sender.clone(),
-            })
+            .cloned()
             .ok_or(ActorError::IndexOutOfBounds)
     }
 
@@ -113,13 +123,9 @@ impl ServerData {
     }
 
     #[CreateDimension]
-    pub fn create_dimension(&mut self, name: Id) -> ActorResult<Dimension> {
+    pub fn create_dimension(&mut self, name: Id, dim_type: Id) -> ActorResult<Dimension> {
         log::debug!("Creating new dimension: {:?}", name);
-        let root_dim = DimensionData::new(
-            name.clone(),
-            self.as_actor(),
-            Id::new("minecraft", "overworld"),
-        );
+        let root_dim = DimensionData::new(name.clone(), self.as_actor(), dim_type);
 
         let dim = Dimension {
             sender: root_dim.sender.downgrade(),

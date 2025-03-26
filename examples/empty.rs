@@ -4,33 +4,45 @@ use wyvern_mc::{
     actors::ActorResult,
     blocks::{BlockComponents, BlockState, Blocks},
     components::DataComponentHolder,
-    datatypes::gamemode::Gamemode,
+    datatypes::{
+        gamemode::Gamemode,
+        regval::{DimensionEffects, DimensionType},
+    },
     entities::{AttributeContainer, Attributes},
     events::{
         BreakBlockEvent, DimensionCreateEvent, PlaceBlockEvent, PlayerJoinEvent, ServerStartEvent,
     },
     inventory::Inventory,
     item::{ItemComponents, ItemStack, Items},
-    macros::server,
     player::PlayerComponents,
     runtime::Runtime,
-    server::{Server, ServerBuilder},
+    server::{Server, registries::RegistryKeys},
     values::{Vec3, id},
 };
 
-#[server]
-fn server() -> ServerBuilder {
+fn main() {
+    env_logger::init();
+
     Server::builder()
         .event(on_server_start)
         .event(on_dim_init)
         .event(on_join)
         .event(on_break)
         .event(on_place)
+        .registries(|rg| {
+            rg.get_mut(RegistryKeys::DIMENSION_TYPE).insert(
+                id![minecraft:the_end],
+                DimensionType::default().effects(DimensionEffects::End),
+            );
+        })
+        .run();
 }
 
 async fn on_server_start(event: Arc<ServerStartEvent>) -> ActorResult<()> {
-    event.server.create_dimension(id!(example:root))?;
-
+    event
+        .server
+        .create_dimension(id![example:root], id![minecraft:the_end])?;
+    event.server.set_default_dimension(id![example:root])?;
     Ok(())
 }
 
