@@ -1,7 +1,8 @@
 use voxidian_protocol::value::{
-    CustomDataComp, DamageComp, DataComponentTypes, DataComponents, EquippableComp, EquippableSlot,
-    Identifier, ItemModelComp, ItemNameComp, LengthPrefixVec, LoreComp, MaxDamageComp,
-    Nbt as PtcNbt, NbtElement, RegOr, SlotData, SoundEvent, Text, VarInt,
+    BlocksAttacksComp, CustomDataComp, DamageComp, DataComponentTypes, DataComponents,
+    EquippableComp, EquippableSlot, Identifier, ItemDamageFunction, ItemModelComp, ItemNameComp,
+    LengthPrefixVec, LoreComp, MaxDamageComp, Nbt as PtcNbt, NbtElement, RegOr, SlotData,
+    SoundEvent, Text, VarInt,
 };
 
 use wyvern_components::{DataComponentHolder, DataComponentMap};
@@ -64,6 +65,22 @@ impl From<ItemStack> for SlotData {
 
             filtered_components.push(DataComponentTypes::LoreComp);
         }
+        if let Ok(true) = value.get(ItemComponents::CAN_BLOCK) {
+            components.push(DataComponents::BlocksAttacksComp(BlocksAttacksComp {
+                block_delay_seconds: 0.0,
+                disable_cooldown_scale: 0.0,
+                damage_reductions: vec![].into(),
+                item_damage: ItemDamageFunction {
+                    thresold: 0.0,
+                    base: 0.0,
+                    factor: 0.0,
+                },
+                bypassed_by: vec![].into(),
+                block_sound: None,
+                disable_sound: None,
+            }));
+            filtered_components.push(DataComponentTypes::BlocksAttacksComp);
+        }
         if let Ok(component) = value.get(ItemComponents::EQUIPPABLE) {
             components.push(DataComponents::EquippableComp(EquippableComp {
                 slot: match component.slot {
@@ -74,6 +91,7 @@ impl From<ItemStack> for SlotData {
                     EquipmentSlot::Leggings => EquippableSlot::Legs,
                     EquipmentSlot::Boots => EquippableSlot::Feet,
                     EquipmentSlot::Body => EquippableSlot::Body,
+                    EquipmentSlot::Saddle => EquippableSlot::Saddle,
                 },
                 equip_sound: RegOr::Or(SoundEvent {
                     name: component.equip_sound.into(),
@@ -85,6 +103,7 @@ impl From<ItemStack> for SlotData {
                 dispensable: false,
                 swappable: true,
                 damage_on_hurt: false,
+                equip_on_interact: false,
             }));
             filtered_components.push(DataComponentTypes::EquippableComp);
         }
@@ -150,6 +169,7 @@ impl From<SlotData> for ItemStack {
                                 EquippableSlot::Head => EquipmentSlot::Helmet,
                                 EquippableSlot::Offhand => EquipmentSlot::Offhand,
                                 EquippableSlot::Body => EquipmentSlot::Body,
+                                EquippableSlot::Saddle => EquipmentSlot::Saddle,
                             },
                             equip_sound: match component.equip_sound {
                                 RegOr::Id(_) => Id::empty(),

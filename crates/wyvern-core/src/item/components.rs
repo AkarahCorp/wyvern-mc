@@ -19,6 +19,7 @@ impl ItemComponents {
     pub const LORE: DataComponentType<Vec<Text>> = DataComponentType::new(id![minecraft:lore]);
     pub const EQUIPPABLE: DataComponentType<EquippableComponent> =
         DataComponentType::new(id![minecraft:equippable]);
+    pub const CAN_BLOCK: DataComponentType<bool> = DataComponentType::new(id![minecraft:can_block]);
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -32,6 +33,7 @@ pub enum EquipmentSlot {
     Boots,
 
     Body,
+    Saddle,
 }
 
 impl From<PtcEquipmentSlot> for EquipmentSlot {
@@ -44,6 +46,7 @@ impl From<PtcEquipmentSlot> for EquipmentSlot {
             PtcEquipmentSlot::Chestplate => EquipmentSlot::Chestplate,
             PtcEquipmentSlot::Helmet => EquipmentSlot::Helmet,
             PtcEquipmentSlot::Body => EquipmentSlot::Body,
+            PtcEquipmentSlot::Saddle => EquipmentSlot::Saddle,
         }
     }
 }

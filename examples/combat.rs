@@ -63,7 +63,8 @@ async fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
     event.player.inventory()?.set_slot(
         36,
         ItemStack::new(Items::DIAMOND_SWORD)
-            .with(ItemComponents::ITEM_NAME, Text::literal("Diamond Sword")),
+            .with(ItemComponents::ITEM_NAME, Text::literal("Diamond Sword"))
+            .with(ItemComponents::CAN_BLOCK, true),
     )?;
 
     event.player.set(
