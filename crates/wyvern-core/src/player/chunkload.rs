@@ -65,6 +65,7 @@ impl ConnectionData {
         if let Some(pos) = chunks.first() {
             let pos = *pos;
             self.associated_data.loaded_chunks.push(pos);
+
             Runtime::spawn_task(async move {
                 let dim_type_entry = dimension.dimension_type().unwrap();
 
@@ -85,8 +86,10 @@ impl ConnectionData {
                 let chunk_z = pos.y();
 
                 let mut sections = Vec::new();
+
                 for y in (min_y..max_y).step_by(16) {
                     let pos = Vec3::new(chunk_x, y, chunk_z);
+
                     let chunk = dimension.get_chunk_section(pos)?;
                     let Some(chunk) = chunk else {
                         return Ok(());
@@ -99,7 +102,9 @@ impl ConnectionData {
                     chunk_z,
                     heightmaps: LengthPrefixVec::new(),
                     data: ChunkSectionData { sections },
-                    block_entities: vec![].into(),
+                    block_entities: dimension
+                        .get_chunk_block_entities(Vec2::new(chunk_x, chunk_z))?
+                        .into(),
                     sky_light_mask: vec![0].into(),
                     block_light_mask: vec![0].into(),
                     empty_sky_light_mask: vec![0].into(),

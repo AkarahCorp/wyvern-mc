@@ -32,7 +32,6 @@ impl ConnectionData {
                         let id = this.associated_data.entity_id;
                         let p = this.as_actor();
                         Runtime::spawn_task(async move {
-                            log::error!("GOT HERE AAAHHHH");
                             let default_dim = Server::get()?.default_dimension()?;
                             let default_dim = Server::get()?.dimension(default_dim)?;
                             p.write_packet(LoginS2CPlayPacket {

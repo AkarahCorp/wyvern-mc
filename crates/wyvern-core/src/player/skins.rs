@@ -20,7 +20,7 @@ impl<O: CodecOps> DefaultCodec<O> for UuidToUsernameResponse {
             .field(
                 String::codec()
                     .xmap(
-                        |x| Uuid::from_str(&x).unwrap_or(Uuid::nil()),
+                        |x| Uuid::from_str(x).unwrap_or(Uuid::nil()),
                         |x| x.to_string(),
                     )
                     .field_of("id", |x: &UuidToUsernameResponse| &x.uuid),
@@ -43,7 +43,7 @@ impl<O: CodecOps> DefaultCodec<O> for ProfileResponse {
             .field(
                 String::codec()
                     .xmap(
-                        |x| Uuid::from_str(&x).unwrap_or(Uuid::nil()),
+                        |x| Uuid::from_str(x).unwrap_or(Uuid::nil()),
                         |x| x.to_string(),
                     )
                     .field_of("id", |x: &ProfileResponse| &x.uuid),

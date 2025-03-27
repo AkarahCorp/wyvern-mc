@@ -13,12 +13,13 @@ use chunk::{Chunk, ChunkSection};
 use flume::Sender;
 use voxidian_protocol::{
     packet::s2c::play::{
-        AddEntityS2CPlayPacket, BlockUpdateS2CPlayPacket, PlayerActionEntry,
+        AddEntityS2CPlayPacket, BlockUpdateS2CPlayPacket, ChunkBlockEntity, PlayerActionEntry,
         PlayerInfoUpdateS2CPlayPacket, RemoveEntitiesS2CPlayPacket,
     },
     registry::RegEntry,
     value::{
-        Angle, BlockPos, EntityType as PtcEntityType, Identifier, ProfileProperty, Uuid, VarInt,
+        Angle, BlockPos, EntityType as PtcEntityType, Identifier, Nbt, ProfileProperty, Uuid,
+        VarInt,
     },
 };
 use wyvern_actors::Actor;
@@ -107,6 +108,29 @@ impl DimensionData {
                 Ok(Some(chunk.section_at_mut(chunk_y).unwrap().clone()))
             }
             None => Ok(None),
+        }
+    }
+
+    #[GetChunkBlockEntities]
+    pub fn get_chunk_block_entities(
+        &mut self,
+        position: Vec2<i32>,
+    ) -> ActorResult<Vec<ChunkBlockEntity>> {
+        match self.chunks.get(&position) {
+            Some(chunk) => {
+                let list = chunk
+                    .block_entities
+                    .iter()
+                    .map(|x| ChunkBlockEntity {
+                        packed_xz: (((x.0.x() & 15) << 4) | (x.0.z() & 15)) as u8,
+                        y: x.0.y(),
+                        entity_type: *x.1,
+                        data: Nbt::new(),
+                    })
+                    .collect::<Vec<_>>();
+                Ok(list)
+            }
+            None => Ok(Vec::new()),
         }
     }
 

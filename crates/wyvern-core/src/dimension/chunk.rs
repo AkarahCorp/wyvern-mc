@@ -1,8 +1,11 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::LazyLock};
 
 use voxidian_protocol::{
-    registry::RegEntry,
-    value::{ChunkSection as ProtocolSection, PaletteFormat, PalettedContainer, RawDataArray},
+    packet::s2c::play::ChunkBlockEntity,
+    registry::{RegEntry, Registry},
+    value::{
+        ChunkSection as ProtocolSection, PaletteFormat, PalettedContainer, RawDataArray, VarInt,
+    },
 };
 use wyvern_components::DataComponentHolder;
 use wyvern_datatypes::nbt::Nbt;
@@ -16,11 +19,15 @@ use wyvern_values::{Id, Vec3};
 
 use crate::blocks::BlockState;
 
+pub static BLOCK_ENTITY_REGISTRY: LazyLock<Registry<VarInt>> =
+    LazyLock::new(ChunkBlockEntity::block_entity_type_registry);
+
 #[derive(Clone, Debug)]
 pub struct Chunk {
-    min_sections: i32,
-    _max_sections: i32,
-    sections: Vec<ChunkSection>,
+    pub(crate) min_sections: i32,
+    pub(crate) _max_sections: i32,
+    pub(crate) sections: Vec<ChunkSection>,
+    pub(crate) block_entities: HashMap<Vec3<i16>, VarInt>,
 }
 
 impl Chunk {
@@ -34,6 +41,7 @@ impl Chunk {
             min_sections,
             _max_sections: max_sections,
             sections: vec,
+            block_entities: HashMap::new(),
         }
     }
 
@@ -45,8 +53,15 @@ impl Chunk {
     pub fn set_block_at(&mut self, pos: Vec3<i32>, block: BlockState) {
         let section_y = pos.y().div_euclid(16);
         let local_y = pos.y().rem_euclid(16);
+        let name = block.name().clone();
         if let Some(section) = self.section_at_mut(section_y) {
             section.set_block_at(pos.map(|x| x as usize).with_y(local_y as usize), block);
+
+            if let Some(id) = BLOCK_ENTITY_REGISTRY.get(&name.into()) {
+                self.block_entities.insert(pos.map(|x| x as i16), *id);
+            } else {
+                self.block_entities.remove(&pos.map(|x| x as i16));
+            }
         }
     }
 
