@@ -53,6 +53,7 @@ pub mod data;
 pub mod inventory;
 pub mod itf;
 pub mod net;
+pub mod skins;
 pub mod stages;
 
 #[actor(Player, PlayerMessage)]

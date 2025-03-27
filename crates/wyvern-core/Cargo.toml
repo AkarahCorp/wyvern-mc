@@ -18,3 +18,5 @@ wyvern-components = { workspace = true }
 wyvern-textures = { workspace = true }
 async-executor = { workspace = true }
 futures = { workspace = true }
+ureq = { workspace = true }
+json = { workspace = true }

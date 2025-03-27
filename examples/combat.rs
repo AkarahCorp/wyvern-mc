@@ -5,21 +5,19 @@ use wyvern_mc::{
     blocks::{BlockComponents, BlockState, Blocks},
     components::DataComponentHolder,
     datatypes::{particle::Particle, sound::Sounds, text::Text},
-    entities::{AttributeContainer, Attributes, EntityComponents, PlayerSkinData},
+    entities::{AttributeContainer, Attributes, EntityComponents},
     events::{
         DimensionCreateEvent, PlayerAttackEntityEvent, PlayerAttackPlayerEvent, PlayerJoinEvent,
         ServerStartEvent,
     },
     inventory::Inventory,
     item::{EquipmentSlot, EquippableComponent, ItemComponents, ItemStack, Items},
-    player::PlayerComponents,
+    player::{Player, PlayerComponents},
     runtime::Runtime,
     server::Server,
     values::{Id, Vec3, id},
 };
 
-const TEXTURE: &str = include_str!("./texture.txt");
-const SIGNATURE: &str = include_str!("./signature.txt");
 fn main() {
     env_logger::init();
 
@@ -77,13 +75,9 @@ async fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
     )?;
 
     Runtime::spawn_task(async move {
-        let entity = event
-            .player
-            .dimension()?
-            .spawn_human_entity(PlayerSkinData {
-                texture: TEXTURE.into(),
-                signature: SIGNATURE.into(),
-            })?;
+        let uuid = Player::uuid_to_username("PrinceOfVines");
+        let skin = Player::get_skin_for_uuid(&uuid);
+        let entity = event.player.dimension()?.spawn_human_entity(skin)?;
         entity.set(EntityComponents::POSITION, Vec3::new(3.0, 10.0, 3.0))?;
         entity.set(EntityComponents::PHYSICS_ENABLED, true)?;
         entity.set(EntityComponents::GRAVITY_ENABLED, true)?;
