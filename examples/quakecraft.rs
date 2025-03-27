@@ -58,7 +58,7 @@ async fn on_server_start(event: Arc<ServerStartEvent>) -> ActorResult<()> {
 async fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
     let bytes = include_bytes!("./quake.nbt").to_vec();
     let nbt = Nbt::new(NbtCompound::try_from(bytes).unwrap());
-    let structure = Structure::codec().decode(&NbtOps, &nbt).unwrap();
+    let structure = Structure::codec().decode_start(&NbtOps, &nbt).unwrap();
 
     structure.place(event.dimension.clone(), Vec3::new(0, 0, 0))?;
 

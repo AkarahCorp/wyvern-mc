@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use datafix::serialization::{
-    Codec, CodecAdapters, CodecOps, DefaultCodec, MapCodecBuilder, json::JsonOps,
+    Codec, CodecAdapters, CodecOps, Codecs, DefaultCodec, MapCodecBuilder, json::JsonOps,
 };
 use wyvern_values::Uuid;
 
@@ -34,6 +34,7 @@ struct ProfileResponse {
     uuid: Uuid,
     username: String,
     properties: Vec<ProfileProperty>,
+    profile_actions: (),
 }
 
 impl<O: CodecOps> DefaultCodec<O> for ProfileResponse {
@@ -53,11 +54,17 @@ impl<O: CodecOps> DefaultCodec<O> for ProfileResponse {
                     .list_of()
                     .field_of("properties", |x: &ProfileResponse| &x.properties),
             )
-            .build(|uuid, username, properties| ProfileResponse {
-                uuid,
-                username,
-                properties,
-            })
+            .field(
+                Codecs::unit().field_of("profileActions", |x: &ProfileResponse| &x.profile_actions),
+            )
+            .build(
+                |uuid, username, properties, profile_actions| ProfileResponse {
+                    uuid,
+                    username,
+                    properties,
+                    profile_actions,
+                },
+            )
     }
 }
 
@@ -90,8 +97,9 @@ impl Player {
         .unwrap();
         let resp = req.body_mut().read_to_string().unwrap();
         let json = json::parse(&resp).unwrap();
+        log::error!("{:#?}", json);
         let value = UuidToUsernameResponse::codec()
-            .decode(&JsonOps, &json)
+            .decode_start(&JsonOps, &json)
             .unwrap();
         value.uuid
     }
@@ -104,7 +112,9 @@ impl Player {
         .unwrap();
         let resp = req.body_mut().read_to_string().unwrap();
         let json = json::parse(&resp).unwrap();
-        let value = ProfileResponse::codec().decode(&JsonOps, &json).unwrap();
+        let value = ProfileResponse::codec()
+            .decode_start(&JsonOps, &json)
+            .unwrap();
         PlayerSkinData {
             texture: value.properties[0].value.clone(),
             signature: value.properties[0].signature.clone(),
