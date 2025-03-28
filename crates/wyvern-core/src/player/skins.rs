@@ -97,7 +97,6 @@ impl Player {
         .unwrap();
         let resp = req.body_mut().read_to_string().unwrap();
         let json = json::parse(&resp).unwrap();
-        log::error!("{:#?}", json);
         let value = UuidToUsernameResponse::codec()
             .decode_start(&JsonOps, &json)
             .unwrap();

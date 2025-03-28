@@ -77,6 +77,7 @@ async fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
             })
             .with(ItemComponents::ITEM_NAME, Text::literal("Click me!")),
     )?;
+
     Ok(())
 }
 

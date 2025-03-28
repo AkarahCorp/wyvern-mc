@@ -11,11 +11,11 @@ use wyvern_mc::{
         ServerStartEvent,
     },
     inventory::Inventory,
-    item::{EquipmentSlot, EquippableComponent, ItemComponents, ItemStack, Items},
+    item::{ItemComponents, ItemStack, Items},
     player::{Player, PlayerComponents},
     runtime::Runtime,
     server::Server,
-    values::{Id, Vec3, id},
+    values::{Vec3, id},
 };
 
 fn main() {
@@ -75,57 +75,57 @@ async fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
     )?;
 
     Runtime::spawn_task(async move {
-        let uuid = Player::uuid_to_username("PrinceOfVines");
+        let uuid = Player::uuid_to_username("platinaknife");
         let skin = Player::get_skin_for_uuid(&uuid);
         let entity = event.player.dimension()?.spawn_human_entity(skin)?;
         entity.set(EntityComponents::POSITION, Vec3::new(3.0, 10.0, 3.0))?;
         entity.set(EntityComponents::PHYSICS_ENABLED, true)?;
         entity.set(EntityComponents::GRAVITY_ENABLED, true)?;
 
-        entity.set(
-            EntityComponents::HELMET_ITEM,
-            ItemStack::new(Items::GOLDEN_HELMET).with(
-                ItemComponents::EQUIPPABLE,
-                EquippableComponent {
-                    slot: EquipmentSlot::Helmet,
-                    equip_sound: Id::empty(),
-                    model: Id::new("minecraft", "gold"),
-                },
-            ),
-        )?;
-        entity.set(
-            EntityComponents::CHESTPLATE_ITEM,
-            ItemStack::new(Items::CHAINMAIL_CHESTPLATE).with(
-                ItemComponents::EQUIPPABLE,
-                EquippableComponent {
-                    slot: EquipmentSlot::Chestplate,
-                    equip_sound: Id::empty(),
-                    model: Id::new("minecraft", "chainmail"),
-                },
-            ),
-        )?;
-        entity.set(
-            EntityComponents::LEGGINGS_ITEM,
-            ItemStack::new(Items::DIAMOND_LEGGINGS).with(
-                ItemComponents::EQUIPPABLE,
-                EquippableComponent {
-                    slot: EquipmentSlot::Leggings,
-                    equip_sound: Id::empty(),
-                    model: Id::new("minecraft", "chainmail"),
-                },
-            ),
-        )?;
-        entity.set(
-            EntityComponents::BOOTS_ITEM,
-            ItemStack::new(Items::DIAMOND_BOOTS).with(
-                ItemComponents::EQUIPPABLE,
-                EquippableComponent {
-                    slot: EquipmentSlot::Boots,
-                    equip_sound: Id::empty(),
-                    model: Id::new("minecraft", "diamond"),
-                },
-            ),
-        )?;
+        // entity.set(
+        //     EntityComponents::HELMET_ITEM,
+        //     ItemStack::new(Items::GOLDEN_HELMET).with(
+        //         ItemComponents::EQUIPPABLE,
+        //         EquippableComponent {
+        //             slot: EquipmentSlot::Helmet,
+        //             equip_sound: Id::empty(),
+        //             model: Id::new("minecraft", "gold"),
+        //         },
+        //     ),
+        // )?;
+        // entity.set(
+        //     EntityComponents::CHESTPLATE_ITEM,
+        //     ItemStack::new(Items::CHAINMAIL_CHESTPLATE).with(
+        //         ItemComponents::EQUIPPABLE,
+        //         EquippableComponent {
+        //             slot: EquipmentSlot::Chestplate,
+        //             equip_sound: Id::empty(),
+        //             model: Id::new("minecraft", "chainmail"),
+        //         },
+        //     ),
+        // )?;
+        // entity.set(
+        //     EntityComponents::LEGGINGS_ITEM,
+        //     ItemStack::new(Items::DIAMOND_LEGGINGS).with(
+        //         ItemComponents::EQUIPPABLE,
+        //         EquippableComponent {
+        //             slot: EquipmentSlot::Leggings,
+        //             equip_sound: Id::empty(),
+        //             model: Id::new("minecraft", "chainmail"),
+        //         },
+        //     ),
+        // )?;
+        // entity.set(
+        //     EntityComponents::BOOTS_ITEM,
+        //     ItemStack::new(Items::DIAMOND_BOOTS).with(
+        //         ItemComponents::EQUIPPABLE,
+        //         EquippableComponent {
+        //             slot: EquipmentSlot::Boots,
+        //             equip_sound: Id::empty(),
+        //             model: Id::new("minecraft", "diamond"),
+        //         },
+        //     ),
+        // )?;
         entity.set(
             EntityComponents::MAINHAND_ITEM,
             ItemStack::new(id![minecraft:iron_axe]),

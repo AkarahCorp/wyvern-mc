@@ -14,11 +14,11 @@ use flume::Sender;
 use voxidian_protocol::{
     packet::s2c::play::{
         AddEntityS2CPlayPacket, BlockUpdateS2CPlayPacket, ChunkBlockEntity, PlayerActionEntry,
-        PlayerInfoUpdateS2CPlayPacket, RemoveEntitiesS2CPlayPacket,
+        PlayerInfoUpdateS2CPlayPacket, RemoveEntitiesS2CPlayPacket, SetEntityDataS2CPlayPacket,
     },
     registry::RegEntry,
     value::{
-        Angle, BlockPos, EntityType as PtcEntityType, Identifier, Nbt, ProfileProperty, Uuid,
+        Angle, BlockPos, EntityMetadata, EntityType as PtcEntityType, Nbt, ProfileProperty, Uuid,
         VarInt,
     },
 };
@@ -234,6 +234,47 @@ impl DimensionData {
             .collect())
     }
 
+    #[UniversalEntitySpawn]
+    pub(crate) fn spawn_entity_universal(
+        &mut self,
+        entity_id: i32,
+        uuid: Uuid,
+        entity_type: Id,
+        metadata: EntityMetadata,
+    ) -> ActorResult<()> {
+        let dim = self.as_actor();
+        Runtime::spawn_task(async move {
+            for conn in dim.players().unwrap_or_else(|_| Vec::new()) {
+                if conn != uuid {
+                    let conn = dim.server().unwrap().player(conn).unwrap();
+                    let _ = conn.write_packet(AddEntityS2CPlayPacket {
+                        id: entity_id.into(),
+                        uuid,
+                        kind: PtcEntityType::vanilla_registry()
+                            .get_entry(&entity_type.clone().into())
+                            .unwrap(),
+                        x: 0.0,
+                        y: 0.0,
+                        z: 0.0,
+                        pitch: Angle::of_deg(0.0),
+                        yaw: Angle::of_deg(0.0),
+                        head_yaw: Angle::of_deg(0.0),
+                        data: VarInt::from(0),
+                        vel_x: 0,
+                        vel_y: 0,
+                        vel_z: 0,
+                    });
+                    let _ = conn.write_packet(SetEntityDataS2CPlayPacket {
+                        entity: entity_id.into(),
+                        data: metadata.clone(),
+                    });
+                }
+            }
+            Ok(())
+        });
+        Ok(())
+    }
+
     #[SpawnEntity]
     #[doc = "Spawns a new entity in the dimension with the given type, returning a handle to the entity."]
     pub fn spawn_entity(&mut self, entity_type: Id) -> ActorResult<Entity> {
@@ -263,27 +304,8 @@ impl DimensionData {
         let dim = self.as_actor();
 
         Runtime::spawn_task(async move {
-            for conn in dim.players().unwrap_or_else(|_| Vec::new()) {
-                let conn = dim.server().unwrap().player(conn).unwrap();
-                let _ = conn.write_packet(AddEntityS2CPlayPacket {
-                    id: id.into(),
-                    uuid,
-                    kind: PtcEntityType::vanilla_registry()
-                        .get_entry(&entity_type.clone().into())
-                        .unwrap(),
-                    x: 0.0,
-                    y: 0.0,
-                    z: 0.0,
-                    pitch: Angle::of_deg(0.0),
-                    yaw: Angle::of_deg(0.0),
-                    head_yaw: Angle::of_deg(0.0),
-                    data: VarInt::from(0),
-                    vel_x: 0,
-                    vel_y: 0,
-                    vel_z: 0,
-                });
-            }
-
+            let entity = dim.get_entity_by_id(id)?;
+            dim.spawn_entity_universal(id, uuid, entity_type, entity.generate_metadata()?)?;
             Ok(())
         });
 
@@ -340,23 +362,14 @@ impl DimensionData {
                         }],
                     )],
                 });
-                let _ = conn.write_packet(AddEntityS2CPlayPacket {
-                    id: id.into(),
+
+                let entity = dim.get_entity_by_id(id)?;
+                dim.spawn_entity_universal(
+                    id,
                     uuid,
-                    kind: PtcEntityType::vanilla_registry()
-                        .get_entry(&Identifier::new_const("minecraft", "player"))
-                        .unwrap(),
-                    x: 0.0,
-                    y: 0.0,
-                    z: 0.0,
-                    pitch: Angle::of_deg(0.0),
-                    yaw: Angle::of_deg(0.0),
-                    head_yaw: Angle::of_deg(0.0),
-                    data: VarInt::from(0),
-                    vel_x: 0,
-                    vel_y: 0,
-                    vel_z: 0,
-                });
+                    id![minecraft:player],
+                    entity.generate_metadata()?,
+                )?;
             }
 
             Ok(())
@@ -392,28 +405,13 @@ impl DimensionData {
         let dim = self.as_actor();
 
         Runtime::spawn_task(async move {
-            for conn in dim.players().unwrap_or_else(|_| Vec::new()) {
-                if conn != uuid {
-                    let conn = dim.server().unwrap().player(conn).unwrap();
-                    let _ = conn.write_packet(AddEntityS2CPlayPacket {
-                        id: id.into(),
-                        uuid,
-                        kind: PtcEntityType::vanilla_registry()
-                            .get_entry(&Identifier::new("minecraft", "player"))
-                            .unwrap(),
-                        x: 0.0,
-                        y: 0.0,
-                        z: 0.0,
-                        pitch: Angle::of_deg(0.0),
-                        yaw: Angle::of_deg(0.0),
-                        head_yaw: Angle::of_deg(0.0),
-                        data: VarInt::from(0),
-                        vel_x: 0,
-                        vel_y: 0,
-                        vel_z: 0,
-                    });
-                }
-            }
+            let entity = dim.get_entity_by_id(id)?;
+            dim.spawn_entity_universal(
+                id,
+                uuid,
+                id![minecraft:player],
+                entity.generate_metadata()?,
+            )?;
             Ok(())
         });
 

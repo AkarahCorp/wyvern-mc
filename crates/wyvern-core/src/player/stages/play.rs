@@ -6,6 +6,7 @@ use voxidian_protocol::{
             ContainerSlotGroup, DisconnectS2CPlayPacket, EntityAnimation, GameEvent,
             GameEventS2CPlayPacket, Hand, PlayerActionEntry, PlayerInfoUpdateS2CPlayPacket,
             PongResponseS2CPlayPacket, RespawnDataKept, RespawnS2CPlayPacket, ScreenWindowKind,
+            SetEntityDataS2CPlayPacket,
         },
     },
     registry::RegEntry,
@@ -286,7 +287,6 @@ impl ConnectionData {
                                 Ok(())
                             });
 
-                            // TODO: make placement only occur if the item is placable
                             if state.id_is_valid() {
                                 if let Ok(item_count) = held.get(ItemComponents::ITEM_COUNT) {
                                     if item_count <= 1 {
@@ -666,6 +666,10 @@ impl ConnectionData {
                 vel_x: 0,
                 vel_y: 0,
                 vel_z: 0,
+            });
+            self.write_packet(SetEntityDataS2CPlayPacket {
+                entity: id.into(),
+                data: entity.generate_metadata()?,
             });
         }
 

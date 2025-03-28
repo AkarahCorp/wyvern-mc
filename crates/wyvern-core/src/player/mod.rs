@@ -22,8 +22,8 @@ use voxidian_protocol::{
                 Gamemode as PtcGamemode, LevelParticlesS2CPlayPacket, OpenScreenS2CPlayPacket,
                 PlayerPositionS2CPlayPacket, PlayerRotationS2CPlayPacket,
                 RemoveEntitiesS2CPlayPacket, RespawnDataKept, RespawnS2CPlayPacket,
-                ScreenWindowKind, SoundCategory, SoundEntityS2CPlayPacket, SystemChatS2CPlayPacket,
-                TeleportFlags,
+                ScreenWindowKind, SetEntityDataS2CPlayPacket, SoundCategory,
+                SoundEntityS2CPlayPacket, SystemChatS2CPlayPacket, TeleportFlags,
             },
         },
     },
@@ -307,6 +307,10 @@ impl ConnectionData {
                 vel_x: 0,
                 vel_y: 0,
                 vel_z: 0,
+            });
+            self.write_packet(SetEntityDataS2CPlayPacket {
+                entity: id.into(),
+                data: entity.generate_metadata()?,
             });
         }
 

@@ -1,14 +1,14 @@
 use std::sync::Arc;
 
 use dyn_clone::clone_box;
-use voxidian_protocol::value::Uuid;
+use voxidian_protocol::value::{EntityMetadata, MetadataEntry, Uuid};
 use wyvern_components::{ComponentElement, DataComponentMap, DataComponentType};
 
 use crate::{
     actors::{ActorError, ActorResult},
     dimension::Dimension,
 };
-use wyvern_values::Id;
+use wyvern_values::{Id, id};
 
 mod components;
 pub use components::*;
@@ -58,6 +58,14 @@ impl Entity {
             component.into_name(),
             Arc::new(value),
         )
+    }
+
+    pub fn generate_metadata(&self) -> ActorResult<EntityMetadata> {
+        let mut meta = EntityMetadata::new();
+        if self.get(EntityComponents::ENTITY_TYPE)? == id![minecraft:player] {
+            meta.insert_raw_entry(17, MetadataEntry::Byte(255));
+        }
+        Ok(meta)
     }
 }
 
