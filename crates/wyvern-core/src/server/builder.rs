@@ -113,8 +113,8 @@ impl ServerBuilder {
             let _ = Builder::new().name("AsyncEventLoop".into()).spawn(|| {
                 loop {
                     if let Ok(recv) = GLOBAL_RUNTIME.receiver.try_recv() {
-                        let result = futures::executor::block_on(recv);
-                        println!("Task result: {:#?}", result);
+                        let _result = futures::executor::block_on(recv);
+                        // TODO: do something with task result
                     }
                     std::thread::yield_now();
                 }
