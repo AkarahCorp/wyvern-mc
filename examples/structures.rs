@@ -44,7 +44,7 @@ async fn on_server_start(event: Arc<ServerStartEvent>) -> ActorResult<()> {
 }
 
 async fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
-    let bytes = include_bytes!("./structure.nbt").to_vec();
+    let bytes = include_bytes!("./h.nbt").to_vec();
     let nbt = Nbt::new(NbtCompound::try_from(bytes).unwrap());
     let structure = Structure::codec().decode_start(&NbtOps, &nbt).unwrap();
 

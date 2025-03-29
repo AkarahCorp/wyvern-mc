@@ -72,6 +72,11 @@ impl DimensionData {
 
 #[crate::message(Dimension, DimensionMessage)]
 impl DimensionData {
+    #[ChunkCount]
+    pub fn count_chunks(&self) -> ActorResult<usize> {
+        Ok(self.chunks.capacity())
+    }
+
     #[GetEntityById]
     pub fn get_entity_by_id(&self, id: i32) -> ActorResult<Entity> {
         self.entities
