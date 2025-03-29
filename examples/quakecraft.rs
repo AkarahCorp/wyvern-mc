@@ -27,7 +27,7 @@ use wyvern_mc::{
 #[server]
 fn server() -> ServerBuilder {
     Server::builder()
-        .task_threads(16)
+        .task_threads(1)
         .event(on_server_start)
         .event(on_dim_init)
         .event(on_join)

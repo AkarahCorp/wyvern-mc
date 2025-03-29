@@ -34,6 +34,7 @@ async fn on_server_start(event: Arc<ServerStartEvent>) -> ActorResult<()> {
     event
         .server
         .create_dimension(id!(example:root), id![minecraft:overworld])?;
+
     event.server.set_default_dimension(id![example:root])?;
 
     Ok(())
@@ -67,11 +68,7 @@ async fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
 
     event.player.set(
         PlayerComponents::ATTRIBUTES,
-        AttributeContainer::new()
-            .with(Attributes::MAX_HEALTH, 30.0)
-            .with(Attributes::ATTACK_SPEED, 100.0)
-            .with(Attributes::FOLLOW_RANGE, 0.0)
-            .with(Attributes::ENTITY_INTERACTION_RANGE, 20.0),
+        AttributeContainer::new().with(Attributes::ATTACK_SPEED, 100.0),
     )?;
 
     Runtime::spawn_task(async move {

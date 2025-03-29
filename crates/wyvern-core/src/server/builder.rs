@@ -11,6 +11,7 @@ use crate::{
     blocks::BLOCK_STATE_KEYS,
     events::{Event, EventBus},
     plugin::Plugin,
+    runtime::GLOBAL_RUNTIME,
 };
 
 use super::{ServerData, dimensions::DimensionContainer, registries::RegistryContainer};
@@ -111,7 +112,11 @@ impl ServerBuilder {
         for _ in 0..self.task_threads {
             let _ = Builder::new().name("AsyncEventLoop".into()).spawn(|| {
                 loop {
-                    futures::executor::block_on(crate::runtime::GLOBAL_EXECUTOR.tick())
+                    if let Ok(recv) = GLOBAL_RUNTIME.receiver.try_recv() {
+                        let result = futures::executor::block_on(recv);
+                        println!("Task result: {:#?}", result);
+                    }
+                    std::thread::yield_now();
                 }
             });
         }

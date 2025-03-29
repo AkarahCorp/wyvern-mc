@@ -32,7 +32,10 @@ fn main() {
         .registries(|rg| {
             rg.get_mut(RegistryKeys::DIMENSION_TYPE).insert(
                 id![minecraft:the_end],
-                DimensionType::default().effects(DimensionEffects::End),
+                DimensionType::default()
+                    .effects(DimensionEffects::End)
+                    .min_y(0)
+                    .height(16),
             );
         })
         .run();

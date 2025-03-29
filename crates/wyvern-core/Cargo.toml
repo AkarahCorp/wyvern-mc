@@ -20,3 +20,4 @@ async-executor = { workspace = true }
 futures = { workspace = true }
 ureq = { workspace = true }
 json = { workspace = true }
+lockfree = { workspace = true }

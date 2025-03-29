@@ -53,7 +53,7 @@ impl Server {
             .cloned()
     }
 
-    pub fn spawn_event<E: Event + Send + 'static>(&self, event: E) -> ActorResult<()> {
+    pub fn spawn_event<E: Event + Send + Sync + 'static>(&self, event: E) -> ActorResult<()> {
         let server = self.clone();
         Runtime::spawn_task(async move {
             event.dispatch(server.event_bus().unwrap());

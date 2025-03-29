@@ -30,6 +30,7 @@ async-executor = { version = "*" }
 futures = { version = "*" }
 ureq = { version = "*" }
 json = { version = "*" }
+lockfree = { version = "*" }
 
 [profile.release]
 debug = true

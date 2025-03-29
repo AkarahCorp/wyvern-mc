@@ -86,7 +86,7 @@ pub trait Event {
     fn dispatch_sync(self, bus: Arc<EventBus>);
 }
 
-pub type BoxedFuture = Pin<Box<dyn Future<Output = ActorResult<()>> + Send + 'static>>;
+pub type BoxedFuture = Pin<Box<dyn Future<Output = ActorResult<()>> + Sync + Send + 'static>>;
 
 #[derive(Debug, Clone)]
 pub struct DimensionCreateEvent {
