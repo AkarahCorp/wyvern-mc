@@ -23,12 +23,6 @@ macro_rules! event_bus {
             }
 
             fn dispatch(self, bus: std::sync::Arc<EventBus>) {
-                std::thread::spawn(move || {
-                    self.dispatch_sync(bus);
-                });
-            }
-
-            fn dispatch_sync(self, bus: Arc<EventBus>) {
                 let tick1 = std::time::Instant::now();
                 let tick2 = std::time::Instant::now();
                 let time_time = tick2 - tick1;
@@ -83,7 +77,6 @@ pub trait Event {
         f: N,
     );
     fn dispatch(self, bus: Arc<EventBus>);
-    fn dispatch_sync(self, bus: Arc<EventBus>);
 }
 
 pub type BoxedFuture = Pin<Box<dyn Future<Output = ActorResult<()>> + Sync + Send + 'static>>;

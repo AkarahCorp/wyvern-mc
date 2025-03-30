@@ -8,25 +8,18 @@ use std::{
     thread::Builder,
 };
 
-use async_executor::Executor;
+use async_executor::{Executor, Task};
 use flume::{Receiver, Sender};
 use lockfree::queue::Queue;
 
 use crate::actors::ActorResult;
 
-pub(crate) static GLOBAL_RUNTIME: LazyLock<Runtime> = const {
-    LazyLock::new(|| {
-        let chan = flume::unbounded();
-        Runtime {
-            sender: chan.0,
-            receiver: chan.1,
-        }
-    })
+pub(crate) static GLOBAL_RUNTIME: Runtime = Runtime {
+    executor: Executor::new(),
 };
 
 pub struct Runtime {
-    pub(crate) sender: Sender<Pin<Box<dyn Future<Output = ActorResult<()>> + Send + Sync>>>,
-    pub(crate) receiver: Receiver<Pin<Box<dyn Future<Output = ActorResult<()>> + Send + Sync>>>,
+    pub(crate) executor: Executor<'static>,
 }
 
 impl Runtime {
@@ -37,11 +30,22 @@ impl Runtime {
         let builder = Builder::new().name(name.into()).spawn(func).unwrap();
     }
 
+    pub fn executor(&self) -> &'static Executor<'static> {
+        &GLOBAL_RUNTIME.executor
+    }
+
     pub fn spawn_task<F>(fut: F)
     where
         F: Future<Output = ActorResult<()>> + Send + Sync + 'static,
     {
-        GLOBAL_RUNTIME.sender.send(Box::pin(fut));
+        GLOBAL_RUNTIME.executor.spawn(fut).detach();
+    }
+
+    pub fn run_async<T: Send + 'static, F>(fut: F) -> Task<ActorResult<T>>
+    where
+        F: Future<Output = ActorResult<T>> + Send + Sync + 'static,
+    {
+        GLOBAL_RUNTIME.executor.spawn(fut)
     }
 
     pub async fn yield_now() {
@@ -65,5 +69,16 @@ impl Future for YieldNow {
         } else {
             Poll::Ready(())
         }
+    }
+}
+
+pub struct NeverYield;
+
+impl Future for NeverYield {
+    type Output = ();
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        cx.waker().wake_by_ref();
+        Poll::Pending
     }
 }
