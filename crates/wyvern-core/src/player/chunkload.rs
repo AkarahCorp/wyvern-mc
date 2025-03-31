@@ -8,7 +8,7 @@ use voxidian_protocol::{
 use wyvern_components::DataComponentHolder;
 
 use crate::{actors::ActorResult, runtime::Runtime, server::registries::RegistryKeys};
-use wyvern_values::{Vec2, Vec3};
+use wyvern_values::{IVec2, IVec3};
 
 use super::{ConnectionData, PlayerComponents};
 
@@ -18,15 +18,15 @@ impl ConnectionData {
             return Ok(());
         };
 
-        let chunk_center = Vec2::new(
-            f64::floor(self.get(PlayerComponents::POSITION)?.x() / 16.0) as i32,
-            f64::floor(self.get(PlayerComponents::POSITION)?.z() / 16.0) as i32,
+        let chunk_center = IVec2::new(
+            f64::floor(self.get(PlayerComponents::POSITION)?[0] / 16.0) as i32,
+            f64::floor(self.get(PlayerComponents::POSITION)?[2] / 16.0) as i32,
         );
 
         self.associated_data.last_chunk_position = chunk_center;
 
-        let cx = chunk_center.x();
-        let cz = chunk_center.y();
+        let cx = chunk_center[0];
+        let cz = chunk_center[1];
 
         let render_distance = self.associated_data.render_distance + 2;
 
@@ -35,10 +35,10 @@ impl ConnectionData {
             .loaded_chunks
             .iter()
             .filter(|position| {
-                position.x() >= cx - render_distance
-                    && position.x() <= cx + render_distance
-                    && position.y() >= cz - render_distance
-                    && position.y() <= cz + render_distance
+                position[0] >= cx - render_distance
+                    && position[0] <= cx + render_distance
+                    && position[1] >= cz - render_distance
+                    && position[1] <= cz + render_distance
             })
             .copied()
             .collect::<Vec<_>>();
@@ -46,7 +46,7 @@ impl ConnectionData {
         let mut chunks = Vec::new();
         for chunk_x in (cx - render_distance)..(cx + render_distance) {
             for chunk_z in (cz - render_distance)..(cz + render_distance) {
-                let pos = Vec2::new(chunk_x, chunk_z);
+                let pos = IVec2::new(chunk_x, chunk_z);
                 if !self.associated_data.loaded_chunks.contains(&pos) {
                     chunks.push(pos);
                 }
@@ -54,8 +54,8 @@ impl ConnectionData {
         }
 
         chunks.sort_by(|lhs, rhs| {
-            let lhs_dist = i32::isqrt(i32::pow(lhs.x() - cx, 2) + i32::pow(lhs.y() - cz, 2));
-            let rhs_dist = i32::isqrt(i32::pow(rhs.x() - cx, 2) + i32::pow(rhs.y() - cz, 2));
+            let lhs_dist = i32::isqrt(i32::pow(lhs[0] - cx, 2) + i32::pow(lhs[1] - cz, 2));
+            let rhs_dist = i32::isqrt(i32::pow(rhs[0] - cx, 2) + i32::pow(rhs[1] - cz, 2));
             lhs_dist.cmp(&rhs_dist)
         });
 
@@ -82,13 +82,13 @@ impl ConnectionData {
                     (min_y, max_y)
                 };
 
-                let chunk_x = pos.x();
-                let chunk_z = pos.y();
+                let chunk_x = pos[0];
+                let chunk_z = pos[1];
 
                 let mut sections = Vec::new();
 
                 for y in (min_y..max_y).step_by(16) {
-                    let pos = Vec3::new(chunk_x, y, chunk_z);
+                    let pos = IVec3::new(chunk_x, y, chunk_z);
 
                     let chunk = dimension.get_chunk_section(pos)?;
                     let Some(chunk) = chunk else {
@@ -103,7 +103,7 @@ impl ConnectionData {
                     heightmaps: LengthPrefixVec::new(),
                     data: ChunkSectionData { sections },
                     block_entities: dimension
-                        .get_chunk_block_entities(Vec2::new(chunk_x, chunk_z))?
+                        .get_chunk_block_entities(IVec2::new(chunk_x, chunk_z))?
                         .into(),
                     sky_light_mask: vec![0].into(),
                     block_light_mask: vec![0].into(),
@@ -114,8 +114,8 @@ impl ConnectionData {
                 };
 
                 player.write_packet(SetChunkCacheCenterS2CPlayPacket {
-                    chunk_x: chunk_center.x().into(),
-                    chunk_z: chunk_center.y().into(),
+                    chunk_x: chunk_center[0].into(),
+                    chunk_z: chunk_center[1].into(),
                 })?;
                 player.write_packet(ChunkBatchStartS2CPlayPacket {})?;
                 player.write_packet(packet).unwrap();

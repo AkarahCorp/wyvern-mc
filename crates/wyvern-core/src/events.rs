@@ -5,7 +5,7 @@ use crate::{
     item::ItemStack, player::Player, server::Server,
 };
 
-use wyvern_values::{Id, Vec2, Vec3, cell::Token};
+use wyvern_values::{DVec3, IVec2, IVec3, Id, Vec2, cell::Token};
 
 macro_rules! event_bus {
     ($($name:ident : $t:ty)*) => {
@@ -90,7 +90,7 @@ pub struct DimensionCreateEvent {
 #[derive(Debug, Clone)]
 pub struct ChunkLoadEvent {
     pub dimension: Dimension,
-    pub pos: Vec2<i32>,
+    pub pos: IVec2,
 }
 
 #[derive(Debug, Clone)]
@@ -101,8 +101,8 @@ pub struct ServerTickEvent {
 #[derive(Debug, Clone)]
 pub struct PlayerMoveEvent {
     pub player: Player,
-    pub new_position: Vec3<f64>,
-    pub new_direction: Vec2<f32>,
+    pub new_position: DVec3,
+    pub new_direction: Vec2,
 }
 
 #[derive(Debug, Clone)]
@@ -114,26 +114,26 @@ pub struct PlayerCommandEvent {
 #[derive(Debug, Clone)]
 pub struct StartBreakBlockEvent {
     pub player: Player,
-    pub position: Vec3<i32>,
+    pub position: IVec3,
 }
 
 #[derive(Debug, Clone)]
 pub struct StopBreakBlockEvent {
     pub player: Player,
-    pub position: Vec3<i32>,
+    pub position: IVec3,
 }
 
 #[derive(Debug, Clone)]
 pub struct BreakBlockEvent {
     pub player: Player,
-    pub position: Vec3<i32>,
+    pub position: IVec3,
     pub old_block: BlockState,
 }
 
 #[derive(Debug, Clone)]
 pub struct PlaceBlockEvent {
     pub player: Player,
-    pub position: Vec3<i32>,
+    pub position: IVec3,
     pub block: BlockState,
 }
 

@@ -15,7 +15,7 @@ use wyvern_mc::{
     player::{Player, PlayerComponents},
     runtime::Runtime,
     server::Server,
-    values::{Vec3, id},
+    values::{DVec3, IVec3, Vec2Ext, id},
 };
 
 fn main() {
@@ -44,7 +44,7 @@ async fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
     for x in -20..20 {
         for z in -20..20 {
             event.dimension.set_block(
-                Vec3::new(x, 0, z),
+                IVec3::new(x, 0, z),
                 BlockState::new(Blocks::GRASS_BLOCK).with(BlockComponents::SNOWY, false),
             )?;
         }
@@ -57,7 +57,7 @@ async fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
     event.new_dimension.set(id![example:root]);
     event
         .player
-        .set(PlayerComponents::POSITION, Vec3::new(0.0, 1.0, 0.0))?;
+        .set(PlayerComponents::POSITION, DVec3::new(0.0, 1.0, 0.0))?;
 
     event.player.inventory()?.set_slot(
         36,
@@ -75,7 +75,7 @@ async fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
         let uuid = Player::uuid_to_username("platinaknife");
         let skin = Player::get_skin_for_uuid(&uuid);
         let entity = event.player.dimension()?.spawn_human_entity(skin)?;
-        entity.set(EntityComponents::POSITION, Vec3::new(3.0, 10.0, 3.0))?;
+        entity.set(EntityComponents::POSITION, DVec3::new(3.0, 10.0, 3.0))?;
         entity.set(EntityComponents::PHYSICS_ENABLED, true)?;
         entity.set(EntityComponents::GRAVITY_ENABLED, true)?;
 

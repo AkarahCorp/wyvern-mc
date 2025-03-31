@@ -15,7 +15,7 @@ use crate::{
     server::{Server, registries::RegistryKeys},
 };
 
-use wyvern_values::{Id, Vec3};
+use wyvern_values::{I16Vec3, IVec3, Id, USizeVec3};
 
 use crate::blocks::BlockState;
 
@@ -27,7 +27,7 @@ pub struct Chunk {
     pub(crate) min_sections: i32,
     pub(crate) _max_sections: i32,
     pub(crate) sections: Vec<ChunkSection>,
-    pub(crate) block_entities: HashMap<Vec3<i16>, VarInt>,
+    pub(crate) block_entities: HashMap<I16Vec3, VarInt>,
 }
 
 impl Chunk {
@@ -47,30 +47,30 @@ impl Chunk {
 
     pub(crate) fn section_at_mut(&mut self, section: i32) -> Option<&mut ChunkSection> {
         self.sections
-            .get_mut((section + -self.min_sections) as usize)
+            .get_mut((section - self.min_sections) as usize)
     }
 
-    pub fn set_block_at(&mut self, pos: Vec3<i32>, block: BlockState) {
-        let section_y = pos.y().div_euclid(16);
-        let local_y = pos.y().rem_euclid(16);
+    pub fn set_block_at(&mut self, pos: IVec3, block: BlockState) {
+        let section_y = pos[1].div_euclid(16);
+        let local_y = pos[1].rem_euclid(16);
         let name = block.name().clone();
         if let Some(section) = self.section_at_mut(section_y) {
-            section.set_block_at(pos.map(|x| x as usize).with_y(local_y as usize), block);
+            section.set_block_at(pos.with_y(local_y).as_usizevec3(), block);
 
             if let Some(id) = BLOCK_ENTITY_REGISTRY.get(&name.into()) {
-                self.block_entities.insert(pos.map(|x| x as i16), *id);
+                self.block_entities.insert(pos.as_i16vec3(), *id);
             } else {
-                self.block_entities.remove(&pos.map(|x| x as i16));
+                self.block_entities.remove(&pos.as_i16vec3());
             }
         }
     }
 
-    pub fn get_block_at(&mut self, pos: Vec3<i32>) -> BlockState {
-        let section_y = pos.y().div_euclid(16); // Use Euclidean division
-        let local_y = pos.y().rem_euclid(16); // Always positive in [0, 15]
+    pub fn get_block_at(&mut self, pos: IVec3) -> BlockState {
+        let section_y = pos[1].div_euclid(16);
+        let local_y = pos[1].rem_euclid(16);
 
         if let Some(section) = self.section_at_mut(section_y) {
-            section.get_block_at(pos.map(|x| x as usize).with_y(local_y as usize))
+            section.get_block_at(pos.as_usizevec3().with_y(local_y as usize))
         } else {
             BlockState::from_protocol_id(0)
         }
@@ -81,12 +81,12 @@ impl Chunk {
 pub(crate) struct ChunkSection {
     block_count: i16,
     blocks: RawDataArray,
-    block_meta: HashMap<Vec3<usize>, Nbt>,
+    block_meta: HashMap<USizeVec3, Nbt>,
 }
 
 impl ChunkSection {
-    pub fn index_from_pos(pos: Vec3<usize>) -> usize {
-        pos.y() * 256 + pos.z() * 16 + pos.x()
+    pub fn index_from_pos(pos: USizeVec3) -> usize {
+        pos[1] * 256 + pos[2] * 16 + pos[0]
     }
 
     pub fn empty() -> ChunkSection {
@@ -103,7 +103,7 @@ impl ChunkSection {
         }
     }
 
-    pub fn set_block_at(&mut self, pos: Vec3<usize>, block: BlockState) {
+    pub fn set_block_at(&mut self, pos: USizeVec3, block: BlockState) {
         let idx = Self::index_from_pos(pos);
         let old_block = self.blocks.get(idx).unwrap();
 
@@ -123,7 +123,7 @@ impl ChunkSection {
         }
     }
 
-    pub fn get_block_at(&mut self, pos: Vec3<usize>) -> BlockState {
+    pub fn get_block_at(&mut self, pos: USizeVec3) -> BlockState {
         let ptc = self.blocks.get(Self::index_from_pos(pos)).unwrap();
         let mut state = BlockState::from_protocol_id(ptc as i32);
 

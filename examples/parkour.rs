@@ -10,7 +10,7 @@ use wyvern_mc::{
     },
     player::{HealthComponent, PlayerComponents},
     server::{Server, registries::RegistryKeys},
-    values::{Id, Vec3, id},
+    values::{DVec3, IVec3, Id, id},
 };
 
 fn main() {
@@ -43,10 +43,10 @@ async fn on_server_start(event: Arc<ServerStartEvent>) -> ActorResult<()> {
 
 async fn tick(event: Arc<ServerTickEvent>) -> ActorResult<()> {
     for player in event.server.players()? {
-        if player.get(PlayerComponents::POSITION)?.y() < -64.0 {
+        if player.get(PlayerComponents::POSITION)?[1] < -64.0 {
             player.set(
                 PlayerComponents::TELEPORT_POSITION,
-                Vec3::new(0.0, 1000.0, 0.0),
+                DVec3::new(0.0, 1000.0, 0.0),
             )?;
             player.set(
                 PlayerComponents::HEALTH,
@@ -65,14 +65,14 @@ async fn on_command(event: Arc<PlayerCommandEvent>) -> ActorResult<()> {
     if event.command == "restart" {
         event.player.set(
             PlayerComponents::TELEPORT_POSITION,
-            Vec3::new(0.0, 11.0, 0.0),
+            DVec3::new(0.0, 11.0, 0.0),
         )?;
     }
     Ok(())
 }
 
 async fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
-    let mut block_pos = Vec3::new(0, 10, 0);
+    let mut block_pos = IVec3::new(0, 10, 0);
     for _ in 0..20 {
         event
             .dimension
@@ -81,44 +81,36 @@ async fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
         match rand::random_range(1..=3) {
             1 => {
                 let ys = rand::random_range(-1..=1);
-                block_pos = block_pos
-                    .shift_x(4 - ys)
-                    .shift_y(ys)
-                    .shift_z(rand::random_range(-2..=2));
+                block_pos = block_pos + IVec3::new(4 - ys, ys, rand::random_range(-2..=2));
             }
             2 => {
-                block_pos = block_pos
-                    .shift_x(6)
-                    .shift_y(-5)
-                    .shift_z(rand::random_range(-2..=2));
+                block_pos = block_pos + IVec3::new(6, -5, rand::random_range(-2..=2));
+
                 event
                     .dimension
                     .set_block(block_pos, BlockState::new(Blocks::SLIME_BLOCK))?;
 
                 let ys = rand::random_range(-1..=1);
-                block_pos = block_pos
-                    .shift_x(4 - ys)
-                    .shift_y(ys + 2)
-                    .shift_z(rand::random_range(-2..=2));
+                block_pos = block_pos + IVec3::new(4 - ys, ys + 2, rand::random_range(-2..=2));
             }
             3 => {
-                block_pos = block_pos.shift_x(1);
+                block_pos = block_pos + IVec3::new(1, 0, 0);
                 event
                     .dimension
                     .set_block(block_pos, BlockState::new(Blocks::POLISHED_ANDESITE))?;
-                block_pos = block_pos.shift_x(1);
+                block_pos = block_pos + IVec3::new(1, 0, 0);
                 event
                     .dimension
                     .set_block(block_pos, BlockState::new(Blocks::POLISHED_ANDESITE))?;
-                block_pos = block_pos.shift_x(2).shift_y(2);
+                block_pos = block_pos + IVec3::new(2, 2, 0);
                 event
                     .dimension
                     .set_block(block_pos, BlockState::new(Blocks::POLISHED_ANDESITE))?;
-                block_pos = block_pos.shift_x(1).shift_y(-2);
+                block_pos = block_pos + IVec3::new(1, -2, 0);
                 event
                     .dimension
                     .set_block(block_pos, BlockState::new(Blocks::POLISHED_ANDESITE))?;
-                block_pos = block_pos.with_x(block_pos.x() + 1);
+                block_pos = block_pos.with_x(block_pos[0] + 1);
                 event
                     .dimension
                     .set_block(block_pos, BlockState::new(Blocks::POLISHED_ANDESITE))?;
@@ -133,7 +125,7 @@ async fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
     event.new_dimension.set(id![example:root]);
     event.player.set(
         PlayerComponents::TELEPORT_POSITION,
-        Vec3::new(0.0, 11.0, 0.0),
+        DVec3::new(0.0, 11.0, 0.0),
     )?;
     Ok(())
 }
@@ -141,7 +133,7 @@ async fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
 async fn on_respawn(event: Arc<PlayerRespawnEvent>) -> ActorResult<()> {
     event.player.set(
         PlayerComponents::TELEPORT_POSITION,
-        Vec3::new(0.0, 100.0, 0.0),
+        DVec3::new(0.0, 100.0, 0.0),
     )?;
     Ok(())
 }

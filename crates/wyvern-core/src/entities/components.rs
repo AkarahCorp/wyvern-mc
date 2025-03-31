@@ -3,7 +3,7 @@ use wyvern_components::{DataComponentHolder, DataComponentMap, DataComponentType
 
 use crate::item::ItemStack;
 
-use wyvern_values::{Id, Vec2, Vec3, id};
+use wyvern_values::{DVec3, Id, Vec2, id};
 
 use super::EntityData;
 
@@ -12,10 +12,8 @@ pub struct EntityComponents;
 impl EntityComponents {
     pub const ENTITY_TYPE: DataComponentType<Id> =
         DataComponentType::new(id![minecraft:entity_type]);
-    pub const POSITION: DataComponentType<Vec3<f64>> =
-        DataComponentType::new(id![minecraft:position]);
-    pub const DIRECTION: DataComponentType<Vec2<f32>> =
-        DataComponentType::new(id![minecraft:direction]);
+    pub const POSITION: DataComponentType<DVec3> = DataComponentType::new(id![minecraft:position]);
+    pub const DIRECTION: DataComponentType<Vec2> = DataComponentType::new(id![minecraft:direction]);
     pub const UUID: DataComponentType<Uuid> = DataComponentType::new(id![minecraft:uuid]);
     pub const ENTITY_ID: DataComponentType<i32> = DataComponentType::new(id![minecraft:entity_id]);
 
@@ -24,8 +22,7 @@ impl EntityComponents {
     pub const PLAYER_SKIN: DataComponentType<PlayerSkinData> =
         DataComponentType::new(id![minecraft:player_skin]);
 
-    pub const VELOCITY: DataComponentType<Vec3<f64>> =
-        DataComponentType::new(id![minecraft:velocity]);
+    pub const VELOCITY: DataComponentType<DVec3> = DataComponentType::new(id![minecraft:velocity]);
     pub const PHYSICS_ENABLED: DataComponentType<bool> =
         DataComponentType::new(id![minecraft:physics]);
     pub const GRAVITY_ENABLED: DataComponentType<bool> =

@@ -22,7 +22,7 @@ use wyvern_mc::{
     item::{ItemComponents, ItemStack, Items},
     player::PlayerComponents,
     server::Server,
-    values::{Uuid, Vec2, Vec3, id},
+    values::{DVec3, IVec3, Uuid, Vec2, id},
 };
 
 static COUNTER: LazyLock<Mutex<HashMap<Uuid, i32>>> = LazyLock::new(|| Mutex::new(HashMap::new()));
@@ -54,12 +54,12 @@ async fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
         for z in 0..6 {
             event
                 .dimension
-                .set_block(Vec3::new(x, 0, z), BlockState::new(Blocks::GRASS_BLOCK))?;
+                .set_block(IVec3::new(x, 0, z), BlockState::new(Blocks::GRASS_BLOCK))?;
         }
     }
 
     let entity = event.dimension.spawn_entity(Entities::ZOMBIE)?;
-    entity.set(EntityComponents::POSITION, Vec3::new(1.0, 0.0, 2.0))?;
+    entity.set(EntityComponents::POSITION, DVec3::new(1.0, 0.0, 2.0))?;
     entity.set(EntityComponents::DIRECTION, Vec2::new(58.0, 32.5))?;
     Ok(())
 }
@@ -102,7 +102,7 @@ async fn on_tick(event: Arc<ServerTickEvent>) -> ActorResult<()> {
         for entity in player.dimension()?.entities()? {
             entity.set(
                 EntityComponents::POSITION,
-                Vec3::new(
+                DVec3::new(
                     rand::random_range(0.0..1.0),
                     rand::random_range(0.0..1.0),
                     rand::random_range(0.0..1.0),

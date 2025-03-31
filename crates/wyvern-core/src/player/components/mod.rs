@@ -10,7 +10,7 @@ use crate::{
     entities::AttributeContainer,
 };
 
-use wyvern_values::{Vec2, Vec3, id};
+use wyvern_values::{DVec2, DVec3, Vec2, id};
 
 pub mod update;
 
@@ -21,14 +21,12 @@ pub struct PlayerComponents;
 impl PlayerComponents {
     pub const USERNAME: DataComponentType<String> = DataComponentType::new(id![minecraft:username]);
     pub const UUID: DataComponentType<Uuid> = DataComponentType::new(id![minecraft:uuid]);
-    pub const TELEPORT_POSITION: DataComponentType<Vec3<f64>> =
+    pub const TELEPORT_POSITION: DataComponentType<DVec3> =
         DataComponentType::new(id![minecraft:tp_position]);
-    pub const TELEPORT_VELOCITY: DataComponentType<Vec3<f64>> =
+    pub const TELEPORT_VELOCITY: DataComponentType<DVec3> =
         DataComponentType::new(id![minecraft:tp_velocity]);
-    pub const POSITION: DataComponentType<Vec3<f64>> =
-        DataComponentType::new(id![minecraft:position]);
-    pub const DIRECTION: DataComponentType<Vec2<f32>> =
-        DataComponentType::new(id![minecraft:direction]);
+    pub const POSITION: DataComponentType<DVec3> = DataComponentType::new(id![minecraft:position]);
+    pub const DIRECTION: DataComponentType<Vec2> = DataComponentType::new(id![minecraft:direction]);
     pub const ATTRIBUTES: DataComponentType<AttributeContainer> =
         DataComponentType::new(id![minecraft:attributes]);
     pub const INPUT_FLAGS: DataComponentType<InputFlags> =
@@ -84,7 +82,7 @@ pub struct HealthComponent {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct WorldBorderComponent {
-    pub center: Vec2<f64>,
+    pub center: DVec2,
     pub size: f64,
     pub warning_delay: i32,
     pub warning_distance: i32,

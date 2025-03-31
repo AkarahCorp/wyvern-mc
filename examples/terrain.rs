@@ -10,7 +10,7 @@ use wyvern_mc::{
     events::{DimensionCreateEvent, PlayerJoinEvent, ServerStartEvent},
     player::PlayerComponents,
     server::{Server, registries::RegistryKeys},
-    values::{Vec3, id},
+    values::{IVec3, id},
 };
 
 fn main() {
@@ -52,7 +52,7 @@ async fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
                     ]) + 1.0;
                     let y = f64::floor(y * 16.0) as i32;
 
-                    let new_pos = Vec3::new(x2, y, z2);
+                    let new_pos = IVec3::new(x2, y, z2);
                     chunk.set_block_at(
                         new_pos,
                         BlockState::new(Blocks::GRASS_BLOCK).with(BlockComponents::SNOWY, false),
@@ -60,13 +60,13 @@ async fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
 
                     if SIMPLEX.get([(x2) as f64 * 100.0, (z2) as f64 * 100.0]) > 0.5 {
                         chunk.set_block_at(
-                            new_pos.with_y(new_pos.y() + 1),
+                            new_pos.with_y(new_pos[1] + 1),
                             BlockState::new(Blocks::SHORT_GRASS),
                         );
                     }
 
                     for y in 0..y {
-                        let new_pos = Vec3::new(x2, y, z2);
+                        let new_pos = IVec3::new(x2, y, z2);
                         chunk.set_block_at(new_pos, BlockState::new(Blocks::DIRT));
                     }
                 }

@@ -17,7 +17,7 @@ use crate::{
     actors::ActorResult, entities::EntityComponents, item::ItemStack, player::ConnectionData,
     runtime::Runtime,
 };
-use wyvern_values::{Vec3, id};
+use wyvern_values::{DVec3, id};
 
 use super::{Player, PlayerComponents};
 
@@ -71,21 +71,21 @@ impl Player {
 
     pub(crate) fn update_teleport(&mut self, _patch: &DataComponentPatch) -> ActorResult<()> {
         if let Ok(location) = self.get(PlayerComponents::TELEPORT_POSITION) {
-            if location != Vec3::new(f64::MIN, f64::MIN, f64::MIN) {
+            if location != DVec3::new(f64::MIN, f64::MIN, f64::MIN) {
                 self.set(
                     PlayerComponents::TELEPORT_SYNC_SENT,
                     self.get(PlayerComponents::TELEPORT_SYNC_SENT).unwrap_or(10) + 1,
                 )?;
                 self.set(
                     PlayerComponents::TELEPORT_POSITION,
-                    Vec3::new(f64::MIN, f64::MIN, f64::MIN),
+                    DVec3::new(f64::MIN, f64::MIN, f64::MIN),
                 )?;
                 self.set(PlayerComponents::POSITION, location)?;
                 self.write_packet(PlayerPositionS2CPlayPacket {
                     teleport_id: VarInt::from(self.get(PlayerComponents::TELEPORT_SYNC_SENT)?),
-                    x: location.x(),
-                    y: location.y(),
-                    z: location.z(),
+                    x: location[0],
+                    y: location[1],
+                    z: location[2],
                     vx: 0.0,
                     vy: 0.0,
                     vz: 0.0,
@@ -110,23 +110,23 @@ impl Player {
 
     pub(crate) fn update_velocity(&mut self, _patch: &DataComponentPatch) -> ActorResult<()> {
         if let Ok(velocity) = self.get(PlayerComponents::TELEPORT_VELOCITY) {
-            if velocity != Vec3::new(f64::MIN, f64::MIN, f64::MIN) {
+            if velocity != DVec3::new(f64::MIN, f64::MIN, f64::MIN) {
                 self.set(
                     PlayerComponents::TELEPORT_SYNC_SENT,
                     self.get(PlayerComponents::TELEPORT_SYNC_SENT).unwrap_or(10) + 1,
                 )?;
                 self.set(
                     PlayerComponents::TELEPORT_VELOCITY,
-                    Vec3::new(f64::MIN, f64::MIN, f64::MIN),
+                    DVec3::new(f64::MIN, f64::MIN, f64::MIN),
                 )?;
                 self.write_packet(PlayerPositionS2CPlayPacket {
                     teleport_id: VarInt::from(self.get(PlayerComponents::TELEPORT_SYNC_SENT)?),
                     x: 0.0,
                     y: 0.0,
                     z: 0.0,
-                    vx: velocity.x(),
-                    vy: velocity.y(),
-                    vz: velocity.z(),
+                    vx: velocity[0],
+                    vy: velocity[1],
+                    vz: velocity[2],
                     adyaw_deg: 0.0,
                     adpitch_deg: 0.0,
                     flags: TeleportFlags {
@@ -216,8 +216,8 @@ impl Player {
                 diameter: world_border.size,
             })?;
             self.write_packet(SetBorderCenterS2CPlayPacket {
-                x: world_border.center.x(),
-                z: world_border.center.y(),
+                x: world_border.center[0],
+                z: world_border.center[1],
             })?;
             self.write_packet(SetBorderWarningDelayS2CPlayPacket {
                 warning_time: world_border.warning_delay.into(),

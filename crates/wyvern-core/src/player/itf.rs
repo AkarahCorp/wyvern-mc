@@ -1,15 +1,15 @@
 use wyvern_actors::{ActorError, ActorResult};
 use wyvern_datatypes::{gamemode::Gamemode, text::Text};
-use wyvern_values::{Uuid, Vec2, Vec3};
+use wyvern_values::{DVec2, DVec3, Uuid};
 
 use super::{Player, PlayerComponents};
 
 impl Player {
-    pub fn teleport(&self, position: Vec3<f64>) -> ActorResult<()> {
+    pub fn teleport(&self, position: DVec3) -> ActorResult<()> {
         self.set(PlayerComponents::TELEPORT_POSITION, position)
     }
 
-    pub fn set_velocity(&self, position: Vec3<f64>) -> ActorResult<()> {
+    pub fn set_velocity(&self, position: DVec3) -> ActorResult<()> {
         self.set(PlayerComponents::TELEPORT_VELOCITY, position)
     }
 
@@ -109,11 +109,11 @@ impl PlayerWorldBorder<'_> {
         self.player.set(PlayerComponents::WORLD_BORDER, c)
     }
 
-    pub fn center(&self) -> ActorResult<Vec2<f64>> {
+    pub fn center(&self) -> ActorResult<DVec2> {
         Ok(self.player.get(PlayerComponents::WORLD_BORDER)?.center)
     }
 
-    pub fn set_center(&self, center: Vec2<f64>) -> ActorResult<()> {
+    pub fn set_center(&self, center: DVec2) -> ActorResult<()> {
         let mut c = self.player.get(PlayerComponents::WORLD_BORDER)?;
         c.center = center;
         self.player.set(PlayerComponents::WORLD_BORDER, c)

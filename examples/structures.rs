@@ -16,7 +16,7 @@ use wyvern_mc::{
     player::PlayerComponents,
     runtime::Runtime,
     server::Server,
-    values::{Vec3, id},
+    values::{DVec3, IVec3, id},
 };
 
 fn main() {
@@ -48,7 +48,7 @@ async fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
     let nbt = Nbt::new(NbtCompound::try_from(bytes).unwrap());
     let structure = Structure::codec().decode_start(&NbtOps, &nbt).unwrap();
 
-    structure.place(event.dimension.clone(), Vec3::new(0, 0, 0))?;
+    structure.place(event.dimension.clone(), IVec3::new(0, 0, 0))?;
     Ok(())
 }
 
@@ -57,7 +57,7 @@ async fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
     event.player.set_gamemode(Gamemode::Survival)?;
     event.player.set(
         PlayerComponents::TELEPORT_POSITION,
-        Vec3::new(0.0, 1.0, 0.0),
+        DVec3::new(0.0, 1.0, 0.0),
     )?;
 
     Runtime::spawn_task(async move {

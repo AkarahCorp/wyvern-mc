@@ -11,7 +11,7 @@ use crate::{
     actors::ActorResult, blocks::Blocks, dimension::DimensionData, entities::Entity,
     runtime::Runtime, server::Server,
 };
-use wyvern_values::Vec3;
+use wyvern_values::DVec3;
 
 use super::{Dimension, EntityComponents};
 
@@ -38,19 +38,19 @@ impl DimensionData {
                         let player = Server::get()?.player(player)?;
                         player.write_packet(EntityPositionSyncS2CPlayPacket {
                             entity_id: id.into(),
-                            x: pos.x(),
-                            y: pos.y(),
-                            z: pos.z(),
+                            x: pos[0],
+                            y: pos[1],
+                            z: pos[2],
                             vx: 0.0,
                             vy: 0.0,
                             vz: 0.0,
-                            yaw: dir.x(),
-                            pitch: dir.y(),
+                            yaw: dir[0],
+                            pitch: dir[1],
                             on_ground: true,
                         })?;
                         player.write_packet(RotateHeadS2CPlayPacket {
                             entity: id.into(),
-                            yaw: Angle::of_deg(dir.x().rem_euclid(360.0)),
+                            yaw: Angle::of_deg(dir[0].rem_euclid(360.0)),
                         })?;
                         Ok(())
                     });
@@ -94,11 +94,11 @@ pub fn entity_position(entity: &Entity, dimension: &Dimension) -> ActorResult<()
             let mut pos = entity.get(EntityComponents::POSITION)?;
             for _ in 1..10 {
                 let new_pos = pos
-                    .with_x(pos.x() + velocity.x())
-                    .with_y(pos.y() + velocity.y())
-                    .with_z(pos.z() + velocity.z());
+                    .with_x(pos[0] + velocity[0])
+                    .with_y(pos[1] + velocity[1])
+                    .with_z(pos[2] + velocity[2]);
 
-                if dimension.get_block(new_pos.floor())?.name() == &Blocks::AIR {
+                if dimension.get_block(new_pos.floor().as_ivec3())?.name() == &Blocks::AIR {
                     pos = new_pos;
                     break;
                 } else {
@@ -113,8 +113,8 @@ pub fn entity_position(entity: &Entity, dimension: &Dimension) -> ActorResult<()
     if let Ok(true) = entity.get(EntityComponents::GRAVITY_ENABLED) {
         let vel = entity
             .get(EntityComponents::VELOCITY)
-            .unwrap_or(Vec3::new(0.0, 0.0, 0.0));
-        entity.set(EntityComponents::VELOCITY, vel.with_y(vel.y() - 0.08))?;
+            .unwrap_or(DVec3::new(0.0, 0.0, 0.0));
+        entity.set(EntityComponents::VELOCITY, vel.with_y(vel[1] - 0.08))?;
     }
     Ok(())
 }

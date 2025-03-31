@@ -2,14 +2,14 @@ use datafix::serialization::{
     Codec, CodecAdapters, CodecOps, Codecs, DefaultCodec, MapCodecBuilder,
 };
 use wyvern_actors::ActorResult;
-use wyvern_values::Vec3;
+use wyvern_values::IVec3;
 
 use crate::dimension::Dimension;
 
 use super::BlockState;
 
 pub struct Structure {
-    size: Vec3<i32>,
+    size: IVec3,
     blocks: Vec<StructureBlock>,
     palette: Vec<BlockState>,
     entities: (),
@@ -19,7 +19,7 @@ pub struct Structure {
 impl<O: CodecOps> DefaultCodec<O> for Structure {
     fn codec() -> impl Codec<Self, O> {
         MapCodecBuilder::new()
-            .field(Vec3::codec().field_of("size", |s: &Structure| &s.size))
+            .field(ivec3_codec().field_of("size", |s: &Structure| &s.size))
             .field(
                 StructureBlock::codec()
                     .list_of()
@@ -42,7 +42,7 @@ impl<O: CodecOps> DefaultCodec<O> for Structure {
     }
 }
 struct StructureBlock {
-    pos: Vec3<i32>,
+    pos: IVec3,
     state: i32,
     nbt: (),
 }
@@ -50,7 +50,7 @@ struct StructureBlock {
 impl<O: CodecOps> DefaultCodec<O> for StructureBlock {
     fn codec() -> impl datafix::serialization::Codec<Self, O> {
         MapCodecBuilder::new()
-            .field(Vec3::codec().field_of("pos", |s: &StructureBlock| &s.pos))
+            .field(ivec3_codec().field_of("pos", |s: &StructureBlock| &s.pos))
             .field(i32::codec().field_of("state", |s: &StructureBlock| &s.state))
             .field(Codecs::unit().default_field_of("nbt", |s: &StructureBlock| &s.nbt, || ()))
             .build(|pos, state, nbt| StructureBlock { pos, state, nbt })
@@ -58,7 +58,7 @@ impl<O: CodecOps> DefaultCodec<O> for StructureBlock {
 }
 
 impl Structure {
-    pub fn place(&self, dim: Dimension, base_position: Vec3<i32>) -> ActorResult<()> {
+    pub fn place(&self, dim: Dimension, base_position: IVec3) -> ActorResult<()> {
         for block in &self.blocks {
             let new_pos = base_position + block.pos;
             let block_state = &self.palette[block.state as usize];
@@ -66,4 +66,11 @@ impl Structure {
         }
         Ok(())
     }
+}
+
+fn ivec3_codec<O: CodecOps>() -> impl Codec<IVec3, O> {
+    i32::codec().list_of().xmap(
+        |vec| IVec3::new(vec[0], vec[1], vec[2]),
+        |ivec| Vec::from(ivec.to_array()),
+    )
 }

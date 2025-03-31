@@ -2,15 +2,15 @@ use std::time::Instant;
 
 use crate::{dimension::Dimension, inventory::DataInventory, item::ItemStack};
 use wyvern_datatypes::window::InventoryKind;
-use wyvern_values::Vec2;
+use wyvern_values::IVec2;
 
 #[derive(Debug, Clone)]
 pub struct PlayerData {
     pub(crate) dimension: Option<Dimension>,
 
     #[allow(unused)]
-    pub(crate) last_chunk_position: Vec2<i32>,
-    pub(crate) loaded_chunks: Vec<Vec2<i32>>,
+    pub(crate) last_chunk_position: IVec2,
+    pub(crate) loaded_chunks: Vec<IVec2>,
     pub(crate) render_distance: i32,
 
     pub(crate) entity_id: i32,
@@ -30,7 +30,7 @@ impl Default for PlayerData {
         Self {
             dimension: None,
 
-            last_chunk_position: Vec2::new(0, 0),
+            last_chunk_position: IVec2::new(0, 0),
             loaded_chunks: Vec::new(),
 
             render_distance: 2,

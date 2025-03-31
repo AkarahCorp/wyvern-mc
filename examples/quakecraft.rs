@@ -21,7 +21,7 @@ use wyvern_mc::{
     macros::server,
     player::{Player, PlayerComponents},
     server::{Server, ServerBuilder, registries::RegistryKeys},
-    values::{NVec, Vec3, id},
+    values::{DVec3, IVec3, Vec2Ext, id},
 };
 
 #[server]
@@ -60,7 +60,7 @@ async fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
     let nbt = Nbt::new(NbtCompound::try_from(bytes).unwrap());
     let structure = Structure::codec().decode_start(&NbtOps, &nbt).unwrap();
 
-    structure.place(event.dimension.clone(), Vec3::new(0, 0, 0))?;
+    structure.place(event.dimension.clone(), IVec3::new(0, 0, 0))?;
 
     println!("Placed structure!");
     Ok(())
@@ -141,20 +141,26 @@ async fn on_shoot(event: Arc<RightClickEvent>) -> ActorResult<()> {
         .get(PlayerComponents::DIRECTION)?
         .to_3d_direction()
         .map(|x| x / 2.0);
-    let mut step = position.with_y(position.y() + 1.8);
+    let mut step = position.with_y(position[1] + 1.8);
     let players = event.player.dimension()?.players()?;
     for _ in 1..120 {
         step = step
-            .with_x(step.x() + direction.x())
-            .with_y(step.y() + direction.y())
-            .with_z(step.z() + direction.z());
+            .with_x(step[0] + direction[0])
+            .with_y(step[1] + direction[1])
+            .with_z(step[2] + direction[2]);
 
         for subplayer in &players {
             let subplayer = Server::get()?.player(*subplayer)?;
             subplayer.play_particle(step, Particle::new(id![minecraft:electric_spark]))?;
         }
 
-        if *event.player.dimension()?.get_block(step.floor())?.name() != id![minecraft:air] {
+        if *event
+            .player
+            .dimension()?
+            .get_block(step.floor().as_ivec3())?
+            .name()
+            != id![minecraft:air]
+        {
             break;
         }
 
@@ -167,9 +173,9 @@ async fn on_shoot(event: Arc<RightClickEvent>) -> ActorResult<()> {
                 continue;
             }
 
-            let dx = (step.x() - position.x()).abs();
-            let dy = (step.y() - (position.y() + 1.0)).abs();
-            let dz = (step.z() - position.z()).abs();
+            let dx = (step[0] - position[0]).abs();
+            let dy = (step[1] - (position[1] + 1.0)).abs();
+            let dz = (step[2] - position[2]).abs();
 
             if dx <= 0.5 && dz <= 0.5 && dy <= 1.0 {
                 respawn_player(&player)?;
@@ -198,11 +204,16 @@ fn respawn_player(player: &Player) -> ActorResult<()> {
         let rand_y = rand::random_range(0.0..20.0);
         let rand_z = rand::random_range(0.0..20.0);
 
-        let mut pos: NVec<f64, 3> = Vec3::new(rand_x, rand_y, rand_z);
+        let mut pos = DVec3::new(rand_x, rand_y, rand_z);
         let mut descent_steps = 0;
 
-        while *player.dimension()?.get_block(pos.floor())?.name() == id![minecraft:air] {
-            pos = pos.with_y(pos.y() - 0.5);
+        while *player
+            .dimension()?
+            .get_block(pos.floor().as_ivec3())?
+            .name()
+            == id![minecraft:air]
+        {
+            pos = pos.with_y(pos[1] - 0.5);
             descent_steps += 1;
             if descent_steps > 100 {
                 break;
@@ -215,19 +226,24 @@ fn respawn_player(player: &Player) -> ActorResult<()> {
             continue;
         }
 
-        let candidate_spawn = pos.with_y(pos.y() + 1.0);
+        let candidate_spawn = pos.with_y(pos[1] + 1.0);
 
         if *player
             .dimension()?
-            .get_block(candidate_spawn.floor())?
+            .get_block(candidate_spawn.floor().as_ivec3())?
             .name()
             != id![minecraft:air]
         {
             continue;
         }
 
-        let head_space = candidate_spawn.with_y(candidate_spawn.y() + 1.0);
-        if *player.dimension()?.get_block(head_space.floor())?.name() != id![minecraft:air] {
+        let head_space = candidate_spawn.with_y(candidate_spawn[1] + 1.0);
+        if *player
+            .dimension()?
+            .get_block(head_space.floor().as_ivec3())?
+            .name()
+            != id![minecraft:air]
+        {
             continue;
         }
 

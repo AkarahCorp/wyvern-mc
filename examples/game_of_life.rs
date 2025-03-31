@@ -16,7 +16,7 @@ use wyvern_mc::{
     },
     runtime::Runtime,
     server::{Server, registries::RegistryKeys},
-    values::{Id, Vec3, id},
+    values::{IVec3, Id, id},
 };
 
 const MAX_X: usize = 50;
@@ -57,7 +57,7 @@ async fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
     for x in 0..MAX_X {
         for z in 0..MAX_Z {
             event.dimension.set_block(
-                Vec3::new(x as i32, 0, z as i32),
+                IVec3::new(x as i32, 0, z as i32),
                 BlockState::new(Blocks::DIRT),
             )?;
         }
@@ -107,7 +107,7 @@ async fn run_tick(server: &Server) -> ActorResult<()> {
 
     for x in 0..MAX_X {
         for z in 0..MAX_Z {
-            copies[x][z] = dim.get_block(Vec3::new(x as i32, 0, z as i32))?;
+            copies[x][z] = dim.get_block(IVec3::new(x as i32, 0, z as i32))?;
         }
     }
 
@@ -149,7 +149,7 @@ async fn run_tick(server: &Server) -> ActorResult<()> {
 
     for x in 0..MAX_X {
         for z in 0..MAX_Z {
-            dim.set_block(Vec3::new(x as i32, 0, z as i32), outputs[x][z].clone())?;
+            dim.set_block(IVec3::new(x as i32, 0, z as i32), outputs[x][z].clone())?;
         }
     }
     let end2 = Instant::now();

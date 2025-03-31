@@ -17,7 +17,7 @@ use wyvern_mc::{
     player::PlayerComponents,
     runtime::Runtime,
     server::{Server, registries::RegistryKeys},
-    values::{Vec3, id},
+    values::{IVec3, id},
 };
 
 fn main() {
@@ -53,7 +53,7 @@ async fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
     for x in 0..10 {
         for z in 0..10 {
             event.dimension.set_block(
-                Vec3::new(x, 0, z),
+                IVec3::new(x, 0, z),
                 BlockState::new(Blocks::GRASS_BLOCK).with(BlockComponents::SNOWY, false),
             )?;
         }

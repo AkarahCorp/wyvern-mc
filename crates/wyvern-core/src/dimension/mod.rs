@@ -24,12 +24,12 @@ use voxidian_protocol::{
 };
 use wyvern_actors::Actor;
 use wyvern_components::{ComponentElement, DataComponentHolder, DataComponentMap};
-use wyvern_values::id;
+use wyvern_values::{DVec3, IVec2, IVec3, id};
 
 use crate::{events::ChunkLoadEvent, runtime::Runtime, server::Server};
 
 use crate::actors::{ActorError, ActorResult};
-use wyvern_values::{Id, Vec2, Vec3};
+use wyvern_values::{Id, Vec2};
 
 pub mod chunk;
 
@@ -38,7 +38,7 @@ pub mod chunk;
 pub struct DimensionData {
     #[allow(unused)]
     pub(crate) name: Id,
-    pub(crate) chunks: HashMap<Vec2<i32>, Chunk>,
+    pub(crate) chunks: HashMap<IVec2, Chunk>,
     pub(crate) entities: HashMap<Uuid, EntityData>,
     pub(crate) server: Option<Server>,
     pub(crate) sender: Sender<DimensionMessage>,
@@ -103,13 +103,13 @@ impl DimensionData {
 
     #[GetChunkSection]
     #[doc = "Returns a copy of the 16x16x16 chunk section at the provided coordinates."]
-    pub fn get_chunk_section(&mut self, position: Vec3<i32>) -> ActorResult<Option<ChunkSection>> {
-        let chunk_pos = Vec2::new(position.x(), position.z());
+    pub fn get_chunk_section(&mut self, position: IVec3) -> ActorResult<Option<ChunkSection>> {
+        let chunk_pos = IVec2::new(position[0], position[2]);
         self.try_initialize_chunk(&chunk_pos)?;
 
         match self.chunks.get_mut(&chunk_pos) {
             Some(chunk) => {
-                let chunk_y = position.y() / 16;
+                let chunk_y = position[1] / 16;
                 Ok(Some(chunk.section_at_mut(chunk_y).unwrap().clone()))
             }
             None => Ok(None),
@@ -119,7 +119,7 @@ impl DimensionData {
     #[GetChunkBlockEntities]
     pub fn get_chunk_block_entities(
         &mut self,
-        position: Vec2<i32>,
+        position: IVec2,
     ) -> ActorResult<Vec<ChunkBlockEntity>> {
         match self.chunks.get(&position) {
             Some(chunk) => {
@@ -127,8 +127,8 @@ impl DimensionData {
                     .block_entities
                     .iter()
                     .map(|x| ChunkBlockEntity {
-                        packed_xz: (((x.0.x() & 15) << 4) | (x.0.z() & 15)) as u8,
-                        y: x.0.y(),
+                        packed_xz: (((x.0[0] & 15) << 4) | (x.0[2] & 15)) as u8,
+                        y: x.0[1],
                         entity_type: *x.1,
                         data: Nbt::new(),
                     })
@@ -141,12 +141,12 @@ impl DimensionData {
 
     #[SetBlock]
     #[doc = "Sets a block in this dimension at the given coordinates to the provided block state."]
-    pub fn set_block(&mut self, position: Vec3<i32>, block_state: BlockState) -> ActorResult<()> {
-        let chunk_pos = Vec2::new(position.x().div_euclid(16), position.z().div_euclid(16));
-        let pos_in_chunk = Vec3::new(
-            position.x().rem_euclid(16),
-            position.y(),
-            position.z().rem_euclid(16),
+    pub fn set_block(&mut self, position: IVec3, block_state: BlockState) -> ActorResult<()> {
+        let chunk_pos = IVec2::new(position[0].div_euclid(16), position[2].div_euclid(16));
+        let pos_in_chunk = IVec3::new(
+            position[0].rem_euclid(16),
+            position[1],
+            position[2].rem_euclid(16),
         );
 
         self.try_initialize_chunk(&chunk_pos)?;
@@ -164,7 +164,7 @@ impl DimensionData {
                 let conn = conn.clone();
 
                 let _ = conn.write_packet(BlockUpdateS2CPlayPacket {
-                    pos: BlockPos::new(pos.x(), pos.y(), pos.z()),
+                    pos: BlockPos::new(pos[0], pos[1], pos[2]),
                     block: unsafe { RegEntry::new_unchecked(block_state.protocol_id() as u32) },
                 });
             }
@@ -175,12 +175,12 @@ impl DimensionData {
 
     #[GetBlock]
     #[doc = "Returns a copy of the block state at the provided coordinates."]
-    pub fn get_block(&mut self, position: Vec3<i32>) -> ActorResult<BlockState> {
-        let chunk = Vec2::new(position.x().div_euclid(16), position.z().div_euclid(16));
-        let pos_in_chunk = Vec3::new(
-            position.x().rem_euclid(16),
-            position.y(),
-            position.z().rem_euclid(16),
+    pub fn get_block(&mut self, position: IVec3) -> ActorResult<BlockState> {
+        let chunk = IVec2::new(position[0].div_euclid(16), position[2].div_euclid(16));
+        let pos_in_chunk = IVec3::new(
+            position[0].rem_euclid(16),
+            position[1],
+            position[2].rem_euclid(16),
         );
 
         self.try_initialize_chunk(&chunk)?;
@@ -293,9 +293,9 @@ impl DimensionData {
         components.set(EntityComponents::ENTITY_ID, id);
         components.set(EntityComponents::UUID, uuid);
         components.set(EntityComponents::ENTITY_TYPE, entity_type.clone());
-        components.set(EntityComponents::POSITION, Vec3::new(0.0, 0.0, 0.0));
+        components.set(EntityComponents::POSITION, DVec3::new(0.0, 0.0, 0.0));
         components.set(EntityComponents::DIRECTION, Vec2::new(0.0, 0.0));
-        components.set(EntityComponents::VELOCITY, Vec3::new(0.0, 0.0, 0.0));
+        components.set(EntityComponents::VELOCITY, DVec3::new(0.0, 0.0, 0.0));
         components.set(EntityComponents::PLAYER_CONTROLLED, false);
 
         self.entities.insert(
@@ -333,9 +333,9 @@ impl DimensionData {
         components.set(EntityComponents::ENTITY_ID, id);
         components.set(EntityComponents::UUID, uuid);
         components.set(EntityComponents::ENTITY_TYPE, id![minecraft:player]);
-        components.set(EntityComponents::POSITION, Vec3::new(0.0, 0.0, 0.0));
+        components.set(EntityComponents::POSITION, DVec3::new(0.0, 0.0, 0.0));
         components.set(EntityComponents::DIRECTION, Vec2::new(0.0, 0.0));
-        components.set(EntityComponents::VELOCITY, Vec3::new(0.0, 0.0, 0.0));
+        components.set(EntityComponents::VELOCITY, DVec3::new(0.0, 0.0, 0.0));
         components.set(EntityComponents::PLAYER_CONTROLLED, false);
         components.set(EntityComponents::PLAYER_SKIN, skin.clone());
 
@@ -395,9 +395,9 @@ impl DimensionData {
             EntityComponents::ENTITY_TYPE,
             Id::constant("minecraft", "player"),
         );
-        components.set(EntityComponents::POSITION, Vec3::new(0.0, 0.0, 0.0));
+        components.set(EntityComponents::POSITION, DVec3::new(0.0, 0.0, 0.0));
         components.set(EntityComponents::DIRECTION, Vec2::new(0.0, 0.0));
-        components.set(EntityComponents::VELOCITY, Vec3::new(0.0, 0.0, 0.0));
+        components.set(EntityComponents::VELOCITY, DVec3::new(0.0, 0.0, 0.0));
         components.set(EntityComponents::PLAYER_CONTROLLED, true);
         self.entities.insert(
             uuid,
@@ -526,10 +526,10 @@ impl DimensionData {
         }
     }
 
-    pub(crate) fn try_initialize_chunk(&mut self, pos: &Vec2<i32>) -> ActorResult<()> {
+    pub(crate) fn try_initialize_chunk(&mut self, pos: &IVec2) -> ActorResult<()> {
         if !self.chunks.contains_key(pos)
-            && pos.x() <= self.chunk_max.0 as i32
-            && pos.y() <= self.chunk_max.1 as i32
+            && pos[0] <= self.chunk_max.0 as i32
+            && pos[1] <= self.chunk_max.1 as i32
         {
             let server = self.server.clone().unwrap();
             let registries = server.registries()?;
@@ -543,7 +543,7 @@ impl DimensionData {
             let max_sections = (dim_type.min_y + dim_type.height as i32) / 16;
 
             let mut chunk = Chunk::new(min_sections, max_sections);
-            (self.chunk_generator)(&mut chunk, pos.x(), pos.y());
+            (self.chunk_generator)(&mut chunk, pos[0], pos[1]);
             self.chunks.insert(*pos, chunk);
 
             server.spawn_event(ChunkLoadEvent {

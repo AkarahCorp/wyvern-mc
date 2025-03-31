@@ -43,7 +43,7 @@ use crate::{
     server::{Server, registries::RegistryKeys},
 };
 
-use wyvern_values::{Id, Uuid, Vec2, Vec3};
+use wyvern_values::{DVec3, Id, Uuid, Vec2};
 
 mod components;
 pub use components::*;
@@ -213,14 +213,14 @@ impl ConnectionData {
     pub fn set_dimension(&mut self, dimension: Dimension) -> ActorResult<()> {
         for chunk in self.associated_data.loaded_chunks.clone() {
             self.write_packet(ForgetLevelChunkS2CPlayPacket {
-                chunk_z: chunk.y(),
-                chunk_x: chunk.x(),
+                chunk_z: chunk[1],
+                chunk_x: chunk[0],
             });
         }
 
         self.associated_data.dimension = Some(dimension.clone());
         self.associated_data.loaded_chunks.clear();
-        self.set(PlayerComponents::POSITION, Vec3::new(0.0, 0.0, 0.0));
+        self.set(PlayerComponents::POSITION, DVec3::new(0.0, 0.0, 0.0));
         self.set(PlayerComponents::DIRECTION, Vec2::new(0.0, 0.0));
 
         self.write_packet(RespawnS2CPlayPacket {
@@ -297,12 +297,12 @@ impl ConnectionData {
                             .id(),
                     )
                 },
-                x: position.x(),
-                y: position.y(),
-                z: position.z(),
-                pitch: Angle::of_deg(direction.x()),
-                yaw: Angle::of_deg(direction.y()),
-                head_yaw: Angle::of_deg(direction.y()),
+                x: position[0],
+                y: position[1],
+                z: position[2],
+                pitch: Angle::of_deg(direction[0]),
+                yaw: Angle::of_deg(direction[1]),
+                head_yaw: Angle::of_deg(direction[1]),
                 data: VarInt::from(0),
                 vel_x: 0,
                 vel_y: 0,
@@ -449,13 +449,13 @@ impl ConnectionData {
     }
 
     #[PlayParticle]
-    pub fn play_particle(&mut self, pos: Vec3<f64>, particle: Particle) -> ActorResult<()> {
+    pub fn play_particle(&mut self, pos: DVec3, particle: Particle) -> ActorResult<()> {
         self.write_packet(LevelParticlesS2CPlayPacket {
             long_distance: true,
             always_visible: true,
-            x: pos.x(),
-            y: pos.y(),
-            z: pos.z(),
+            x: pos[0],
+            y: pos[1],
+            z: pos[2],
             spread_x: 0.0,
             spread_y: 0.0,
             spread_z: 0.0,

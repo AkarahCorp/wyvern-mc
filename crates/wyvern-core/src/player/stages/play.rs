@@ -32,7 +32,7 @@ use crate::{
     server::{Server, registries::RegistryKeys},
 };
 
-use wyvern_values::{Id, Vec2, Vec3, cell::Token, id};
+use wyvern_values::{DVec3, IVec3, Id, Vec2, cell::Token, id};
 
 impl ConnectionData {
     pub fn play_phase(&mut self) -> ActorResult<()> {
@@ -53,7 +53,7 @@ impl ConnectionData {
                     }
                     C2SPlayPackets::PlayerAction(packet) => {
                         let block =
-                            Vec3::new(packet.location.x, packet.location.y, packet.location.z);
+                            IVec3::new(packet.location.x, packet.location.y, packet.location.z);
 
                         this.write_packet(BlockChangedAckS2CPlayPacket(packet.sequence));
                         match packet.status {
@@ -156,7 +156,7 @@ impl ConnectionData {
                         }
                         this.set(
                             PlayerComponents::POSITION,
-                            Vec3::new(packet.x, packet.y, packet.z),
+                            DVec3::new(packet.x, packet.y, packet.z),
                         );
 
                         this.send_chunks()?;
@@ -179,7 +179,7 @@ impl ConnectionData {
                         }
                         this.set(
                             PlayerComponents::POSITION,
-                            Vec3::new(packet.x, packet.y, packet.z),
+                            DVec3::new(packet.x, packet.y, packet.z),
                         );
                         this.set(
                             PlayerComponents::DIRECTION,
@@ -255,16 +255,16 @@ impl ConnectionData {
                     }
                     C2SPlayPackets::UseItemOn(packet) => {
                         if packet.hand == Hand::Mainhand {
-                            let face: Vec3<i32> = match packet.face {
-                                BlockFace::Down => Vec3::new(0, -1, 0),
-                                BlockFace::Up => Vec3::new(0, 1, 0),
-                                BlockFace::North => Vec3::new(0, 0, -1),
-                                BlockFace::South => Vec3::new(0, 0, 1),
-                                BlockFace::West => Vec3::new(-1, 0, 0),
-                                BlockFace::East => Vec3::new(1, 0, 0),
+                            let face: IVec3 = match packet.face {
+                                BlockFace::Down => IVec3::new(0, -1, 0),
+                                BlockFace::Up => IVec3::new(0, 1, 0),
+                                BlockFace::North => IVec3::new(0, 0, -1),
+                                BlockFace::South => IVec3::new(0, 0, 1),
+                                BlockFace::West => IVec3::new(-1, 0, 0),
+                                BlockFace::East => IVec3::new(1, 0, 0),
                             };
                             let target =
-                                Vec3::new(packet.target.x, packet.target.y, packet.target.z);
+                                IVec3::new(packet.target.x, packet.target.y, packet.target.z);
                             let final_pos = target + face;
                             let held = this
                                 .associated_data
@@ -465,7 +465,7 @@ impl ConnectionData {
 
                             this.set(
                                 PlayerComponents::TELEPORT_POSITION,
-                                this.get(PlayerComponents::POSITION)?.shift_y(0.1),
+                                this.get(PlayerComponents::POSITION)? + DVec3::new(0.0, 0.1, 0.0),
                             );
                             Server::get()?.spawn_event(PlayerRespawnEvent {
                                 player: this.as_actor(),
@@ -623,7 +623,7 @@ impl ConnectionData {
         for entity in entities {
             let position = entity
                 .get(EntityComponents::POSITION)
-                .unwrap_or(Vec3::new(0.0, 0.0, 0.0));
+                .unwrap_or(DVec3::new(0.0, 0.0, 0.0));
             let direction = entity
                 .get(EntityComponents::DIRECTION)
                 .unwrap_or(Vec2::new(0.0, 0.0));
@@ -656,12 +656,12 @@ impl ConnectionData {
                     .get(RegistryKeys::ENTITY_TYPE)
                     .get_entry(ty)
                     .unwrap(),
-                x: position.x(),
-                y: position.y(),
-                z: position.z(),
-                pitch: Angle::of_deg(direction.x()),
-                yaw: Angle::of_deg(direction.y()),
-                head_yaw: Angle::of_deg(direction.y()),
+                x: position[0],
+                y: position[1],
+                z: position[2],
+                pitch: Angle::of_deg(direction[0]),
+                yaw: Angle::of_deg(direction[1]),
+                head_yaw: Angle::of_deg(direction[1]),
                 data: VarInt::from(0),
                 vel_x: 0,
                 vel_y: 0,
