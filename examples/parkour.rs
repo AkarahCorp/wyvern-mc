@@ -81,32 +81,32 @@ async fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
         match rand::random_range(1..=3) {
             1 => {
                 let ys = rand::random_range(-1..=1);
-                block_pos = block_pos + IVec3::new(4 - ys, ys, rand::random_range(-2..=2));
+                block_pos += IVec3::new(4 - ys, ys, rand::random_range(-2..=2));
             }
             2 => {
-                block_pos = block_pos + IVec3::new(6, -5, rand::random_range(-2..=2));
+                block_pos += IVec3::new(6, -5, rand::random_range(-2..=2));
 
                 event
                     .dimension
                     .set_block(block_pos, BlockState::new(Blocks::SLIME_BLOCK))?;
 
                 let ys = rand::random_range(-1..=1);
-                block_pos = block_pos + IVec3::new(4 - ys, ys + 2, rand::random_range(-2..=2));
+                block_pos += IVec3::new(4 - ys, ys + 2, rand::random_range(-2..=2));
             }
             3 => {
-                block_pos = block_pos + IVec3::new(1, 0, 0);
+                block_pos += IVec3::new(1, 0, 0);
                 event
                     .dimension
                     .set_block(block_pos, BlockState::new(Blocks::POLISHED_ANDESITE))?;
-                block_pos = block_pos + IVec3::new(1, 0, 0);
+                block_pos += IVec3::new(1, 0, 0);
                 event
                     .dimension
                     .set_block(block_pos, BlockState::new(Blocks::POLISHED_ANDESITE))?;
-                block_pos = block_pos + IVec3::new(2, 2, 0);
+                block_pos += IVec3::new(2, 2, 0);
                 event
                     .dimension
                     .set_block(block_pos, BlockState::new(Blocks::POLISHED_ANDESITE))?;
-                block_pos = block_pos + IVec3::new(1, -2, 0);
+                block_pos += IVec3::new(1, -2, 0);
                 event
                     .dimension
                     .set_block(block_pos, BlockState::new(Blocks::POLISHED_ANDESITE))?;
