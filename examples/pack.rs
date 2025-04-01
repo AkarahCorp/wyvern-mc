@@ -2,13 +2,11 @@ use std::{sync::Arc, time::Duration};
 
 use wyvern_mc::{
     actors::ActorResult,
-    blocks::{BlockComponents, BlockState, Blocks},
+    blocks::BlockState,
     components::DataComponentHolder,
     datatypes::gamemode::Gamemode,
     entities::{AttributeContainer, Attributes},
-    events::{
-        BreakBlockEvent, DimensionCreateEvent, PlaceBlockEvent, PlayerJoinEvent, ServerStartEvent,
-    },
+    events::{DimensionCreateEvent, PlayerJoinEvent, ServerStartEvent},
     inventory::Inventory,
     item::{ItemComponents, ItemStack},
     macros::server,
@@ -25,9 +23,10 @@ fn server() -> ServerBuilder {
         .event(on_server_start)
         .event(on_dim_init)
         .event(on_join)
-        .event(on_break)
-        .event(on_place)
-        .pack(TexturePack::new())
+        .pack(TexturePack::new().with_texture(
+            id!(minecraft:block/cobblestone),
+            include_bytes!("./assets/custom_grass.png"),
+        ))
 }
 
 async fn on_server_start(event: Arc<ServerStartEvent>) -> ActorResult<()> {
@@ -44,7 +43,7 @@ async fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
         for z in 0..10 {
             event.dimension.set_block(
                 IVec3::new(x, 0, z),
-                BlockState::new(id![minecraft:grass_block]).with(BlockComponents::SNOWY, false),
+                BlockState::new(id![minecraft:cobblestone]),
             )?;
         }
     }
@@ -79,17 +78,5 @@ async fn on_join(event: Arc<PlayerJoinEvent>) -> ActorResult<()> {
         )?;
         Ok(())
     });
-    Ok(())
-}
-
-async fn on_break(event: Arc<BreakBlockEvent>) -> ActorResult<()> {
-    let dim = event.player.dimension()?;
-    dim.set_block(event.position, event.old_block.clone())?;
-    Ok(())
-}
-
-async fn on_place(event: Arc<PlaceBlockEvent>) -> ActorResult<()> {
-    let dim = event.player.dimension()?;
-    dim.set_block(event.position, BlockState::new(Blocks::AIR))?;
     Ok(())
 }
