@@ -50,7 +50,7 @@ impl Chunk {
             .get_mut((section - self.min_sections) as usize)
     }
 
-    pub fn set_block_at(&mut self, pos: IVec3, block: BlockState) {
+    pub fn set_block_at(&mut self, pos: IVec3, block: &BlockState) {
         let section_y = pos[1].div_euclid(16);
         let local_y = pos[1].rem_euclid(16);
         let name = block.name().clone();
@@ -62,6 +62,21 @@ impl Chunk {
             } else {
                 self.block_entities.remove(&pos.as_i16vec3());
             }
+        }
+    }
+
+    pub fn set_block_at_by_id(&mut self, pos: IVec3, block: u32) {
+        let section_y = pos[1].div_euclid(16);
+        let local_y = pos[1].rem_euclid(16);
+        if let Some(section) = self.section_at_mut(section_y) {
+            section.set_block_at_by_id(pos.with_y(local_y).as_usizevec3(), block);
+
+            // TODO: add this
+            // if let Some(id) = BLOCK_ENTITY_REGISTRY.get(&name) {
+            //     self.block_entities.insert(pos.as_i16vec3(), *id);
+            // } else {
+            //     self.block_entities.remove(&pos.as_i16vec3());
+            // }
         }
     }
 
@@ -103,13 +118,12 @@ impl ChunkSection {
         }
     }
 
-    pub fn set_block_at(&mut self, pos: USizeVec3, block: BlockState) {
+    pub fn set_block_at(&mut self, pos: USizeVec3, block: &BlockState) {
         let idx = Self::index_from_pos(pos);
         let old_block = self.blocks.get(idx).unwrap();
 
         let new_block =
-            unsafe { RegEntry::<BlockState>::new_unchecked(block.clone().protocol_id() as u32) }
-                .id();
+            unsafe { RegEntry::<BlockState>::new_unchecked(block.protocol_id() as u32) }.id();
 
         if old_block == 0 && new_block != 0 {
             self.block_count += 1;
@@ -121,6 +135,19 @@ impl ChunkSection {
         if let Ok(data) = block.get(BlockComponents::CUSTOM_DATA) {
             self.block_meta.insert(pos, data);
         }
+    }
+
+    pub fn set_block_at_by_id(&mut self, pos: USizeVec3, new_block: u32) {
+        let idx = Self::index_from_pos(pos);
+        let old_block = self.blocks.get(idx).unwrap();
+
+        if old_block == 0 && new_block != 0 {
+            self.block_count += 1;
+        } else if old_block != 0 && new_block == 0 {
+            self.block_count -= 1;
+        }
+
+        self.blocks.set(idx, new_block as u64);
     }
 
     pub fn get_block_at(&mut self, pos: USizeVec3) -> BlockState {

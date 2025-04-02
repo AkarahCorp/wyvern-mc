@@ -1,6 +1,7 @@
 use datafix::serialization::{
     Codec, CodecAdapters, CodecOps, Codecs, DefaultCodec, MapCodecBuilder,
 };
+use voxidian_protocol::registry::RegEntry;
 use wyvern_actors::ActorResult;
 use wyvern_values::IVec3;
 
@@ -63,6 +64,18 @@ impl Structure {
             let new_pos = base_position + block.pos;
             let block_state = &self.palette[block.state as usize];
             dim.set_block(new_pos, block_state.clone())?;
+        }
+        Ok(())
+    }
+
+    pub fn place_loading(&self, dim: Dimension, base_position: IVec3) -> ActorResult<()> {
+        for block in &self.blocks {
+            let new_pos = base_position + block.pos;
+            let block_state = &self.palette[block.state as usize];
+            let block_state_id =
+                unsafe { RegEntry::<BlockState>::new_unchecked(block_state.protocol_id() as u32) }
+                    .id();
+            dim.set_block_loading(new_pos, block_state_id)?;
         }
         Ok(())
     }

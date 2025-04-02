@@ -55,19 +55,19 @@ async fn on_dim_init(event: Arc<DimensionCreateEvent>) -> ActorResult<()> {
                     let new_pos = IVec3::new(x2, y, z2);
                     chunk.set_block_at(
                         new_pos,
-                        BlockState::new(Blocks::GRASS_BLOCK).with(BlockComponents::SNOWY, false),
+                        &BlockState::new(Blocks::GRASS_BLOCK).with(BlockComponents::SNOWY, false),
                     );
 
                     if SIMPLEX.get([(x2) as f64 * 100.0, (z2) as f64 * 100.0]) > 0.5 {
                         chunk.set_block_at(
                             new_pos.with_y(new_pos[1] + 1),
-                            BlockState::new(Blocks::SHORT_GRASS),
+                            &BlockState::new(Blocks::SHORT_GRASS),
                         );
                     }
 
                     for y in 0..y {
                         let new_pos = IVec3::new(x2, y, z2);
-                        chunk.set_block_at(new_pos, BlockState::new(Blocks::DIRT));
+                        chunk.set_block_at(new_pos, &BlockState::new(Blocks::DIRT));
                     }
                 }
             }

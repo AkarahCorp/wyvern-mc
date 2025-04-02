@@ -154,7 +154,7 @@ impl DimensionData {
         let Some(chunk) = self.chunks.get_mut(&chunk_pos) else {
             return Ok(());
         };
-        chunk.set_block_at(pos_in_chunk, block_state.clone());
+        chunk.set_block_at(pos_in_chunk, &block_state.clone());
 
         let server = self.server.clone().unwrap();
         Runtime::spawn_task(async move {
@@ -170,6 +170,26 @@ impl DimensionData {
             }
             Ok(())
         });
+        Ok(())
+    }
+
+    #[SetBlockLoading]
+    #[doc = "Sets a block in this dimension at the given coordinates to the provided block state. Does not update for current players"]
+    pub fn set_block_loading(&mut self, position: IVec3, block_state: u32) -> ActorResult<()> {
+        let chunk_pos = IVec2::new(position[0].div_euclid(16), position[2].div_euclid(16));
+        let pos_in_chunk = IVec3::new(
+            position[0].rem_euclid(16),
+            position[1],
+            position[2].rem_euclid(16),
+        );
+
+        self.try_initialize_chunk(&chunk_pos)?;
+
+        let Some(chunk) = self.chunks.get_mut(&chunk_pos) else {
+            return Ok(());
+        };
+        chunk.set_block_at_by_id(pos_in_chunk, block_state);
+
         Ok(())
     }
 
