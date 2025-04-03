@@ -21,3 +21,4 @@ futures = { workspace = true }
 ureq = { workspace = true }
 json = { workspace = true }
 lockfree = { workspace = true }
+flate2 = { workspace = true }

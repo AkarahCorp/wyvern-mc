@@ -5,7 +5,7 @@ use std::{
     pin::Pin,
     sync::{LazyLock, Mutex, OnceLock},
     task::{Context, Poll},
-    thread::Builder,
+    thread::{Builder, JoinHandle},
 };
 
 use async_executor::{Executor, Task};
@@ -23,11 +23,11 @@ pub struct Runtime {
 }
 
 impl Runtime {
-    pub fn spawn_actor<F>(func: F, name: impl Into<String>)
+    pub fn spawn_actor<F>(func: F, name: impl Into<String>) -> JoinHandle<()>
     where
         F: FnOnce() + Send + 'static,
     {
-        let builder = Builder::new().name(name.into()).spawn(func).unwrap();
+        Builder::new().name(name.into()).spawn(func).unwrap()
     }
 
     pub fn executor(&self) -> &'static Executor<'static> {

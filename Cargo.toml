@@ -3,8 +3,8 @@ resolver = "3"
 members = ["examples", "crates/*"]
 
 [workspace.dependencies]
-voxidian-protocol = { git = "https://github.com/LighthouseMC/VoxidianProtocol.git", branch = "1.21.5" }
-# voxidian-protocol = { path = "../voxidian-protocol/" }
+# voxidian-protocol = { git = "https://github.com/LighthouseMC/VoxidianProtocol.git", branch = "1.21.5" }
+voxidian-protocol = { path = "../voxidian-protocol/" }
 datafix = { git = "https://github.com/akarahdev/datafix.git" }
 wyvern-macros = { path = "./crates/wyvern-macros" }
 wyvern-components = { path = "./crates/wyvern-components" }
@@ -32,6 +32,6 @@ ureq = { version = "*" }
 json = { version = "*" }
 lockfree = { version = "*" }
 glam = { version = "*" }
-
+flate2 = { version = "*" }
 [profile.release]
 debug = true

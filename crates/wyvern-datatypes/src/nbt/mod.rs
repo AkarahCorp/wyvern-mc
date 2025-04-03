@@ -234,6 +234,19 @@ impl From<PtcNbtCompound> for NbtCompound {
     }
 }
 
+impl From<NbtCompound> for PtcNbtCompound {
+    fn from(mut value: NbtCompound) -> Self {
+        let mut compound = PtcNbtCompound::new();
+        for key in value.keys() {
+            compound.insert(
+                key.clone(),
+                PtcNbtElement::from(value.remove(&key).unwrap()),
+            );
+        }
+        compound
+    }
+}
+
 impl NbtCompound {
     pub fn new() -> NbtCompound {
         NbtCompound {
@@ -251,6 +264,10 @@ impl NbtCompound {
 
     pub fn get_mut(&mut self, key: impl Into<String>) -> Option<&mut Nbt> {
         self.inner.get_mut(&key.into())
+    }
+
+    pub fn remove(&mut self, key: impl Into<String>) -> Option<Nbt> {
+        self.inner.remove(&key.into())
     }
 
     pub fn set(&mut self, key: impl Into<String>, value: Nbt) {

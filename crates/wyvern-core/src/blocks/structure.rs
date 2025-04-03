@@ -1,20 +1,24 @@
+use std::collections::HashMap;
+
 use datafix::serialization::{
     Codec, CodecAdapters, CodecOps, Codecs, DefaultCodec, MapCodecBuilder,
 };
-use voxidian_protocol::registry::RegEntry;
+use voxidian_protocol::{packet::PacketBuf, registry::RegEntry, value::Nbt as PtcNbt};
 use wyvern_actors::ActorResult;
+use wyvern_datatypes::nbt::{Nbt, NbtOps};
 use wyvern_values::IVec3;
 
 use crate::dimension::Dimension;
 
 use super::BlockState;
 
+#[derive(Debug, Clone)]
 pub struct Structure {
-    size: IVec3,
-    blocks: Vec<StructureBlock>,
-    palette: Vec<BlockState>,
-    entities: (),
-    data_version: i32,
+    pub size: IVec3,
+    pub blocks: Vec<StructureBlock>,
+    pub palette: Vec<BlockState>,
+    pub entities: (),
+    pub data_version: i32,
 }
 
 impl<O: CodecOps> DefaultCodec<O> for Structure {
@@ -42,7 +46,9 @@ impl<O: CodecOps> DefaultCodec<O> for Structure {
             })
     }
 }
-struct StructureBlock {
+
+#[derive(Clone, Debug)]
+pub struct StructureBlock {
     pos: IVec3,
     state: i32,
     nbt: (),
@@ -86,4 +92,49 @@ fn ivec3_codec<O: CodecOps>() -> impl Codec<IVec3, O> {
         |vec| IVec3::new(vec[0], vec[1], vec[2]),
         |ivec| Vec::from(ivec.to_array()),
     )
+}
+
+pub struct StructureSplitter;
+
+impl StructureSplitter {
+    pub fn split_structure(structure: Structure, output_dir: &str, piece_size: IVec3) {
+        let mut map = HashMap::<IVec3, Structure>::new();
+        for block in structure.blocks {
+            let offset_pos = block.pos.div_euclid(piece_size);
+            map.entry(offset_pos)
+                .or_insert_with(|| Structure {
+                    size: piece_size,
+                    blocks: Vec::new(),
+                    palette: structure.palette.clone(),
+                    entities: (),
+                    data_version: 0,
+                })
+                .blocks
+                .push(block);
+        }
+
+        for entry in map {
+            let encoded = Structure::codec().encode_start(&NbtOps, &entry.1).unwrap();
+            let Nbt::Compound(encoded) = encoded else {
+                continue;
+            };
+            let encoded: voxidian_protocol::value::NbtCompound = encoded.into();
+
+            let mut buf = PacketBuf::new();
+            PtcNbt {
+                name: String::new(),
+                root: encoded,
+            }
+            .write_named(&mut buf)
+            .unwrap();
+
+            std::fs::write(
+                format!("{output_dir}/{}.{}.{}.nbt", entry.0.x, entry.0.y, entry.0.z),
+                buf.into_inner(),
+            )
+            .unwrap();
+        }
+    }
+
+    pub fn place_split_structure(origin: IVec3, dimension: &Dimension, directory: &str) {}
 }
