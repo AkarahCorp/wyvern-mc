@@ -295,13 +295,21 @@ impl TryFrom<Vec<u8>> for NbtCompound {
     type Error = NbtDecodeError;
 
     fn try_from(value: Vec<u8>) -> Result<Self, NbtDecodeError> {
-        let mut buf = PacketBuf::from(value)
-            .inflate_gzip()
-            .map_err(|_| NbtDecodeError::NotGzipped)?;
-        let nbt = PtcNbt::read_named(&mut buf)
-            .map_err(|_| NbtDecodeError::BadNbt)?
-            .root;
-        Ok(nbt.into())
+        if matches!(value.get(0), Some(0x1f)) && matches!(value.get(1), Some(0x8b)) {
+            let mut buf = PacketBuf::from(value)
+                .inflate_gzip()
+                .map_err(|_| NbtDecodeError::NotGzipped)?;
+            let nbt = PtcNbt::read_named(&mut buf)
+                .map_err(|_| NbtDecodeError::BadNbt)?
+                .root;
+            Ok(nbt.into())
+        } else {
+            let mut buf = PacketBuf::from(value);
+            let nbt = PtcNbt::read_named(&mut buf)
+                .map_err(|_| NbtDecodeError::BadNbt)?
+                .root;
+            Ok(nbt.into())
+        }
     }
 }
 
