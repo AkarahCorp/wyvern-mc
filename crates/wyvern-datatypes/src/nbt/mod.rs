@@ -2,6 +2,9 @@ mod ops;
 pub use ops::*;
 mod snbt;
 pub use snbt::*;
+mod vx_ops;
+pub use vx_ops::*;
+
 use voxidian_protocol::packet::PacketBuf;
 
 use std::collections::HashMap;

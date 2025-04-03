@@ -1,14 +1,25 @@
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    sync::{
+        Arc,
+        atomic::{AtomicU32, Ordering},
+    },
+    time::Duration,
+};
 
 use datafix::serialization::{
     Codec, CodecAdapters, CodecOps, Codecs, DefaultCodec, MapCodecBuilder,
 };
-use voxidian_protocol::{packet::PacketBuf, registry::RegEntry, value::Nbt as PtcNbt};
+use voxidian_protocol::{
+    packet::PacketBuf,
+    registry::RegEntry,
+    value::{Nbt as PtcNbt, NbtElement},
+};
 use wyvern_actors::ActorResult;
-use wyvern_datatypes::nbt::{Nbt, NbtOps};
+use wyvern_datatypes::nbt::VxNbtOps;
 use wyvern_values::IVec3;
 
-use crate::dimension::Dimension;
+use crate::{dimension::Dimension, runtime::Runtime};
 
 use super::BlockState;
 
@@ -114,11 +125,12 @@ impl StructureSplitter {
         }
 
         for entry in map {
-            let encoded = Structure::codec().encode_start(&NbtOps, &entry.1).unwrap();
-            let Nbt::Compound(encoded) = encoded else {
+            let encoded = Structure::codec()
+                .encode_start(&VxNbtOps, &entry.1)
+                .unwrap();
+            let NbtElement::Compound(encoded) = encoded else {
                 continue;
             };
-            let encoded: voxidian_protocol::value::NbtCompound = encoded.into();
 
             let mut buf = PacketBuf::new();
             PtcNbt {
@@ -136,5 +148,44 @@ impl StructureSplitter {
         }
     }
 
-    pub fn place_split_structure(origin: IVec3, dimension: &Dimension, directory: &str) {}
+    pub fn place_split_structure(origin: IVec3, dimension: &Dimension, directory: &str) {
+        let files = std::fs::read_dir(directory).unwrap();
+        let idx = Arc::new(AtomicU32::new(0));
+        for file in files {
+            if let Ok(file) = file {
+                let ft = file.file_type().unwrap();
+                if ft.is_file() {
+                    let dim = dimension.clone();
+                    let origin = origin.clone();
+                    let idx2 = idx.clone();
+
+                    Runtime::spawn_task(async move {
+                        let bytes = std::fs::read(file.path()).unwrap();
+                        let mut buf = PacketBuf::from(bytes);
+                        let nbt = PtcNbt::read_named(&mut buf).unwrap();
+                        let structure = Structure::codec()
+                            .decode_start(&VxNbtOps, &NbtElement::Compound(nbt.root))
+                            .unwrap();
+                        structure.place_loading(dim, origin)?;
+                        idx2.fetch_sub(1, Ordering::AcqRel);
+                        Ok(())
+                    });
+                }
+            }
+        }
+
+        Runtime::spawn_actor(
+            move || {
+                loop {
+                    let v = idx.load(Ordering::SeqCst);
+                    println!("{:#?}", v);
+                    if v == 0 {
+                        break;
+                    }
+                    std::thread::sleep(Duration::from_millis(100));
+                }
+            },
+            "Logger",
+        );
+    }
 }
