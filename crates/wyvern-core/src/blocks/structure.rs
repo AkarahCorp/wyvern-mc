@@ -158,6 +158,7 @@ impl StructureSplitter {
                     let dim = dimension.clone();
                     let origin = origin.clone();
                     let idx2 = idx.clone();
+                    idx.fetch_add(1, Ordering::AcqRel);
 
                     Runtime::spawn_task(async move {
                         let bytes = std::fs::read(file.path()).unwrap();
